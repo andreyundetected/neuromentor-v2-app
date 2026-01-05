@@ -1,3 +1,6 @@
+from flask import session
+from flask import url_for
+from flask import redirect
 import requests
 from flask_sqlalchemy import SQLAlchemy
 
@@ -29,3 +32,35 @@ class User(db.Model):
     user_info = db.Column(db.JSON, default={})
     course_info = db.Column(MutableList.as_mutable(db.JSON), default=[])
     has_completed_interview = db.Column(db.Boolean, default=False)
+
+
+def require_login():
+    if 'user_id' not in session:
+        return redirect(url_for('register'))
+    user = User.query.get(session['user_id'])
+    if not user.user_info:
+        return redirect(url_for('interview'))
+    return user
+
+
+def get_empty_course_info():
+    return {
+        "0_topic": "",
+        "1_initial_level": "",
+        "2_target_level": "",
+        "3_name": "",
+        "4_structure": [
+            {
+                "0_topic": "",
+                "1_description": "",
+                "2_instructions_for_generating_lessons": "",
+                "3_lessons": [
+                    {"name": "", "description": ""},
+                    {"name": "", "description": ""}
+                ]
+            }
+        ],
+        "5_categories": [],
+        "6_teaching_style": "",
+        "7_lecture_type": ""
+    }
