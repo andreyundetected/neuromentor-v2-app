@@ -140,3 +140,35 @@ def course_creation(user_id, course_idx):
     except:
         course_name = ""
     return render_template('course_creation.html', user=user, course_idx=course_idx, username=user.username, course_name = course_name)
+
+
+class PublicCourse(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    topic = db.Column(db.String(100), nullable=False)
+    creator = db.Column(db.String(80), nullable=False)
+    course_info = db.Column(db.JSON, nullable=False)
+    rating = db.Column(db.Float, default=10.0)
+
+
+def add_to_library(course_id):
+    user = require_login()
+    if isinstance(user, Response):
+        return user
+
+    public_course = PublicCourse.query.get(course_id)
+    if not public_course:
+        return "Курс не найден.", 404
+
+    if any(c.get('id') == course_id for c in user.course_info):
+        return redirect(url_for('library'))  
+
+    updated_course_info = user.course_info + [{
+        **public_course.course_info,
+        "id": course_id  
+    }]
+    
+    User.query.filter_by(id=user.id).update({"course_info": updated_course_info})
+    db.session.commit()
+
+    return redirect(url_for('library'))

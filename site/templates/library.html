@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <!-- Сервер должен подставить актуальное имя пользователя в content -->
+  <meta name="username" content="{{ username }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Course library - NeuroMentor</title>
+  <style>
+    /* Анимация появления (fadeInUp) */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    /* Глобальные стили скроллбара для всех элементов */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #e0e0e0;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #d3d3d3;
+      border-radius: 10px;
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #e9ecef;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      animation: fadeInUp 0.5s ease-out;
+    }
+    
+    /* Header с белой шторкой, как на странице Интервью */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+    }
+    /* Логотип прикреплён к левому верхнему углу (отступ: top 15px, left 15px) */
+    .logo {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      color: #007bff;
+      font-size: 24px;
+      font-weight: bold;
+      transition: transform 0.3s, color 0.3s;
+    }
+    .logo svg {
+      margin-right: 8px;
+      transition: transform 0.3s;
+    }
+    .logo:hover {
+      color: #0056b3;
+    }
+    .logo:hover svg {
+      transform: scale(1.1);
+    }
+    /* Аватарка прикреплена к правому верхнему углу (отступ: top 8px, right 15px) */
+    .account {
+      position: absolute;
+      top: 8px;
+      right: 15px;
+    }
+    .account a {
+      text-decoration: none;
+    }
+    .account .account-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      font-size: 18px;
+      font-weight: bold;
+      border: 2px solid #007bff;
+      transition: transform 0.3s;
+    }
+    .account .account-avatar:hover {
+      transform: scale(1.1);
+    }
+    
+    h1 {
+      margin: 80px 0 20px;
+      text-align: center;
+      color: #333;
+    }
+    
+    /* Панель поиска */
+    .search-bar {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .search-bar input {
+      padding: 10px 20px;
+      width: 50%;
+      max-width: 400px;
+      border: 1px solid #ccc;
+      border-radius: 25px;
+      background-color: #fafafa;
+      font-size: 14px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .search-bar input:focus {
+      border-color: #007bff;
+      box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+      outline: none;
+    }
+    
+    /* Панель категорий */
+    .category-bar {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 10px 0;
+      margin-bottom: 20px;
+    }
+    .category-bar::-webkit-scrollbar {
+      height: 8px;
+    }
+    .category-bar::-webkit-scrollbar-track {
+      background: #e0e0e0;
+      border-radius: 10px;
+    }
+    .category-bar::-webkit-scrollbar-thumb {
+      background: #d3d3d3;
+      border-radius: 10px;
+    }
+    .category-item {
+      padding: 10px 20px;
+      border-radius: 20px;
+      background: #f5f5f5;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .category-item:hover {
+      background: #007bff;
+      color: #fff;
+    }
+    .category-item.selected {
+      background: #0056b3;
+      color: #fff;
+    }
+    
+    /* Сетка рекомендаций */
+    .recommendation-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* 5-7 карточек */
+      gap: 36px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    /* Карточка рекомендаций */
+    .recommendation-card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      padding: 10px;
+      cursor: pointer;
+      width: 120px; /* Фиксированная ширина */
+      height: 120px; /* Уменьшенная высота */
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .recommendation-card:hover {
+      transform: scale(1.08);
+      box-shadow: 0 3px 7px rgba(0, 0, 0, 0.2);
+    }
+
+    .recommendation-card img {
+      width: 100%;
+      border-radius: 8px;
+      margin-bottom: 5px;
+    }
+
+    .recommendation-card h2 {
+      font-size: 12px;
+      margin: 0;
+      color: #333;
+    }
+
+    .divider {
+      width: 100%;
+      height: 1px;
+      background-color: #ccc;
+      margin: 20px 0;
+    }
+    
+    /* Сетка курсов */
+    .course-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr); /* Жёстко 3 карточки */
+      gap: 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .course-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      padding: 20px;
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: pointer;
+    }
+    .course-card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+    .course-avatar {
+    width: 100%;
+    height: 186px; /* Высота блока */
+    border-radius: 10px;
+    background: linear-gradient(135deg, #ddd, #bbb);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    }
+
+    .course-card h2 {
+      font-size: 18px;
+      margin: 10px 0;
+    }
+    .course-card p {
+      font-size: 14px;
+      color: #666;
+    }
+    .course-categories {
+      font-size: 12px;
+      color: #007bff;
+      margin-top: 5px;
+    }
+    .add-course-card {
+      background: #e0f7fa;
+      border: 2px dashed #007bff;
+      color: #007bff;
+      cursor: pointer;
+      transition: transform 0.3s, background-color 0.3s;
+    }
+    .add-course-card:hover {
+      background: #b2ebf2;
+      transform: scale(1.05);
+    }
+    .add-course-card img {
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    .about-neuromentor {
+  background: linear-gradient(135deg, #3a6ad6, #6a9dfc);
+  color: white;
+  border-radius: 15px;
+  padding: 50px;
+  margin: 50px auto;
+  max-width: 1100px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.about-neuromentor h2 {
+  font-size: 30px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.about-neuromentor .subtitle {
+  font-size: 18px;
+  opacity: 0.9;
+}
+
+.about-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20px;
+  gap: 30px;
+}
+
+.about-text {
+  flex: 1;
+  text-align: left;
+}
+
+.about-text p {
+  font-size: 18px;
+  font-weight: normal;
+}
+
+.about-image {
+  flex: 1;
+}
+
+.about-image img {
+  width: 100%;
+  max-width: 320px;
+  border-radius: 12px;
+}
+.about-founder {
+  background: #f9f9f9;
+  color: #333;
+  border-radius: 15px;
+  padding: 50px;
+  margin: 50px auto;
+  max-width: 1100px;
+  text-align: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.about-founder h2 {
+  font-size: 28px;
+  font-weight: bold;
+  color: #3a6ad6;
+  margin-bottom: 10px;
+}
+
+.about-founder .subtitle {
+  font-size: 18px;
+  opacity: 0.8;
+  margin-bottom: 20px;
+}
+
+.founder-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+.founder-text {
+  flex: 1;
+  text-align: left;
+}
+
+.founder-highlight {
+  font-size: 18px;
+  font-weight: bold;
+  color: #3a6ad6;
+}
+
+.founder-text p {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.founder-small {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.founder-call {
+  font-size: 16px;
+  font-weight: bold;
+  margin-top: 15px;
+}
+
+.founder-image {
+  flex: 1;
+  text-align: center;
+}
+
+.founder-image img {
+  width: 100%;
+  max-width: 280px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+
+
+/* Секция "Свяжитесь с нами" */
+.contact-us {
+  background: #f9f9f9;
+  border-radius: 15px;
+  padding: 50px;
+  margin: 50px auto;
+  max-width: 1100px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+.contact-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 40px;
+}
+.contact-details {
+  flex: 1;
+}
+.contact-us h2 {
+  font-size: 26px;
+  font-weight: bold;
+  color: #3a6ad6;
+  margin-bottom: 10px;
+}
+
+.contact-us .subtitle {
+  font-size: 18px;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+/* Контейнер для контактов */
+.contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Один контакт */
+.contact-item {
+  display: flex;
+  align-items: center;
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 600px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.contact-item:hover {
+  transform: scale(1.03);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Иконки перед текстом */
+.contact-item .icon {
+  font-size: 24px;
+  margin-right: 15px;
+}
+
+/* Текст контакта */
+.contact-text {
+  text-align: left;
+}
+
+.contact-text strong {
+  font-size: 16px;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.contact-text a {
+  font-size: 14px;
+  color: #007bff;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.contact-text a:hover {
+  color: #0056b3;
+}
+
+.support-mentor {
+  flex: 1;
+  text-align: center;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+.crypto-wallet {
+  font-size: 18px;
+  margin-top: 10px;
+}
+
+.wallet-address {
+  font-family: monospace;
+  background: #eee;
+  padding: 10px;
+  border-radius: 5px;
+  display: inline-block;
+  margin-top: 10px;
+}
+/* Затемненный фон */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+/* Контейнер модального окна */
+.modal-content {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    animation: fadeInScale 0.3s ease-out;
+}
+
+/* Анимация появления */
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Заголовок модального окна */
+.modal-content h2 {
+    font-size: 22px;
+    font-weight: bold;
+    color: #3a6ad6;
+    margin-bottom: 10px;
+}
+
+/* Описание */
+.modal-content p {
+    font-size: 16px;
+    color: #555;
+    line-height: 1.4;
+    margin-bottom: 20px;
+}
+
+/* Кнопка "Start Interview" */
+.modal-content .btn {
+    background: #3a6ad6;
+    color: white;
+    font-size: 16px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+    display: inline-block;
+}
+
+.modal-content .btn:hover {
+    background: #2f5bb8;
+}
+/* Блок с количеством кредитов */
+.credits {
+  position: absolute;
+  top: 10px;
+  right: 62px; /* Расстояние от правого края */
+  font-size: 20px;
+  font-weight: bold;
+  color: #ffffff;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #1e90ff, #0073e6);
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-decoration: none;
+  transition: background 0.3s, transform 0.2s;
+  white-space: nowrap;
+  width: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.credits:hover {
+  background: linear-gradient(135deg, #0f7ae5, #005bb5);
+  transform: scale(1.05);
+}
+/* Кнопка выбора языка */
+.lang-btn {
+  position: absolute;
+  top: 10px;
+  right: 214px;
+  width: 40px;
+  height: 40px;
+  background: #ffffff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+/* Текст внутри кнопки */
+.lang-btn .btn-text {
+  font-size: 18px;
+  color: #333;
+}
+
+/* При наведении */
+.lang-btn:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.05);
+}
+
+/* Выпадающий список языков */
+.lang-dropdown {
+  position: absolute;
+  top: 50px; /* Отступ вниз от кнопки */
+  right: 212px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: none; /* Скрыто по умолчанию */
+  z-index: 1100;
+  flex-direction: column;
+  animation: dropdownFadeIn 0.3s ease-out;
+}
+
+/* Анимация появления */
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Кнопки внутри выпадающего списка */
+.lang-dropdown button {
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+/* При наведении */
+.lang-dropdown button:hover {
+  background: #f0f0f0;
+}
+
+/* Адаптивность */
+@media (max-width: 600px) {
+    .modal-content {
+        width: 90%;
+    }
+}
+
+
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <a href="/" class="logo">NeuroMentor</a>
+  
+    <!-- Блок с выбором языка (слева от кредитов) -->
+    <div class="header-btn lang-btn" id="lang-btn" onclick="toggleLanguageDropdown()">
+        <span class="btn-text" id="lang-text">
+            {% if session.get('language', 'ru') == 'ru' %} RU {% else %} EN {% endif %}
+        </span>
+    </div>
+    <!-- Выпадающий список языков (скрыт по умолчанию) -->
+    <div class="lang-dropdown" id="lang-dropdown">
+        <button onclick="selectLanguage('en')">EN</button>
+        <button onclick="selectLanguage('ru')">RU</button>
+      </div>
+    <!-- Блок с количеством кредитов -->
+    <a href="https://t.me/YourBotLink" class="credits" title="Buy Credits via Telegram" target="_blank">
+      {% if session.get('language', 'ru') == 'ru' %}
+        {{ user.credits }} Кредитов
+      {% elif session.get('language', 'ru') == 'en' %}
+        {{ user.credits }} Credits
+      {% endif %}
+    </a>
+  
+    <!-- Аватарка пользователя (крайний правый элемент) -->
+    <a href="/account" title="Profile" class="account">
+      <div class="avatar account-avatar"></div>
+    </a>
+  
+  </header>
+
+  <!-- Основной контейнер -->
+  <div class="container">
+    {% if session.get('language', 'ru') == 'ru' %}
+      <h1>Библиотека курсов</h1>
+    {% elif session.get('language', 'ru') == 'en' %}
+      <h1>Course library</h1>
+    {% endif %}
+    <!-- Панель поиска -->
+    <div class="search-bar">
+        {% if session.get('language', 'ru') == 'ru' %}
+          <input type="text" id="search-input" placeholder="Поиск курсов..." oninput="filterCourses()">
+        {% elif session.get('language', 'ru') == 'en' %}
+          <input type="text" id="search-input" placeholder="Search courses..." oninput="filterCourses()">
+        {% endif %}
+    </div>
+    <!-- Панель категорий -->
+    <div class="category-bar">
+      <div class="category-item" onclick="resetCategory()">All</div>
+      {% for category, count in sorted_categories %}
+      <div class="category-item" onclick="toggleCategory(this, '{{ category }}')">{{ category }}</div>
+      {% endfor %}
+    </div>
+    <!-- Рекомендационная панель -->
+    <div class="recommendation-bar">
+      {% for rec in user.recommendations %}
+      <div class="recommendation-card" onclick="checkInterview('/start_recommendation/{{ loop.index0 }}')">
+        <img src="/static/images/course_placeholder.jpg" alt="Курс {{ rec.recommendation_name }}">
+        <h2>{{ rec.recommendation_name }}</h2>
+      </div>
+      {% endfor %}
+    </div>
+    
+    <!-- Разделительная линия -->
+    <div class="divider"></div>
+    <!-- Сетка курсов -->
+    <div class="course-grid">
+      <!-- Карточка для создания нового курса -->
+      <div class="course-card add-course-card" onclick="checkInterview('{{ new_course_url }}')">
+        <img src="/static/images/add_icon.jpg" alt="Create a course">
+        {% if session.get('language', 'ru') == 'ru' %}
+          <h2>Создать новый курс</h2>
+          <p>Начните свой новый образовательный проект</p>
+        {% elif session.get('language', 'ru') == 'en' %}
+          <h2>Create a new course</h2>
+          <p>Start your new educational project</p>
+        {% endif %}
+      </div>
+      <!-- Существующие курсы -->
+      {% for course in courses_with_indices %}
+      <div class="course-card" onclick="window.location.href='{{ url_for('course_select', user_id=user.id, course_idx=course.index) }}'">
+        <div class="course-avatar" data-categories="{{ course.course['course']['5_categories'] | join(', ') }}"></div>
+        <h2>{{ course.course["course"]["3_name"] or "Untitled" }}</h2>
+        {% if session.get('language', 'ru') == 'ru' %}
+          <p>Тема: {{ course.course["course"]["0_topic"] or "Not specified" }}</p>
+        {% elif session.get('language', 'ru') == 'en' %}
+          <p>Topic: {{ course.course["course"]["0_topic"] or "Not specified" }}</p>
+        {% endif %}
+        <p class="course-categories">
+          {% if session.get('language', 'ru') == 'ru' %}
+            Категории: {{ course.course["course"]["5_categories"] | join(', ') or "Not specified" }}
+          {% elif session.get('language', 'ru') == 'en' %}
+            Categories: {{ course.course["course"]["5_categories"] | join(', ') or "Not specified" }}
+          {% endif %}
+        </p>
+      </div>      
+      {% endfor %}
+    </div> 
+<!-- СЕКЦИЯ "ПРО NEUROMENTOR" -->
+<section class="about-neuromentor">
+    {% if session.get('language', 'ru') == 'ru' %}
+    <h2>NeuroMentor – обучение будущего</h2>
+    <p class="subtitle">
+      Персонализированные онлайн-курсы с адаптивным ИИ-наставником
+    </p>
+  
+    <div class="about-content">
+      <!-- Левая часть: текст -->
+      <div class="about-text">
+        <p>
+          Забудьте о скучных лекциях и неудобных курсах - учитесь в удобном темпе и формате, 
+          получая мгновенную обратную связь от интеллектуального наставника.
+        </p>
+        <ul class="advantages">
+          <li>📌 <strong>Гибкость обучения</strong> – выбирайте удобный ритм и стиль занятий</li>
+          <li>🧠 <strong>Искусственный интеллект</strong> – персональный помощник</li>
+          <li>🎯 <strong>Персонализированные курсы</strong> – адаптация под ваши потребности</li>
+        </ul>
+      </div>
+      <!-- Правая часть: картинка -->
+      <div class="about-image">
+        <img src="/static/images/about_image.png" alt="Иллюстрация ИИ-обучения">
+      </div>
+    </div>
+    {% elif session.get('language', 'ru') == 'en' %}
+    <h2>NeuroMentor – Education of the Future</h2>
+    <p class="subtitle">
+      Personalized online courses with an adaptive AI tutor
+    </p>
+  
+    <div class="about-content">
+      <!-- Левая часть: текст -->
+      <div class="about-text">
+        <p>
+            Forget about boring lectures and inconvenient courses - study at a convenient pace and format, 
+            receiving instant feedback from an intelligent mentor.
+        </p>
+        <ul class="advantages">
+          <li>📌 <strong>Flexible Learning</strong> – choose a convenient pace and style of study</li>
+          <li>🧠 <strong>Artificial Intelligence</strong> – your personal assistant</li>
+          <li>🎯 <strong>Personalized Courses</strong> – tailored to your needs</li>            
+        </ul>
+      </div>
+      <!-- Правая часть: картинка -->
+      <div class="about-image">
+        <img src="/static/images/about_image.png" alt="Иллюстрация ИИ-обучения">
+      </div>
+    </div>
+    {% endif %}
+  </section>
+<!-- СЕКЦИЯ "О НАС" -->
+<section class="about-founder">
+    {% if session.get('language', 'ru') == 'ru' %}
+    <h2>О нас</h2>
+    <p class="subtitle">
+      История создания проекта NeuroMentor
+    </p>
+  
+    <div class="founder-content">
+      <!-- Левая часть: текст -->
+      <div class="founder-text">
+        <p class="founder-highlight">
+          NeuroMentor – это изначально мой пет-проект, который я полностью разработал в одиночку в 17 лет.  
+        </p>
+        <p>
+          Изначально я хотел создать простой ИИ-ассистент, но затем понял, что с помощью нейросетей 
+          можно делать персонализированные учебные курсы, которые адаптируются под каждого человека.  
+        </p>
+        <p class="founder-small">
+          Сегодня NeuroMentor – это реальный рабочий инструмент, который помогает людям учиться быстрее 
+          и эффективнее.
+        </p>
+        <p class="founder-call">
+          Если у тебя есть опыт в разработке (JS, Python, AI, LLM) или идеи по улучшению проекта – пиши, буду рад!
+        </p>
+      </div>
+      <!-- Правая часть: фото -->
+      <div class="founder-image">
+        <img src="/static/images/founder.png" alt="Создатель проекта">
+      </div>
+    </div>
+    {% elif session.get('language', 'ru') == 'en' %}<h2>About Us</h2>
+    <p class="subtitle">
+      The Story Behind NeuroMentor
+    </p>
+    
+    <div class="founder-content">
+      <!-- Left side: text -->
+      <div class="founder-text">
+        <p class="founder-highlight">
+          NeuroMentor started as my personal pet project, which I fully developed on my own at the age of 17.  
+        </p>
+        <p>
+          Initially, I wanted to create a simple AI assistant, but then I realized that neural networks 
+          could be used to generate personalized learning courses that adapt to each individual.  
+        </p>
+        <p class="founder-small">
+          Today, NeuroMentor is a real working tool that helps people learn faster 
+          and more efficiently.
+        </p>
+        <p class="founder-call">
+          If you have experience in development (JS, Python, AI, LLM) or ideas to improve the project – feel free to reach out, I’d be happy to chat!
+        </p>
+      </div>
+      <!-- Right side: photo -->
+      <div class="founder-image">
+        <img src="/static/images/founder.png" alt="Project Founder">
+      </div>
+    </div>
+    
+    {% endif %}
+  </section>
+    
+<!-- СЕКЦИЯ "СВЯЖИТЕСЬ С НАМИ" -->
+<section class="contact-us">
+    {% if session.get('language', 'ru') == 'ru' %}
+    <div class="contact-container">
+      <!-- Левая часть: контакты -->
+      <div class="contact-details">
+        <h2>Свяжитесь с нами</h2>
+        <p class="subtitle">Мы всегда рады вашим вопросам, предложениям и отзывам</p>
+        <div class="contact-list">
+          <div class="contact-item">
+            <span class="icon">📩</span>
+            <div class="contact-text">
+              <strong>Обратная связь, багрепорт</strong>
+              <a href="mailto:support@neuromentor.com">support@neuromentor.com</a>
+            </div>
+          </div>
+          <div class="contact-item">
+            <span class="icon">🔧</span>
+            <div class="contact-text">
+              <strong>Техническая поддержка</strong>
+              <a href="mailto:tech@neuromentor.com">tech@neuromentor.com</a>
+            </div>
+          </div>
+          <div class="contact-item">
+            <span class="icon">🤝</span>
+            <div class="contact-text">
+              <strong>Инвестиции и сотрудничество</strong>
+              <a href="mailto:partners@neuromentor.com">partners@neuromentor.com</a>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Правая часть: Поддержать NeuroMentor -->
+      <div class="support-mentor">
+        <h2>Поддержать NeuroMentor</h2>
+        <p class="subtitle">Если вам нравится проект, вы можете поддержать нас</p>
+        <div class="crypto-wallet">
+          <p><strong>Крипто-кошелек:</strong></p>
+          <p class="wallet-address">0x1234abcd5678ef90ghij1234567890klmnop</p>
+        </div>
+      </div>
+    </div>
+    {% elif session.get('language', 'ru') == 'en' %}<div class="contact-container">
+        <!-- Left side: Contact details -->
+        <div class="contact-details">
+          <h2>Contact Us</h2>
+          <p class="subtitle">We are always happy to hear your questions, suggestions, and feedback</p>
+          <div class="contact-list">
+            <div class="contact-item">
+              <span class="icon">📩</span>
+              <div class="contact-text">
+                <strong>Feedback & Bug Reports</strong>
+                <a href="mailto:support@neuromentor.com">support@neuromentor.com</a>
+              </div>
+            </div>
+            <div class="contact-item">
+              <span class="icon">🔧</span>
+              <div class="contact-text">
+                <strong>Technical Support</strong>
+                <a href="mailto:tech@neuromentor.com">tech@neuromentor.com</a>
+              </div>
+            </div>
+            <div class="contact-item">
+              <span class="icon">🤝</span>
+              <div class="contact-text">
+                <strong>Investments & Partnerships</strong>
+                <a href="mailto:partners@neuromentor.com">partners@neuromentor.com</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      
+        <!-- Right side: Support NeuroMentor -->
+        <div class="support-mentor">
+          <h2>Support NeuroMentor</h2>
+          <p class="subtitle">If you like the project, you can support us</p>
+          <div class="crypto-wallet">
+            <p><strong>Crypto Wallet:</strong></p>
+            <p class="wallet-address">0x1234abcd5678ef90ghij1234567890klmnop</p>
+          </div>
+        </div>
+      </div>
+      
+    {% endif %}
+  </section>
+  <div id="interviewModal" class="modal">
+    <div class="modal-content">
+        {% if session.get('language', 'ru') == 'ru' %}
+        <h2>Пройдите интервью</h2>
+        <p>Чтобы начать создавать курс, вам необходимо пройти короткое интервью. Это займет всего несколько минут</p>
+        <a href="{{ url_for('interview') }}">
+            <button class="btn">Начать интервью</button>
+        {% elif session.get('language', 'ru') == 'en' %}
+        <h2>Complete the Interview</h2>
+        <p>To start creating a course, you need to complete a short interview. It will take just a few minutes</p>
+        <a href="{{ url_for('interview') }}">
+            <button class="btn">Start Interview</button>
+        {% endif %}
+        </a>
+    </div>
+</div>
+
+<script>
+    function toggleLanguageDropdown() {
+        const dropdown = document.getElementById('lang-dropdown');
+        dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
+    }
+
+    function selectLanguage(lang) {
+        console.log("Selected language:", lang);
+        
+        fetch(`/set_language/${lang}`, { method: "POST" })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();  // ✅ Перезагрузка страницы
+                } else {
+                    console.error("Error setting language:", response.statusText);
+                }
+            })
+            .catch(error => console.error("Fetch error:", error));
+    }
+</script>
+
+<script>
+    function checkInterview(targetUrl) {
+        // Проверяем флаг, переданный с бэкенда
+        const showInterviewModal = {{ show_interview_modal | tojson }};
+        
+        if (showInterviewModal) {
+            // Показываем модальное окно, если интервью не пройдено
+            document.getElementById("interviewModal").style.display = "flex";
+        } else {
+            // Если интервью пройдено, переходим по URL
+            window.location.href = targetUrl;
+        }
+    }
+</script>
+
+  <script>
+    function stringToColor(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const hue = Math.abs(hash) % 360; // Цветовой тон (0-360 градусов)
+        return `hsl(${hue}, 80%, 70%)`; // HSL цвет
+    }
+
+    function generateGradient(categories) {
+        if (!categories.length) return 'linear-gradient(135deg, #ddd, #bbb)'; // Если нет категорий
+
+        let sortedCategories = categories.map(c => c.trim()).sort(); // Сортируем категории
+        let colors = sortedCategories.map(stringToColor); // Преобразуем в цвета
+
+        let gradientParts = colors.map((color, index) => {
+            let position = (index / (colors.length - 1)) * 100;
+            return `${color} ${position}%`;
+        });
+
+        return `linear-gradient(135deg, ${gradientParts.join(', ')})`;
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".course-avatar").forEach(el => {
+            let categories = el.getAttribute("data-categories").split(",");
+            el.style.background = generateGradient(categories);
+        });
+    });
+
+    function startRecommendation(index) {
+        fetch(`/start_recommendation/${index}`, {
+            method: 'POST'
+        }).then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            }
+        });
+    }
+    let selectedCategories = [];
+
+    // Функция для динамической фильтрации курсов
+    function filterCourses() {
+    const searchInput = document.getElementById('search-input').value.toLowerCase();
+    const courses = document.querySelectorAll('.course-card:not(.add-course-card)');
+    
+    courses.forEach(course => {
+        const courseName = course.querySelector('h2').textContent.toLowerCase();
+        let courseCatsText = course.querySelector('.course-categories').textContent.trim(); 
+        // Удаляем префикс "Categories:" с учетом возможных пробелов
+        courseCatsText = courseCatsText.replace(/^Categories:\s*/i, '');
+        const courseCategories = courseCatsText.split(',').map(s => s.trim().toLowerCase());
+        
+        // Флаг для совпадения по имени
+        const nameMatch = courseName.includes(searchInput);
+        
+        // Флаг для совпадения по выбранным категориям (каждая выбранная категория должна присутствовать)
+        let categoryMatch = selectedCategories.every(cat => courseCategories.includes(cat));
+        
+        if (nameMatch && categoryMatch) {
+        course.style.display = 'block';
+        } else {
+        course.style.display = 'none';
+        }
+    });
+    }
+
+    // Функция переключения категории (множественный выбор)
+    function toggleCategory(categoryElement, category) {
+      const cat = category.toLowerCase();
+      if (selectedCategories.includes(cat)) {
+        selectedCategories = selectedCategories.filter(c => c !== cat);
+        categoryElement.classList.remove('selected');
+      } else {
+        selectedCategories.push(cat);
+        categoryElement.classList.add('selected');
+      }
+      filterCourses();
+    }
+
+    // Функция сброса выбранных категорий
+    function resetCategory() {
+      const categoryItems = document.querySelectorAll('.category-item');
+      categoryItems.forEach(item => item.classList.remove('selected'));
+      selectedCategories = [];
+      filterCourses();
+    }
+
+    // Извлекаем имя пользователя из мета-тега, переданного сервером
+    const username = document.querySelector('meta[name="username"]').getAttribute('content') || 'User';
+
+    // Функция генерации цвета для аватарки на основе имени
+    function getUserAvatarColor(name) {
+      const colors = ['#FF5733', '#33B5FF', '#FF33F6', '#33FF57', '#FFBD33'];
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      const index = Math.abs(hash) % colors.length;
+      return colors[index];
+    }
+    const userAvatarColor = getUserAvatarColor(username);
+
+    // Устанавливаем аватарку в header
+    const accountAvatar = document.querySelector('.account-avatar');
+    accountAvatar.style.backgroundColor = userAvatarColor;
+    accountAvatar.textContent = username.charAt(0).toUpperCase();
+  </script>
+</body>
+</html>
