@@ -1,3 +1,4 @@
+from collections import Counter
 from flask import Response
 from flask import jsonify
 from flask import request
@@ -172,3 +173,61 @@ def add_to_library(course_id):
     db.session.commit()
 
     return redirect(url_for('library'))
+
+
+def library():
+    user = require_login()
+    if isinstance(user, Response):
+        return user
+
+    if not user.course_info:
+        user.course_info = []
+
+    print("Текущее состояние course_info пользователя:", user.course_info)
+
+    courses_with_indices = [{"index": idx, "course": course} for idx, course in enumerate(user.course_info)]
+    print("Курсы с индексами для шаблона:", courses_with_indices)
+
+    categories = []
+    for course_wrapper in user.course_info:
+        categories.extend(course_wrapper["course"].get("5_categories", []))
+    
+    category_counts = Counter(categories)
+    sorted_categories = sorted(category_counts.items(), key=lambda x: x[1], reverse=True)
+
+    new_course_index = len(user.course_info)
+    new_course_url = url_for('course_creation', user_id=user.id, course_idx=new_course_index)
+    print('======================')
+    print(user.username)
+    return render_template(
+        'library.html',
+        user=user,
+        courses_with_indices=courses_with_indices,
+        new_course_url=new_course_url,
+        sorted_categories=sorted_categories, 
+        username=user.username
+    )
+
+
+def course_settings(user_id, course_idx):
+    user = User.query.get(user_id)
+    if not user:
+        return redirect(url_for('login'))
+    
+    course_info = user.course_info[course_idx]["course"]
+    course_settings = session.get('course_settings', {}).get(course_idx, [])
+    
+    nearest_lesson = None
+    for setting in course_settings:
+        if not setting['completed']:
+            nearest_lesson = setting['name']
+            break
+    
+    return render_template(
+        'course_settings.html',
+        user=user,
+        course_idx=course_idx,
+        course_info=course_info,
+        course_settings=course_settings,
+        nearest_lesson=nearest_lesson
+    )
