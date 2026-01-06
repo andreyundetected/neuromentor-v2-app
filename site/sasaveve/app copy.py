@@ -231,3 +231,44 @@ def course_settings(user_id, course_idx):
         course_settings=course_settings,
         nearest_lesson=nearest_lesson
     )
+
+
+def update_course_info(user_id, course_idx):
+    user = User.query.get(user_id)
+    if not user:
+        return redirect(url_for('login'))
+    
+    course_name = request.form.get('course_name')
+    learning_format = request.form.get('learning_format')
+    lecture_type = request.form.get('lecture_type')
+    
+    course_info = user.course_info[course_idx]["course"]
+    if course_name:
+        course_info['3_name'] = course_name
+    if learning_format:
+        course_info['learning_format'] = learning_format
+    if lecture_type:
+        course_info['lecture_type'] = lecture_type
+    
+    if 'course_settings' not in session:
+        session['course_settings'] = {}
+    
+    course_settings = session['course_settings'].get(course_idx, [])
+    updated_lessons = []
+
+    for topic in course_info['4_structure']:
+        for lesson in topic['3_lessons']:
+            
+            lesson_name = lesson['name']
+            lesson_status = next(
+                (ls['completed'] for ls in course_settings if ls['name'] == lesson_name), 
+                False
+            )
+            updated_lessons.append({'name': lesson_name, 'completed': lesson_status})
+    
+    session['course_settings'][course_idx] = updated_lessons
+    
+    db.session.commit()
+    session.modified = True
+    
+    return redirect(url_for('course_settings', user_id=user.id, course_idx=course_idx))
