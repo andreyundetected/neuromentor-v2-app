@@ -8,3 +8,9 @@ DB_PATH = "neuromentor.db"
 
 
 conn = sqlite3.connect(DB_PATH)
+
+
+cursor = conn.cursor()
+
+
+result = cursor.fetchone()
