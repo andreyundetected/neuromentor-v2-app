@@ -272,3 +272,11 @@ def update_course_info(user_id, course_idx):
     session.modified = True
     
     return redirect(url_for('course_settings', user_id=user.id, course_idx=course_idx))
+
+
+def index():
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+        if user:
+            return redirect(url_for('library'))  
+    return redirect(url_for('login'))
