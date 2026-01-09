@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="username" content="{{ user.username }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account - NeuroMentor</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <style>
+    /* Сброс стилей */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* Динамический фон с анимацией градиента */
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      background: linear-gradient(135deg, #f7f9fc, #e9ecef);
+      background-size: 400% 400%;
+      animation: gradientShift 15s ease infinite;
+      min-height: 100vh;
+      position: relative;
+      overflow: auto;
+      padding-top: 60px; /* чтобы не скрывался контент за header */
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Кастомный скроллбар */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track {
+      background: #e0e0e0;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #d3d3d3;
+      border-radius: 10px;
+    }
+
+    /* Фоновой canvas (если нужен динамический фон фигур) */
+    #backgroundCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* Header – шторка */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 15px;
+    }
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: #007bff;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      transition: transform 0.3s, color 0.3s;
+    }
+    .logo svg {
+      margin-right: 8px;
+      transition: transform 0.3s;
+    }
+    .logo:hover {
+      color: #0056b3;
+    }
+    .logo:hover svg {
+      transform: scale(1.1);
+    }
+    .account a {
+      text-decoration: none;
+    }
+    .account .account-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      font-size: 18px;
+      font-weight: bold;
+      border: 2px solid #007bff;
+      transition: transform 0.3s;
+    }
+    .account .account-avatar:hover {
+      transform: scale(1.1);
+    }
+
+    /* Основной контейнер */
+    .container {
+      position: relative;
+      z-index: 1; /* выше фона */
+      max-width: 800px;
+      margin: 10px auto 30px; /* отступ сверху 80px, чтобы контент был ниже header */
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    header + .container {
+      margin-top: 30px; /* дополнительное смещение, если нужно */
+      margin-bottom: 20px;
+    }
+
+    /* Аватарка пользователя (большая) */
+    .big-avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 48px;
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 20px;
+    }
+
+    h1, h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    /* Форма редактирования аккаунта */
+    form {
+      margin-top: 20px;
+    }
+    .input-group {
+      position: relative;
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    .toggle-password {
+      cursor: pointer;
+      position: absolute;
+      right: 10px;
+      top: 35px;
+      font-size: 16px;
+      color: #555;
+    }
+    .message {
+      color: rgb(0, 33, 221);
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .button {
+      padding: 16px 26px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      display: block;
+      margin: 0 auto;
+      margin-top: 0px;
+      margin-bottom: 20px;
+      font-size: 18px
+    }
+    .button:hover {
+      background-color: #0056b3;
+    }
+
+    /* Таблица результатов интервью */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    th {
+      background-color: #f7f7f7;
+    }
+
+.credits {
+  position: absolute;
+  top: 10px;
+  right: 62px; /* Расстояние от правого края */
+  font-size: 20px;
+  font-weight: bold;
+  color: #ffffff;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #1e90ff, #0073e6);
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-decoration: none;
+  transition: background 0.3s, transform 0.2s;
+  white-space: nowrap;
+  width: 140px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.credits:hover {
+  background: linear-gradient(135deg, #0f7ae5, #005bb5);
+  transform: scale(1.05);
+}
+/* Кнопка выбора языка */
+.lang-btn {
+  position: absolute;
+  top: 10px;
+  right: 214px;
+  width: 40px;
+  height: 40px;
+  background: #ffffff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+/* Текст внутри кнопки */
+.lang-btn .btn-text {
+  font-size: 18px;
+  color: #333;
+}
+
+/* При наведении */
+.lang-btn:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.05);
+}
+
+/* Выпадающий список языков */
+.lang-dropdown {
+  position: absolute;
+  top: 50px; /* Отступ вниз от кнопки */
+  right: 212px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: none; /* Скрыто по умолчанию */
+  z-index: 1100;
+  flex-direction: column;
+  animation: dropdownFadeIn 0.3s ease-out;
+}
+
+/* Анимация появления */
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Кнопки внутри выпадающего списка */
+.lang-dropdown button {
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+/* При наведении */
+.lang-dropdown button:hover {
+  background: #f0f0f0;
+}
+
+  </style>
+</head>
+<body>
+  <canvas id="backgroundCanvas"></canvas>
+  <!-- Header с логотипом и аватаркой -->
+  <header>
+    <a href="/" class="logo">NeuroMentor</a>
+    
+    <!-- Блок с выбором языка (слева от кредитов) -->
+    <div class="header-btn lang-btn" id="lang-btn" onclick="toggleLanguageDropdown()">
+        <span class="btn-text" id="lang-text">
+            {% if session.get('language', 'ru') == 'ru' %} RU {% else %} EN {% endif %}
+        </span>
+    </div>
+    <!-- Выпадающий список языков (скрыт по умолчанию) -->
+    <div class="lang-dropdown" id="lang-dropdown">
+        <button onclick="selectLanguage('en')">EN</button>
+        <button onclick="selectLanguage('ru')">RU</button>
+      </div>
+    <!-- Блок с количеством кредитов -->
+    <a href="https://t.me/YourBotLink" class="credits" title="Buy Credits via Telegram" target="_blank">
+      {% if session.get('language', 'ru') == 'ru' %}
+        {{ user.credits }} Кредитов
+      {% elif session.get('language', 'ru') == 'en' %}
+        {{ user.credits }} Credits
+      {% endif %}
+    </a>
+    
+    <!-- Аватарка пользователя (крайний правый элемент) -->
+    <a href="/account" title="Profile" class="account">
+      <div class="avatar account-avatar"></div>
+    </a>
+    
+    </header>
+
+  <div class="container">
+    <!-- Большая аватарка -->
+    <div id="generatedBigAvatar" class="big-avatar"></div>
+    {% if session.get('language', 'ru') == 'ru' %}
+      <h1>Детали аккаунта</h1>
+    {% elif session.get('language', 'ru') == 'en' %}
+      <h1>Account Details</h1>
+    {% endif %}
+    {% if message %}
+      <div class="message">{{ message }}</div>
+    {% endif %}
+    <form action="{{ url_for('account') }}" method="POST">
+      <div class="input-group">
+        {% if session.get('language', 'ru') == 'ru' %}
+          <label for="username">Имя аккаунта:</label>
+        {% elif session.get('language', 'ru') == 'en' %}
+          <label for="username">Username:</label>
+        {% endif %}
+        <input type="text" name="username" id="username" value="{{ user.username }}" required>
+      </div>
+      <div class="input-group">
+        {% if session.get('language', 'ru') == 'ru' %}
+          <label for="password">Пароль:</label>
+        {% elif session.get('language', 'ru') == 'en' %}
+          <label for="password">Password:</label>
+        {% endif %}
+        <input type="password" name="password" id="password" value="{{ user.password }}" required>
+        <span id="togglePassword" class="toggle-password">&#128065;</span>
+      </div>
+      {% if session.get('language', 'ru') == 'ru' %}
+        <button type="submit" class="button">Обновить детали аккаунта</button>
+      {% elif session.get('language', 'ru') == 'en' %}
+        <button type="submit" class="button">Update account details</button>
+      {% endif %}
+    </form>
+  </div>
+  <script>
+    function toggleLanguageDropdown() {
+        const dropdown = document.getElementById('lang-dropdown');
+        dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
+    }
+
+    function selectLanguage(lang) {
+        console.log("Selected language:", lang);
+        
+        fetch(`/set_language/${lang}`, { method: "POST" })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();  // ✅ Перезагрузка страницы
+                } else {
+                    console.error("Error setting language:", response.statusText);
+                }
+            })
+            .catch(error => console.error("Fetch error:", error));
+    }
+</script>
+  <script>
+    // Функция для генерации цвета для аватарки по имени
+    function getUserAvatarColor(name) {
+      const colors = ['#FF5733', '#33B5FF', '#FF33F6', '#33FF57', '#FFBD33'];
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return colors[Math.abs(hash) % colors.length];
+    }
+    const username = "{{ user.username }}";
+    
+    // Устанавливаем маленькую аватарку в header
+    const accountAvatar = document.querySelector('.account-avatar');
+    accountAvatar.style.backgroundColor = getUserAvatarColor(username);
+    accountAvatar.textContent = username.charAt(0).toUpperCase();
+    
+    // Устанавливаем большую аватарку в контейнере
+    const bigAvatar = document.getElementById("generatedBigAvatar");
+    bigAvatar.style.backgroundColor = getUserAvatarColor(username);
+    bigAvatar.textContent = username.charAt(0).toUpperCase();
+    
+    // Переключение видимости пароля
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+    togglePassword.addEventListener('click', function () {
+      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordInput.setAttribute('type', type);
+    });
+    
+    // Динамический фон (анимация фигур)
+    const canvas = document.getElementById("backgroundCanvas");
+    const ctx = canvas.getContext("2d");
+    let shapes = [];
+    const shapeCount = 120;
+    
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      createShapes();
+    }
+    
+    function createShapes() {
+      shapes = [];
+      for (let i = 0; i < shapeCount; i++) {
+        const size = Math.random() * 30 + 20;
+        shapes.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: size,
+          type: ["triangle0", "triangle1", "triangle2", "triangle3", "square", "circle"][Math.floor(Math.random() * 6)],
+          speedX: (Math.random() - 0.5) * 1,
+          speedY: (Math.random() - 0.5) * 1
+        });
+      }
+    }
+    
+    function drawShapes() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "rgba(180, 180, 180, 0.5)";
+      ctx.lineWidth = 1.5;
+      shapes.forEach(shape => {
+        ctx.beginPath();
+        if (shape.type.startsWith("triangle")) {
+          // Простой вариант: рисуем треугольник
+          ctx.moveTo(shape.x, shape.y);
+          ctx.lineTo(shape.x + shape.size, shape.y);
+          ctx.lineTo(shape.x, shape.y + shape.size);
+          ctx.closePath();
+        } else if (shape.type === "square") {
+          ctx.rect(shape.x, shape.y, shape.size, shape.size);
+        } else if (shape.type === "circle") {
+          ctx.arc(shape.x, shape.y, shape.size / 2, 0, Math.PI * 2);
+        }
+        ctx.stroke();
+      });
+    }
+    
+    function updateShapes() {
+      shapes.forEach(shape => {
+        shape.x += shape.speedX;
+        shape.y += shape.speedY;
+        if (shape.x < 0 || shape.x > canvas.width) shape.speedX *= -1;
+        if (shape.y < 0 || shape.y > canvas.height) shape.speedY *= -1;
+      });
+    }
+    
+    function animate() {
+      updateShapes();
+      drawShapes();
+      requestAnimationFrame(animate);
+    }
+    
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+    animate();
+  </script>
+</body>
+</html>

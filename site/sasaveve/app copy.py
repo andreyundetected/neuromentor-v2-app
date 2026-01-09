@@ -1,3 +1,4 @@
+import re
 from collections import Counter
 from flask import Response
 from flask import jsonify
@@ -297,3 +298,35 @@ def register():
         return redirect(url_for('login'))
 
     return render_template('register.html')
+
+
+def account():
+    user = require_login()
+    if isinstance(user, Response):
+        return user
+    user = User.query.get(session['user_id'])
+    message = ""
+    if request.method == 'POST':
+        new_username = request.form.get('username')
+        new_password = request.form.get('password')
+        
+        if new_username and new_username != user.username:
+            existing = User.query.filter(User.username == new_username, User.id != user.id).first()
+            if existing:
+                message = "Username already taken."
+            else:
+                user.username = new_username
+                message = "Username updated successfully."
+        if new_password:
+            user.password = new_password
+            message += " Password updated successfully."
+        db.session.commit()
+    
+    def clean_key(key):
+        cleaned = re.sub(r'\d+', '', key).replace('_', ' ').strip()
+        return cleaned.capitalize()
+    interview_results = []
+    if isinstance(user.user_info, dict):
+        for key, value in user.user_info.items():
+            interview_results.append((clean_key(key), value))
+    return render_template('account.html', user=user, message=message, interview_results=interview_results)
