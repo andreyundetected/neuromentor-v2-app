@@ -166,3 +166,6 @@ if result:
     updated_course_info = json.dumps(ui, ensure_ascii=False)
     cursor.execute("UPDATE user SET course_info = ? WHERE id = ?", (updated_course_info, user_id))
     conn.commit()
+
+
+cursor.execute("SELECT user_info FROM user WHERE id = ?", (user_id,))
