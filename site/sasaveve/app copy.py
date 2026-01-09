@@ -368,3 +368,57 @@ def interview():
 
     session['conversation'] = []  
     return render_template('interview.html', username=user.username)
+
+
+def course_edit(user_id, course_idx):
+    user = require_login()
+    if isinstance(user, Response):
+        return user
+    user = User.query.get(user_id)
+    if not user or user.id != session['user_id']:
+        return "Доступ запрещен", 403
+
+    if request.method == 'POST':
+        print(f"Начинаем редактирование курса для user_id={user_id}, course_idx={course_idx}")
+        conversation_text = request.form['conversation']
+        conversation = session.get('conversation', [])
+        conversation.append({"role": "user", "content": conversation_text})
+
+        if len(user.course_info) <= course_idx:
+            return "Курс с указанным индексом не найден.", 404
+
+        course_info = user.course_info[course_idx]["course"]
+
+        print("Текущее course_info для редактирования:", course_info)
+
+        payload = {
+            "0_content": {
+                "0_conversation": conversation,
+                "1_user_info": user.user_info,
+                "2_course_info": course_info
+            },
+            "1_type": "course_edit"
+        }
+        response = send_request_to_api(payload)
+
+        if response.get("response"):
+            conversation.append({"role": "manager", "content": response["response"]})
+
+        session['conversation'] = conversation
+
+        if "course_info" in response:
+            print(f"Обновление course_info для индекса {course_idx}")
+            user.course_info[course_idx]["course"] = response["course_info"]
+            print(f"Новое course_info: {user.course_info[course_idx]['course']}")
+
+        try:
+            User.query.filter_by(id=user.id).update({"course_info": user.course_info})
+            db.session.commit()  
+            print("Изменения успешно сохранены в базе данных.")
+        except Exception as e:
+            print("Ошибка при сохранении в базе данных:", e)
+
+        return jsonify(response)
+
+    session['conversation'] = []  
+    return render_template('course_edit.html', user=user, course_idx=course_idx, username=user.username, course_name = user.course_info[course_idx]["course"]["3_name"])
