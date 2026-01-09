@@ -330,3 +330,41 @@ def account():
         for key, value in user.user_info.items():
             interview_results.append((clean_key(key), value))
     return render_template('account.html', user=user, message=message, interview_results=interview_results)
+
+
+def interview():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user = User.query.get(session['user_id'])
+
+    if request.method == 'POST':
+        conversation_text = request.form['conversation']
+        conversation = session.get('conversation', [])
+        conversation.append({"role": "user", "content": conversation_text})
+
+        payload = {
+            "0_content": {
+                "0_conversation": conversation,
+                "1_user_info": user.user_info
+            },
+            "1_type": "interview"
+        }
+        response = send_request_to_api(payload)
+
+        if response.get("response"):
+            conversation.append({"role": "manager", "content": response["response"]})
+
+        session['conversation'] = conversation
+
+        if response.get("user_info"):
+            print("Обновление user_info в базе данных")
+            user.user_info = response["user_info"]
+            if "<END>" in response.get("status"):
+                user.has_completed_interview = True
+            db.session.commit()
+
+        return jsonify(response)
+
+    session['conversation'] = []  
+    return render_template('interview.html', username=user.username)
