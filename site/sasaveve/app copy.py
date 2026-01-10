@@ -455,3 +455,18 @@ def public_course_view(course_id):
 
 with app.app_context():
     db.create_all()
+
+
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(username=username, password=password).first()
+
+        if user:
+            session['user_id'] = user.id
+            return redirect(url_for('index'))
+        else:
+            return "Неверное имя пользователя или пароль"
+
+    return render_template('login.html')
