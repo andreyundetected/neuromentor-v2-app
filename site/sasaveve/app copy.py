@@ -427,3 +427,31 @@ def course_edit(user_id, course_idx):
 def logout():
     session.pop('user_id', None)
     return redirect(url_for('index'))
+
+
+def public_course_view(course_id):
+    user = None
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+
+    public_course = PublicCourse.query.get(course_id)
+    if not public_course:
+        return "Курс не найден", 404
+
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'add_to_library':
+            return redirect(url_for('add_to_library', course_id=course_id))
+        elif action == 'trial_lesson':
+            
+            return redirect(url_for('lesson', user_id=user.id, course_idx=0))
+
+    return render_template(
+        'public_course.html',
+        user=user,
+        course=public_course
+    )
+
+
+with app.app_context():
+    db.create_all()
