@@ -9,3 +9,9 @@ class User(Model):
     has_completed_interview = fields.BooleanField(default=False)
     recommendations = fields.JSONField(default=[])
     credits = fields.IntField(default=0)
+
+
+DB_FILE = "neuromentor.db"
+
+
+DATABASE_URL = "sqlite://neuromentor.db"
