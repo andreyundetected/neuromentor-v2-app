@@ -470,3 +470,29 @@ def login():
             return "Неверное имя пользователя или пароль"
 
     return render_template('login.html')
+
+
+if __name__ == '__main__':
+    app.run(port=8000, debug=True)
+
+
+def update_course(course_id):
+    user = require_login()
+    if isinstance(user, Response):
+        return user
+
+    course_to_update = PublicCourse.query.filter_by(id=course_id, creator=user.username).first()
+    if not course_to_update:
+        return "Курс не найден или вы не являетесь его владельцем.", 403
+
+    new_name = request.form.get('course_name')
+    new_topic = request.form.get('course_topic')
+
+    if new_name:
+        course_to_update.name = new_name
+    if new_topic:
+        course_to_update.topic = new_topic
+
+    db.session.commit()
+
+    return redirect(url_for('index'))
