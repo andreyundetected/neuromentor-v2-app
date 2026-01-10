@@ -422,3 +422,8 @@ def course_edit(user_id, course_idx):
 
     session['conversation'] = []  
     return render_template('course_edit.html', user=user, course_idx=course_idx, username=user.username, course_name = user.course_info[course_idx]["course"]["3_name"])
+
+
+def logout():
+    session.pop('user_id', None)
+    return redirect(url_for('index'))
