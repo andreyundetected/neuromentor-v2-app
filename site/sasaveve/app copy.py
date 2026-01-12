@@ -513,3 +513,6 @@ async def send_request_to_realtime_api(payload):
                     yield piece
                 except Exception as e:
                     print("Error decoding piece:", e)
+
+
+audio_queues = {}
