@@ -1,3 +1,6 @@
+import asyncio
+import sqlite3
+from tortoise import Tortoise
 
 
 class User(Model):
@@ -15,3 +18,36 @@ DB_FILE = "neuromentor.db"
 
 
 DATABASE_URL = "sqlite://neuromentor.db"
+
+
+async def add_column():
+    
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+
+    cursor.execute("PRAGMA table_info(user);")
+    columns = [col[1] for col in cursor.fetchall()]  
+
+    if "credits" not in columns:
+        print("Добавляем колонку 'credits' в таблицу user...")
+        cursor.execute("ALTER TABLE user ADD COLUMN credits INTEGER DEFAULT 0;")
+        conn.commit()
+    else:
+        print("Колонка 'credits' уже существует, пропускаем добавление.")
+
+    conn.close()  
+
+    await Tortoise.init(db_url=DATABASE_URL, modules={"models": ["__main__"]})
+    await Tortoise.generate_schemas()
+
+    users = await User.all().values("id", "credits")
+
+    for user in users:
+        if user["credits"] is None:
+            await User.filter(id=user["id"]).update(credits=0)
+
+    print("Колонка 'credits' успешно добавлена и обновлена для всех пользователей.")
+    await Tortoise.close_connections()
+
+
+asyncio.run(add_column())
