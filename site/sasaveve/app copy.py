@@ -1,3 +1,5 @@
+import json
+import aiohttp
 import re
 from collections import Counter
 from flask import Response
@@ -496,3 +498,18 @@ def update_course(course_id):
     db.session.commit()
 
     return redirect(url_for('index'))
+
+
+NEURO_REALTIME_API_URL = "http://127.0.0.1:5000/neuro_realtime_api"
+
+
+async def send_request_to_realtime_api(payload):
+    async with aiohttp.ClientSession() as session:
+        async with session.post(NEURO_REALTIME_API_URL, json=payload) as response:
+            
+            async for line in response.content:
+                try:
+                    piece = json.loads(line.decode('utf-8').strip())
+                    yield piece
+                except Exception as e:
+                    print("Error decoding piece:", e)
