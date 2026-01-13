@@ -169,3 +169,6 @@ if result:
 
 
 cursor.execute("SELECT user_info FROM user WHERE id = ?", (user_id,))
+
+
+conn.close()

@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 import requests
 import os
 
@@ -29,3 +30,6 @@ def transcribe_audio(audio_data: bytes) -> str:
         return response.json().get("text", "")
     else:
         raise Exception(f"Ошибка при транскрипции: {response.status_code} - {response.text}")
+
+
+load_dotenv()
