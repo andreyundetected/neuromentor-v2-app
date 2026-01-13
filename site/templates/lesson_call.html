@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="username" content="{{ username }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Call Lesson - NeuroMentor</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <style>
+    /* Сброс стилей */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* Фон и анимация градиента */
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      background: linear-gradient(135deg, #f7f9fc, #e9ecef);
+      background-size: 400% 400%;
+      animation: gradientShift 15s ease infinite;
+      min-height: 100vh;
+      position: relative;
+      overflow: hidden;
+      padding-top: 60px; /* чтобы контент не скрывался за header */
+    }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Кастомный скроллбар */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #e0e0e0; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: #d3d3d3; border-radius: 10px; }
+
+    /* Фоновый canvas */
+    #backgroundCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      pointer-events: none;
+      background: linear-gradient(135deg, #f7f9fc, #e9ecef);
+    }
+
+    /* Header – шторка */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(255,255,255,0.8);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+    }
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: #007bff;
+      text-decoration: none;
+      /* Просто текст, без кружочка */
+    }
+    .account a { text-decoration: none; }
+    .account .account-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      font-size: 18px;
+      font-weight: bold;
+      border: 2px solid #007bff;
+      transition: transform 0.3s;
+    }
+    .account .account-avatar:hover { transform: scale(1.1); }
+
+    /* Основной контейнер (копия lesson_chat) */
+    .container {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      width: 90%;
+      max-width: 500px;
+      height: 80vh;
+      margin: 80px 20px 20px auto;
+      overflow: hidden;
+      padding: 20px;
+      animation: fadeInUp 0.5s ease-out;
+      z-index: 1;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .container::after {
+      content: "";
+      background: url('https://via.placeholder.com/300x200?text=Decorative') no-repeat center/contain;
+      opacity: 0.05;
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      width: 150px;
+      height: 100px;
+      pointer-events: none;
+    }
+
+    /* Прогресс-бар */
+    .progress-bar-container {
+      margin-bottom: 25px;
+      background: #eee;
+      border-radius: 5px;
+      overflow: hidden;
+      position: relative;
+      height: 20px;
+    }
+    .progress-bar {
+      height: 100%;
+      background: #007bff;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    .progress-text {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      line-height: 20px;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    /* Область сообщений – идентична lesson_chat */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      background: #f9f9f9;
+      border: 1px solid #eee;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
+    .message {
+      margin-bottom: 10px;
+      display: flex;
+      align-items: flex-start;
+      animation: fadeIn 0.3s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .message.user { justify-content: flex-end; }
+    .message .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      font-size: 14px;
+      margin-right: 10px;
+    }
+    .message.user .avatar { margin-left: 10px; margin-right: 0; }
+    .message .content {
+      max-width: 75%;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: #eee;
+      font-size: 14px;
+      position: relative;
+    }
+    .message.user .content { background: #d1ecf1; }
+    .content .sender-name { font-weight: bold; margin-bottom: 5px; }
+    .content .separator { font-size: 12px; color: #ccc; margin-bottom: 5px; }
+    .content .message-text { line-height: 1.4; }
+    .message .message-text { white-space: pre-wrap; }
+
+    /* Поле ввода */
+    textarea {
+      width: 100%;
+      min-height: 50px;
+      max-height: 150px;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+      font-size: 14px;
+      resize: none;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+    textarea:focus { border-color: #007bff; outline: none; }
+    .button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      border: none;
+      color: #fff;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+    .button:hover { background-color: #0056b3; transform: scale(1.02); }
+
+    /* Модальное окно (если нужно) */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      animation: fadeInOverlay 0.5s ease-out;
+    }
+    @keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
+    .completion-box {
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      max-width: 600px;
+      text-align: center;
+      transform: scale(0.8);
+      animation: scaleIn 0.3s forwards;
+    }
+    @keyframes scaleIn { to { transform: scale(1); } }
+    .completion-box h2 { color: #007bff; margin-bottom: 15px; }
+    .completion-box p { margin-bottom: 20px; text-align: left; }
+    .lesson-title {
+      position: relative;
+      z-index: 1;
+      font-size: 32px;
+      font-weight: bold;
+      color: #3a6ad6;
+      text-align: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #3a6ad6;
+    }
+
+    /* Зона звонка – увеличена и перемещена в левый нижний угол */
+    .call-zone {
+      position: fixed;
+      bottom: 20px;
+      left: 480px;
+      width: 400px;
+      height: 80px;
+      background: #000;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      z-index: 2100;
+      padding: 10px;
+    }
+    .mic-button {
+        width: 60px;
+        height: 60px;
+        background: red;
+        border: none;
+        border-radius: 40%;
+        color: #ccc;
+        font-size: 20px;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+
+    .mic-button.active { background: green; color: #fff; }
+
+    /* Кнопка для открытия транскрипционного чата */
+    .transcript-toggle {
+      position: fixed;
+      bottom: 20px; /* выше зоны звонка */
+      left: 900px;
+      width: 400px;
+      padding: 10px;
+      background: #007bff;
+      color: #fff;
+      text-align: center;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      z-index: 2100;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .transcript-toggle:hover {
+      background: #0056b3;
+      transform: scale(1.02);
+    }
+    /* Транскрипционный чат (скрыт по умолчанию) */
+    .transcript-chat {
+      position: fixed;
+      bottom: 0px; /* чуть выше кнопки */
+      left: 900px;
+      width: 400px;
+      height: 280px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      overflow-y: auto;
+      z-index: 100;
+      transform: translateY(100%);
+      transition: transform 0.5s ease;
+    }
+    .transcript-chat.open {
+      transform: translateY(-100px);
+      height: 380px;
+    }
+/* Переключатель Audio/Text */
+.mode-toggle {
+  position: absolute;
+  right: 145px; /* Чуть левее правого края .container */
+  top: 85px; /* Чуть выше контейнера */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  border: 1px solid #007bff;
+}
+
+.toggle-label {
+  font-size: 14px;
+  color: #333;
+  font-weight: bold;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 20px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #007bff;
+}
+
+input:checked + .slider:before {
+  transform: translateX(24px);
+}
+
+.toggle-text {
+  font-size: 14px;
+  font-weight: bold;
+  color: #007bff;
+}
+
+
+
+    .transcript-message {
+  display: flex;
+  margin-bottom: 8px;
+  align-items: flex-start;
+}
+
+.transcript-message .avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+.transcript-content {
+  background: #eee;
+  border-radius: 8px;
+  padding: 5px 10px;
+}
+
+.transcript-message.teacher .transcript-content {
+  background: #d1ecf1;
+}
+
+.transcript-message.user_audio .transcript-content {
+  background: #f9e79f;
+}
+/* Новая зона презентации 
+*/
+#presentationZone {
+    position: fixed;
+    top: 80px;
+    bottom: calc(100vh - (80px + 80vh));
+    left: 20px;
+    right: calc(50% - 400px + 20px);
+    border: 2px solid #007bff;
+    background-color: rgba(255, 255, 255, 1);
+    padding: 10px;
+    overflow-y: auto;
+    z-index: -1;
+    display: flex; /* Для центрирования */
+    justify-content: center; /* по горизонтали */
+    align-items: center; /* по вертикали */
+}
+
+#presentationImage {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* или cover, в зависимости от ваших потребностей */
+}
+
+/* Блок с количеством кредитов */
+.credits {
+  position: absolute;
+  top: 10px;
+  right: 62px; /* Расстояние от правого края */
+  font-size: 20px;
+  font-weight: bold;
+  color: #ffffff;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #1e90ff, #0073e6);
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-decoration: none;
+  transition: background 0.3s, transform 0.2s;
+  white-space: nowrap;
+  width: 140px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.credits:hover {
+  background: linear-gradient(135deg, #0f7ae5, #005bb5);
+  transform: scale(1.05);
+}
+/* Кнопка выбора языка */
+.lang-btn {
+  position: absolute;
+  top: 10px;
+  right: 214px;
+  width: 40px;
+  height: 40px;
+  background: #ffffff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+/* Текст внутри кнопки */
+.lang-btn .btn-text {
+  font-size: 18px;
+  color: #333;
+}
+
+/* При наведении */
+.lang-btn:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.05);
+}
+
+/* Выпадающий список языков */
+.lang-dropdown {
+  position: absolute;
+  top: 50px; /* Отступ вниз от кнопки */
+  right: 212px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: none; /* Скрыто по умолчанию */
+  z-index: 1100;
+  flex-direction: column;
+  animation: dropdownFadeIn 0.3s ease-out;
+}
+
+/* Анимация появления */
+@keyframes dropdownFadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Кнопки внутри выпадающего списка */
+.lang-dropdown button {
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+/* При наведении */
+.lang-dropdown button:hover {
+  background: #f0f0f0;
+}
+
+
+  </style>
+  </head>
+  <body>
+    <canvas id="backgroundCanvas"></canvas>
+    <header>
+    <a href="/" class="logo">NeuroMentor</a>
+    
+    <!-- Блок с выбором языка (слева от кредитов) -->
+    <div class="header-btn lang-btn" id="lang-btn" onclick="toggleLanguageDropdown()">
+        <span class="btn-text" id="lang-text">
+            {% if session.get('language', 'ru') == 'ru' %} RU {% else %} EN {% endif %}
+        </span>
+    </div>
+    <!-- Выпадающий список языков (скрыт по умолчанию) -->
+    <div class="lang-dropdown" id="lang-dropdown">
+        <button onclick="selectLanguage('en')">EN</button>
+        <button onclick="selectLanguage('ru')">RU</button>
+      </div>
+    <!-- Блок с количеством кредитов -->
+    <a href="https://t.me/YourBotLink" class="credits" title="Buy Credits via Telegram" target="_blank">
+      {% if session.get('language', 'ru') == 'ru' %}
+        {{ user.credits }} Кредитов
+      {% elif session.get('language', 'ru') == 'en' %}
+        {{ user.credits }} Credits
+      {% endif %}
+    </a>
+    
+    <!-- Аватарка пользователя (крайний правый элемент) -->
+    <a href="/account" title="Profile" class="account">
+      <div class="avatar account-avatar"></div>
+    </a>
+    
+    </header>
+  
+
+      <div id="presentationZone">
+        {% if session.get('language', 'ru') == 'ru' %}
+        <img id="presentationImage" src="" alt="Начните урок используя кнопку микрофона или написав в чат и тут появится презентация">
+        {% elif session.get('language', 'ru') == 'en' %}
+        <img id="presentationImage" src="" alt="Start the lesson using the microphone button or by writing in the chat and the presentation will appear here">
+        {% endif %}
+      </div>
+      <div class="mode-toggle">
+        {% if session.get('language', 'ru') == 'ru' %}
+          <span class="toggle-label">Режим ответа:</span>
+          <div class="switch">
+            <input type="checkbox" id="modeSwitch" checked>
+            <label for="modeSwitch" class="slider"></label>
+          </div>
+          <span class="toggle-text" id="toggleText">Аудио</span>
+        {% elif session.get('language', 'ru') == 'en' %}
+          <span class="toggle-label">Response Mode:</span>
+          <div class="switch">
+            <input type="checkbox" id="modeSwitch" checked>
+            <label for="modeSwitch" class="slider"></label>
+          </div>
+          <span class="toggle-text" id="toggleText">Audio</span>
+        {% endif %}
+      </div>
+         
+    <div class="container">
+      <h1 class="lesson-title">{{ lesson_title }}</h1>
+  
+      <div class="progress-bar-container">
+        <div class="progress-bar" style="width: {{ progress or 0 }}%;"></div>
+        <span class="progress-text">{{ progress or 0 }}%</span>
+      </div>
+  
+      <div class="messages" id="messages">
+        <!-- Пример приветствия от Teacher -->
+        <div class="message teacher">
+          <div class="avatar">
+            <img src="https://img.icons8.com/color/48/000000/teacher.png"
+                 alt="Teacher"
+                 style="width:100%;height:100%;border-radius:50%;">
+          </div>
+          <div class="content">
+            {% if session.get('language', 'ru') == 'ru' %}
+              <div class="sender-name">Учитель</div>
+              <div class="message-text">Привет! Я твой учитель. Готов начать урок?</div>
+            {% elif session.get('language', 'ru') == 'en' %}
+              <div class="sender-name">Teacher</div>
+              <div class="message-text">Hi! I'm a teacher. Ready to start class?</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+  
+      <!-- ВАЖНО: отправляем на lesson_call, а не lesson_chat -->
+      <form id="lesson-form" action="/course_select/{{ user.id }}/{{ course_idx }}/lesson_call" method="POST">
+        {% if session.get('language', 'ru') == 'ru' %}
+          <textarea name="conversation" id="conversation" placeholder="Напишите ваше сообщение здесь"></textarea>
+          <button type="submit" class="button">Отправить</button>
+        {% elif session.get('language', 'ru') == 'en' %}
+          <textarea name="conversation" id="conversation" placeholder="Write your message here"></textarea>
+          <button type="submit" class="button">Send</button>
+        {% endif %}
+      </form>
+    </div>
+  
+    <!-- Кнопка и окно транскрипционного чата -->
+    {% if session.get('language', 'ru') == 'ru' %}
+      <button class="transcript-toggle" id="transcriptToggle">Расшифровка</button>
+    {% elif session.get('language', 'ru') == 'en' %}
+      <button class="transcript-toggle" id="transcriptToggle">Transcript</button>
+    {% endif %}
+    <div class="transcript-chat" id="transcriptChat">
+      <div id="transcriptMessages" style="padding:10px;"></div>
+    </div>
+  
+    <!-- Зона звонка -->
+    <div class="call-zone" id="callZone">
+      <button class="mic-button" id="micButton">🎤</button>
+    </div>
+  
+    <!-- Оверлей завершения -->
+    <div class="overlay" id="overlay">
+      <div class="completion-box">
+        <h2>Lesson</h2>
+        <p id="user-info">The lesson is over</p>
+        <button class="button" onclick="window.location.href='/library'">Continue</button>
+      </div>
+    </div>
+
+    <script>
+        function toggleLanguageDropdown() {
+            const dropdown = document.getElementById('lang-dropdown');
+            dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
+        }
+    
+        function selectLanguage(lang) {
+            console.log("Selected language:", lang);
+            
+            fetch(`/set_language/${lang}`, { method: "POST" })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();  // ✅ Перезагрузка страницы
+                    } else {
+                        console.error("Error setting language:", response.statusText);
+                    }
+                })
+                .catch(error => console.error("Fetch error:", error));
+        }
+    </script>
+    <script>
+        let responseMode = "audio"; // По умолчанию "audio"
+      
+        function switchResponseMode(mode) {
+          responseMode = mode;
+      
+          // Обновляем стиль кнопок
+          document.getElementById("modeAudio").classList.toggle("active", mode === "audio");
+          document.getElementById("modeText").classList.toggle("active", mode === "text");
+      
+          console.log("[MODE] Response mode switched to:", mode);
+        }
+      </script>
+      
+    <script>
+        function resizeImage(img, p_x, p_y) {
+            let i_x = img.naturalWidth;
+            let i_y = img.naturalHeight;
+        
+            if (i_x - p_x >= i_y - p_y) {
+                i_x = p_x;
+                i_y = img.naturalHeight * (p_x / img.naturalWidth); // Сохраняем пропорции
+            } else {
+                i_y = p_y;
+                i_x = img.naturalWidth * (p_y / img.naturalHeight); // Сохраняем пропорции
+            }
+        
+            img.width = i_x;
+            img.height = i_y;
+            console.log("p_x, p_y")
+            console.log(p_x, p_y)
+        } 
+        </script>
+    <script>
+        function playTeacherAudio(base64Audio) {
+          if (!base64Audio) return;
+          try {
+            const binary = atob(base64Audio);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+              bytes[i] = binary.charCodeAt(i);
+            }
+            // Изменили тип с 'audio/mp3' на 'audio/mpeg'
+            const blob = new Blob([bytes], { type: 'audio/mpeg' });
+            const audioURL = URL.createObjectURL(blob);
+            const audioElem = new Audio(audioURL);
+            audioElem.play().catch(err => {
+              console.warn("[playTeacherAudio] can't play:", err);
+            });
+          } catch (err) {
+            console.error("[playTeacherAudio] error decoding base64:", err);
+          }
+        }
+      </script>
+      
+      
+      
+      <script>
+        // 2) Добавить текстовое сообщение в общий чат
+        function addMessage(sender, messageText) {
+          const messages = document.getElementById('messages');
+          const messageElem = document.createElement('div');
+          messageElem.classList.add('message', sender);
+          let avatar, senderLabel = '';
+          if (sender === 'user') {
+            avatar = createUserAvatar();
+            senderLabel = username;
+          } else {
+            avatar = createTeacherAvatar();
+            senderLabel = 'Teacher';
+          }
+          const content = document.createElement('div');
+          content.classList.add('content');
+          const senderHeader = document.createElement('div');
+          senderHeader.classList.add('sender-name');
+          senderHeader.textContent = senderLabel;
+          const separator = document.createElement('div');
+          separator.classList.add('separator');
+          const messageBody = document.createElement('div');
+          messageBody.classList.add('message-text');
+          messageBody.textContent = messageText;
+          content.appendChild(senderHeader);
+          content.appendChild(separator);
+          content.appendChild(messageBody);
+          if (sender === 'user') {
+            messageElem.appendChild(content);
+            messageElem.appendChild(avatar);
+          } else {
+            messageElem.appendChild(avatar);
+            messageElem.appendChild(content);
+          }
+          messages.appendChild(messageElem);
+          messages.scrollTop = messages.scrollHeight;
+        }
+      </script>
+      
+      <script>
+        // 3) Функция для добавления одной строки в транскрипционный чат
+        function addTranscriptLine(item) {
+          const transcriptMessagesDiv = document.getElementById("transcriptMessages");
+          if (!transcriptMessagesDiv) return;
+          const messageElem = document.createElement("div");
+          messageElem.classList.add("transcript-message", item.role);
+          const avatar = document.createElement("div");
+          avatar.classList.add("avatar");
+          let senderName = (item.role.toLowerCase().includes("user")) ? username : "Teacher";
+          if (senderName === "You") {
+            avatar.textContent = senderName.charAt(0);
+          } else {
+            avatar.innerHTML = '<img src="https://img.icons8.com/color/48/000000/teacher.png" alt="Teacher" style="width:100%;height:100%;border-radius:50%;">';
+          }
+          const contentDiv = document.createElement("div");
+          contentDiv.classList.add("transcript-content");
+          const senderHeader = document.createElement("div");
+          senderHeader.classList.add("sender-name");
+          senderHeader.textContent = senderName;
+          const textDiv = document.createElement("div");
+          textDiv.classList.add("message-text");
+          textDiv.textContent = item.content;
+          contentDiv.appendChild(senderHeader);
+          contentDiv.appendChild(textDiv);
+          messageElem.appendChild(avatar);
+          messageElem.appendChild(contentDiv);
+          transcriptMessagesDiv.appendChild(messageElem);
+          transcriptMessagesDiv.scrollTop = transcriptMessagesDiv.scrollHeight;
+        }
+      </script>
+      
+      <script>
+        // 4) Переключатель окна транскрипционного чата
+        const transcriptToggle = document.getElementById("transcriptToggle");
+        const transcriptChat = document.getElementById("transcriptChat");
+        transcriptToggle.addEventListener("click", function() {
+          transcriptChat.classList.toggle("open");
+        });
+      </script>
+      
+      <script>
+        // 5) Логика отправки текстовой формы (всегда отправляем на lesson_call)
+        const form = document.getElementById('lesson-form');
+        const textarea = document.getElementById('conversation');
+        const overlay = document.getElementById('overlay');
+      
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const userMessage = textarea.value.trim();
+          if (!userMessage) return;
+          addMessage('user', userMessage);
+          textarea.value = '';
+          formData.append("response_mode", responseMode);
+          const formData = new FormData(form);
+          try {
+            const response_chat = await fetch(form.action, { method: 'POST', body: formData });
+            const data = await response_chat.json();
+            console.log("[TEXT] lesson_call response_chat:", data);
+            if (data.response_chat) {
+              addMessage('teacher', data.response_chat);
+            }
+            if (data.response_call) {
+              playTeacherAudio(data.response_call);
+            }
+            // Добавляем транскрипции: каждое из новых полей отдельно
+            if (data.audio_input_transcription) {
+              addTranscriptLine({ role: 'user_voice', content: data.audio_input_transcription });
+            }
+            if (data.response_call_transcription) {
+              addTranscriptLine({ role: 'teacher_voice', content: data.response_call_transcription });
+            }
+            if (data.presentation_image) {
+            const presentationImage = document.getElementById('presentationImage');
+            presentationImage.src = `data:image/png;base64,${data.presentation_image}`;
+        
+            presentationImage.onload = function() { // Вызываем resizeImage после загрузки изображения
+                const presentationZone = document.getElementById('presentationZone');
+                const p_x = presentationZone.offsetWidth;
+                const p_y = presentationZone.offsetHeight;
+        
+                resizeImage(presentationImage, p_x, p_y);
+            };
+        }
+
+
+            if (data.progress !== undefined) {
+              const progressValue = parseFloat(data.progress);
+              document.querySelector('.progress-bar').style.width = progressValue + '%';
+              document.querySelector('.progress-text').textContent = progressValue.toFixed(0) + '%';
+            }
+            if (data.status === '<END>') {
+              textarea.disabled = true;
+              form.querySelector('.button').disabled = true;
+              overlay.style.display = 'flex';
+            }
+          } catch (err) {
+            console.error("[TEXT] error:", err);
+          }
+        });
+      
+        textarea.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            form.requestSubmit();
+          }
+        });
+      </script>
+      
+      <script>
+        // 6) Микрофон: запись и отправка аудио на lesson_call
+        let mediaRecorder;
+        let audioChunks = [];
+        const micButton = document.getElementById("micButton");
+      
+        micButton.addEventListener("mousedown", async function() {
+          micButton.classList.add("active");
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            console.log("Supported MIME types:",
+              MediaRecorder.isTypeSupported("audio/wav"),
+              MediaRecorder.isTypeSupported("audio/webm")
+            );
+            const options = { mimeType: "audio/webm;codecs=opus" };
+            mediaRecorder = new MediaRecorder(stream, options);
+            console.log("MediaRecorder mimeType:", mediaRecorder.mimeType);
+            mediaRecorder.start();
+            audioChunks = [];
+            mediaRecorder.addEventListener('dataavailable', event => {
+              audioChunks.push(event.data);
+              console.log("[MIC] data available:", event.data);
+            });
+          } catch (err) {
+            console.error("[MIC] Error accessing microphone:", err);
+          }
+        });
+      
+        micButton.addEventListener("mouseup", function() {
+          micButton.classList.remove("active");
+          if (!mediaRecorder) return;
+          mediaRecorder.stop();
+          mediaRecorder.addEventListener('stop', async () => {
+            console.log("[MIC] Recorder stopped, sending audio...");
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' });
+            console.log("[MIC] Audio blob size:", audioBlob.size);
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'recording.webm');
+            const lessonCallUrl = `/course_select/${userId}/${courseIdx}/lesson_call`;
+            try {
+              const resp = await fetch(lessonCallUrl, { method: 'POST', body: formData });
+              const data = await resp.json();
+              console.log("[MIC] lesson_call response_chat:", data);
+              if (data.response_chat) {
+                addMessage('teacher', data.response_chat);
+              }
+              if (data.response_call) {
+                // Проигрываем аудио от учителя (не добавляем в чат)
+                playTeacherAudio(data.response_call);
+              }
+              if (data.audio_input_transcription) {
+                addTranscriptLine({ role: 'user_voice', content: data.audio_input_transcription });
+              }
+              if (data.response_call_transcription) {
+                addTranscriptLine({ role: 'teacher_voice', content: data.response_call_transcription });
+              }
+              if (data.presentation_image) {
+            const presentationImage = document.getElementById('presentationImage');
+            presentationImage.src = `data:image/png;base64,${data.presentation_image}`;
+        
+            presentationImage.onload = function() { // Вызываем resizeImage после загрузки изображения
+                const presentationZone = document.getElementById('presentationZone');
+                const p_x = presentationZone.offsetWidth;
+                const p_y = presentationZone.offsetHeight;
+                console.log(p_x, p_y)
+                resizeImage(presentationImage, p_x, p_y);
+            };
+        }
+
+
+              if (data.progress !== undefined) {
+                const progressValue = parseFloat(data.progress);
+                document.querySelector('.progress-bar').style.width = progressValue + '%';
+                document.querySelector('.progress-text').textContent = progressValue.toFixed(0) + '%';
+              }
+              if (data.status === '<END>') {
+                document.getElementById('conversation').disabled = true;
+                form.querySelector('.button').disabled = true;
+                document.getElementById('overlay').style.display = 'flex';
+              }
+            } catch (err) {
+              console.error("[MIC] Error sending audio:", err);
+            }
+          });
+        });
+      </script>
+      
+      <script type="module">
+        // 7) Скрипт рендера транскрипций
+        console.log("[TRANSCRIPT] Starting transcript module...");
+      
+        function renderTranscriptHistory(historyArray) {
+          console.log("[TRANSCRIPT] renderTranscriptHistory called with:", historyArray);
+          const transcriptMessagesDiv = document.getElementById("transcriptMessages");
+          if (!transcriptMessagesDiv) return;
+          transcriptMessagesDiv.innerHTML = "";
+          historyArray.forEach(item => {
+            console.log("[TRANSCRIPT] Rendering item:", item);
+            const messageElem = document.createElement("div");
+            messageElem.classList.add("transcript-message", item.role);
+            const avatar = document.createElement("div");
+            avatar.classList.add("avatar");
+            let senderName = (item.role.toLowerCase().includes("user")) ? "You" : "Teacher";
+            if (senderName === "You") {
+              avatar.textContent = senderName.charAt(0);
+            } else {
+              avatar.innerHTML = '<img src="https://img.icons8.com/color/48/000000/teacher.png" alt="Teacher" style="width:100%;height:100%;border-radius:50%;">';
+            }
+            const contentDiv = document.createElement("div");
+            contentDiv.classList.add("transcript-content");
+            const senderHeader = document.createElement("div");
+            senderHeader.classList.add("sender-name");
+            senderHeader.textContent = senderName;
+            const textDiv = document.createElement("div");
+            textDiv.classList.add("message-text");
+            textDiv.textContent = item.content;
+            contentDiv.appendChild(senderHeader);
+            contentDiv.appendChild(textDiv);
+            messageElem.appendChild(avatar);
+            messageElem.appendChild(contentDiv);
+            transcriptMessagesDiv.appendChild(messageElem);
+          });
+          transcriptMessagesDiv.scrollTop = transcriptMessagesDiv.scrollHeight;
+          console.log("[TRANSCRIPT] Finished rendering history.");
+        }
+      
+        window.handleTranscriptResponse = function(result) {
+          console.log("[TRANSCRIPT] handleTranscriptResponse called with:", result);
+          if (!result) {
+            console.warn("[TRANSCRIPT] No result received!");
+            return;
+          }
+          // Если сервер возвращает новые транскрипции через audio_input_transcription и response_call_transcription:
+          if (result.audio_input_transcription || result.response_call_transcription) {
+            let historyArray = [];
+            if (result.audio_input_transcription) {
+              historyArray.push({ role: 'user_voice', content: result.audio_input_transcription });
+            }
+            if (result.response_call_transcription) {
+              historyArray.push({ role: 'teacher_voice', content: result.response_call_transcription });
+            }
+            renderTranscriptHistory(historyArray);
+          } else if (result.transcript_history) {
+            renderTranscriptHistory(result.transcript_history);
+          } else {
+            console.warn("[TRANSCRIPT] No transcript data in result!");
+          }
+        };
+      
+        try {
+          const initialTranscriptHistory = {{ transcript_history|tojson }};
+          console.log("[TRANSCRIPT] Checking initialTranscriptHistory:", initialTranscriptHistory);
+          if (initialTranscriptHistory && Array.isArray(initialTranscriptHistory)) {
+            renderTranscriptHistory(initialTranscriptHistory);
+          } else {
+            console.log("[TRANSCRIPT] No initialTranscriptHistory found or not an array.");
+          }
+        } catch (e) {
+          console.warn("[TRANSCRIPT] Could not parse initial transcript_history from template:", e);
+        }
+      
+        console.log("[TRANSCRIPT] module script loaded and executed.");
+      </script>
+      
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+      <script>
+        // Фоновая анимация фигур (оставляем без изменений)
+        const userId = "{{ user.id }}";
+        const courseIdx = "{{ course_idx }}";
+        console.log("Global userId:", userId, "courseIdx:", courseIdx);
+      
+        const canvas = document.getElementById("backgroundCanvas");
+        const ctx = canvas.getContext("2d");
+        let shapes = [];
+        const shapeCount = 120;
+      
+        function resizeCanvas() {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+          createShapes();
+        }
+        function createShapes() {
+          shapes = [];
+          for (let i = 0; i < shapeCount; i++) {
+            const size = Math.random() * 30 + 20;
+            shapes.push({
+              x: Math.random() * canvas.width,
+              y: Math.random() * canvas.height,
+              size: size,
+              type: ["triangle0", "triangle1", "triangle2", "triangle3", "square", "circle"][Math.floor(Math.random() * 6)],
+              speedX: (Math.random() - 0.5) * 1,
+              speedY: (Math.random() - 0.5) * 1
+            });
+          }
+        }
+        function drawShapes() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.strokeStyle = "rgba(180,180,180,0.5)";
+          ctx.lineWidth = 1.5;
+          for (let shape of shapes) {
+            ctx.beginPath();
+            if (shape.type.startsWith("triangle")) {
+              ctx.moveTo(shape.x, shape.y);
+              ctx.lineTo(shape.x + shape.size, shape.y);
+              ctx.lineTo(shape.x, shape.y + shape.size);
+            } else if (shape.type === "square") {
+              ctx.rect(shape.x, shape.y, shape.size, shape.size);
+            } else if (shape.type === "circle") {
+              ctx.arc(shape.x, shape.y, shape.size/2, 0, Math.PI*2);
+            }
+            ctx.closePath();
+            ctx.stroke();
+          }
+        }
+        function updateShapes() {
+          for (let shape of shapes) {
+            shape.x += shape.speedX;
+            shape.y += shape.speedY;
+            if (shape.x < 0 || shape.x > canvas.width) shape.speedX *= -1;
+            if (shape.y < 0 || shape.y > canvas.height) shape.speedY *= -1;
+          }
+        }
+        function animate() {
+          updateShapes();
+          drawShapes();
+          requestAnimationFrame(animate);
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+        animate();
+      
+        function getUserAvatarColor(name) {
+          const colors = ['#FF5733', '#33B5FF', '#FF33F6', '#33FF57', '#FFBD33'];
+          let hash = 0;
+          for (let i = 0; i < name.length; i++) {
+            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+          }
+          return colors[Math.abs(hash) % colors.length];
+        }
+        const username = document.querySelector('meta[name="username"]').getAttribute('content') || 'User';
+        const accountAvatar = document.querySelector('.account-avatar');
+        accountAvatar.style.backgroundColor = getUserAvatarColor(username);
+        accountAvatar.textContent = username.charAt(0).toUpperCase();
+      
+        const callAvatar = document.getElementById("callAvatar");
+        if (callAvatar) {
+          callAvatar.style.backgroundColor = getUserAvatarColor(username);
+          callAvatar.textContent = username.charAt(0).toUpperCase();
+        }
+      
+        window.createUserAvatar = function() {
+          const link = document.createElement('a');
+          link.href = '/account';
+          link.title = 'Profile';
+          const avatar = document.createElement('div');
+          avatar.classList.add('avatar');
+          avatar.style.backgroundColor = getUserAvatarColor(username);
+          avatar.textContent = username.charAt(0).toUpperCase();
+          link.appendChild(avatar);
+          return link;
+        };
+        window.createTeacherAvatar = function() {
+          const avatar = document.createElement('div');
+          avatar.classList.add('avatar');
+          avatar.innerHTML = '<img src="https://img.icons8.com/color/48/000000/teacher.png" alt="Teacher" style="width:100%;height:100%;border-radius:50%;">';
+          return avatar;
+        };
+      </script>
+      
+
+  <!-- 6) Генерация фигур на заднем фоне -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script>
+    const userId = "{{ user.id }}";
+    const courseIdx = "{{ course_idx }}";
+    console.log("Global userId:", userId, "courseIdx:", courseIdx);
+
+    const canvas = document.getElementById("backgroundCanvas");
+    const ctx = canvas.getContext("2d");
+    let shapes = [];
+    const shapeCount = 120;
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      createShapes();
+    }
+    function createShapes() {
+      shapes = [];
+      for (let i = 0; i < shapeCount; i++) {
+        const size = Math.random() * 30 + 20;
+        shapes.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: size,
+          type: ["triangle0", "triangle1", "triangle2", "triangle3", "square", "circle"][Math.floor(Math.random() * 6)],
+          speedX: (Math.random() - 0.5) * 1,
+          speedY: (Math.random() - 0.5) * 1
+        });
+      }
+    }
+    function drawShapes() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "rgba(180,180,180,0.5)";
+      ctx.lineWidth = 1.5;
+
+      for (let shape of shapes) {
+        ctx.beginPath();
+        if (shape.type.startsWith("triangle")) {
+          // Варианты расположения треугольников
+          if (shape.type === "triangle0") {
+            ctx.moveTo(shape.x, shape.y);
+            ctx.lineTo(shape.x + shape.size, shape.y);
+            ctx.lineTo(shape.x, shape.y + shape.size);
+          } else if (shape.type === "triangle1") {
+            ctx.moveTo(shape.x + shape.size, shape.y);
+            ctx.lineTo(shape.x, shape.y);
+            ctx.lineTo(shape.x + shape.size, shape.y + shape.size);
+          } else if (shape.type === "triangle2") {
+            ctx.moveTo(shape.x, shape.y + shape.size);
+            ctx.lineTo(shape.x, shape.y);
+            ctx.lineTo(shape.x + shape.size, shape.y + shape.size);
+          } else if (shape.type === "triangle3") {
+            ctx.moveTo(shape.x + shape.size, shape.y + shape.size);
+            ctx.lineTo(shape.x + shape.size, shape.y);
+            ctx.lineTo(shape.x, shape.y + shape.size);
+          }
+        } else if (shape.type === "square") {
+          ctx.rect(shape.x, shape.y, shape.size, shape.size);
+        } else if (shape.type === "circle") {
+          ctx.arc(shape.x, shape.y, shape.size / 2, 0, Math.PI * 2);
+        }
+        ctx.closePath();
+        ctx.stroke();
+      }
+    }
+    function updateShapes() {
+      for (let shape of shapes) {
+        shape.x += shape.speedX;
+        shape.y += shape.speedY;
+        if (shape.x < 0 || shape.x > canvas.width) shape.speedX *= -1;
+        if (shape.y < 0 || shape.y > canvas.height) shape.speedY *= -1;
+      }
+    }
+    function animate() {
+      updateShapes();
+      drawShapes();
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+    animate();
+
+    // Аватарки в header
+    function getUserAvatarColor(name) {
+      const colors = ['#FF5733', '#33B5FF', '#FF33F6', '#33FF57', '#FFBD33'];
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return colors[Math.abs(hash) % colors.length];
+    }
+    const username = document.querySelector('meta[name="username"]').getAttribute('content') || 'User';
+
+    // Аккаунт (header)
+    const accountAvatar = document.querySelector('.account-avatar');
+    accountAvatar.style.backgroundColor = getUserAvatarColor(username);
+    accountAvatar.textContent = username.charAt(0).toUpperCase();
+
+    // Аватар "в зоне звонка"
+    const callAvatar = document.getElementById("callAvatar");
+    if (callAvatar) {
+      callAvatar.style.backgroundColor = getUserAvatarColor(username);
+      callAvatar.textContent = username.charAt(0).toUpperCase();
+    }
+
+    // Создание аватарок для сообщений
+    window.createUserAvatar = function() {
+      const link = document.createElement('a');
+      link.href = '/account';
+      link.title = 'Profile';
+      const avatar = document.createElement('div');
+      avatar.classList.add('avatar');
+      avatar.style.backgroundColor = getUserAvatarColor(username);
+      avatar.textContent = username.charAt(0).toUpperCase();
+      link.appendChild(avatar);
+      return link;
+    };
+    window.createTeacherAvatar = function() {
+      const avatar = document.createElement('div');
+      avatar.classList.add('avatar');
+      avatar.innerHTML = '<img src="https://img.icons8.com/color/48/000000/teacher.png" alt="Teacher" style="width:100%;height:100%;border-radius:50%;">';
+      return avatar;
+    };
+  </script>
+</body>
+</html>

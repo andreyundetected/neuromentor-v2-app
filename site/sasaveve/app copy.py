@@ -572,3 +572,96 @@ def transcribe():
     except Exception as e:
         print(f"[TRANSCRIBE] Error during transcription: {e}")
         return jsonify({"error": "Transcription failed"}), 500
+
+
+def lesson_call(user_id, course_idx):
+    user = require_login()
+    if isinstance(user, Response):
+        return user
+    user = User.query.get(user_id)
+    if not user or user.id != session['user_id']:
+        return "Access Denied", 403
+
+    if request.method == 'POST':
+        print("[LESSON_CALL] request.form:", request.form)
+        print("[LESSON_CALL] request.files:", request.files)
+        conversation_text = request.form.get('conversation', '')
+        conversation = session.get('conversation', [])
+        progress = session.get('progress', 0)
+
+        if conversation_text:
+            conversation.append({"role": "user", "content": conversation_text})
+        
+        audio_file = request.files.get('audio')
+        if audio_file:
+            try:
+                transcript_result = transcribe().get_json()["transcript"]
+                print("[LESSON_CALL] Transcription from audio:", transcript_result)
+                conversation.append({"role": "user_audio", "content": transcript_result})
+            except Exception as e:
+                print("[LESSON_CALL] Error transcribing audio:", e)
+        
+        if len(user.course_info) <= course_idx:
+            return "Course not found", 404
+
+        user_course_info = user.course_info[course_idx]
+        if not user.course_info[course_idx]["course_settings"].get("lesson"):
+            user.course_info[course_idx]["course_settings"]["lesson"] =                user.course_info[course_idx]["course"]["4_structure"][0]["3_lessons"][0]["name"]
+            User.query.filter_by(id=user.id).update({"course_info": user.course_info})
+            db.session.commit()
+        lesson_topic = user.course_info[course_idx]["course_settings"].get("lesson")
+
+        payload = {
+            "0_content": {
+                "0_conversation": conversation,
+                "1_user_info": user.user_info,
+                "2_user_course_info": user_course_info,
+                "3_course_info": user.course_info[course_idx]["course"],
+                "4_lesson_topic": lesson_topic,
+                "5_progress": progress,
+                
+            },
+            "1_type": "lesson_call"
+        }
+        print("============================")
+        print(conversation)
+        transcript_list = []
+
+        async def process_realtime():
+            teacher_response = ""
+            
+            async for piece in send_request_to_realtime_api(payload):
+                resp = piece.get("response", {})
+                resp_type = piece.get("type")
+                if resp_type == "text":
+                    content = piece.get("content", "")
+                    teacher_response += content
+                    transcript_list.append(content)
+                    print("[REALTIME] Received text piece:", content)
+                elif resp_type == "audio":
+                    print("[REALTIME] Received audio piece")
+                    if (user_id, course_idx) in audio_queues:
+                        print(f"{user_id}  {course_idx} in audio_queues")
+                        await audio_queues[(user_id, course_idx)].put(content)  
+
+                elif resp_type == "done":
+                    print("[REALTIME] Received done signal")
+                    conversation.append({"role": "teacher", "content": teacher_response})
+                    break
+
+        try:
+            asyncio.run(process_realtime())
+        except Exception as e:
+            raise(e)
+            print("[LESSON_CALL] Error during realtime processing:", e)
+            return jsonify({"error": "Realtime processing failed"}), 500
+
+        User.query.filter_by(id=user.id).update({"course_info": user.course_info})
+        db.session.commit()
+        session['conversation'] = conversation
+        return jsonify({"status": "<END>", "response": "".join(transcript_list)})
+
+    session['conversation'] = []
+    progress = 0
+    lesson_title = user.course_info[course_idx]["course_settings"].get("lesson", "")
+    return render_template('lesson_call.html', user=user, course_idx=course_idx, username=user.username, lesson_title=lesson_title)
