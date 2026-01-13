@@ -1,3 +1,5 @@
+from transcription import transcribe_audio
+import asyncio
 import json
 import aiohttp
 import re
@@ -516,3 +518,57 @@ async def send_request_to_realtime_api(payload):
 
 
 audio_queues = {}
+
+
+def transcribe():
+    print("[TRANSCRIBE] Endpoint called")
+    if 'audio' not in request.files:
+        print("[TRANSCRIBE] No audio file provided")
+        return jsonify({"error": "No audio file provided"}), 400
+    audio_file = request.files['audio']
+    print(f"[TRANSCRIBE] Audio content type: {audio_file.content_type}")
+    audio_bytes = audio_file.read()
+    print(f"[TRANSCRIBE] Received audio file of length: {len(audio_bytes)} bytes")
+    
+    with open("debug_received_audio", "wb") as f:
+        f.write(audio_bytes)
+
+    print("[TRANSCRIBE] First 64 bytes of received audio:", audio_bytes[:64])
+
+    print(f"[TRANSCRIBE] Received audio file of length: {len(audio_bytes)} bytes")
+    
+    with open("debug_input.webm", "wb") as f:
+        f.write(audio_bytes)
+    print(f"[TRANSCRIBE] Saved raw audio as debug_input.webm")
+
+    if audio_bytes.startswith(b'RIFF'):
+        print("[TRANSCRIBE] Audio appears to be in WAV format.")
+        wav_data = audio_bytes
+    else:
+        print("[TRANSCRIBE] Audio is not WAV, attempting conversion via ffmpeg...")
+        import subprocess
+        try:
+            process = subprocess.run(
+                ['ffmpeg', '-nostdin', '-y', '-f', 'webm', '-i', 'debug_input.webm', '-c:a', 'pcm_s16le', '-ar', '16000', '-ac', '1', 'debug_converted.wav'],
+                capture_output=True,
+                timeout=30
+            )
+
+        except subprocess.TimeoutExpired:
+            print("[TRANSCRIBE] FFmpeg process timed out.")
+            return jsonify({"error": "Conversion timed out"}), 500
+
+        if process.returncode != 0:
+            print("[TRANSCRIBE] FFmpeg error:", process.stderr.decode())
+            return jsonify({"error": "Conversion failed"}), 500
+
+        with open("debug_converted.wav", "rb") as f:
+            wav_data = f.read()
+        print("[TRANSCRIBE] Conversion successful, WAV data starts with RIFF:", wav_data.startswith(b'RIFF'))
+    try:
+        transcript = asyncio.run(transcribe_audio(wav_data))
+        print(f"[TRANSCRIBE] Transcription result: {transcript}")
+        return jsonify({"transcript": transcript})
+    except Exception as e:
+        print(f"[TRANSCRIBE] Error during transcription: {e}")
+        return jsonify({"error": "Transcription failed"}), 500
