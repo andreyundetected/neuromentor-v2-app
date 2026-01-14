@@ -1,3 +1,4 @@
+from flask import stream_with_context
 from transcription import transcribe_audio
 import asyncio
 import json
@@ -809,3 +810,8 @@ def event_stream(user_id, course_idx):
         audio_chunk = asyncio.run(queue.get())  
         print("in event_stream")
         yield f"data: {json.dumps({'audio': audio_chunk})}\n\n"
+
+
+def stream_audio(user_id, course_idx):
+    print("in stream_audio")
+    return Response(stream_with_context(event_stream(user_id, course_idx)), content_type="text/event-stream")
