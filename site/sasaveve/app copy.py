@@ -665,3 +665,15 @@ def lesson_call(user_id, course_idx):
     progress = 0
     lesson_title = user.course_info[course_idx]["course_settings"].get("lesson", "")
     return render_template('lesson_call.html', user=user, course_idx=course_idx, username=user.username, lesson_title=lesson_title)
+
+
+def delete_course(course_idx):
+    user = require_login()
+    if isinstance(user, Response):
+        return user
+    user = User.query.get(session['user_id'])
+    if course_idx < 0 or course_idx >= len(user.course_info):
+        return "Course not found", 404
+    user.course_info.pop(course_idx)
+    db.session.commit()
+    return redirect(url_for('library'))
