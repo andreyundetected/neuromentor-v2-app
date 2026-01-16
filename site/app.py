@@ -1,3 +1,7 @@
+import os
+from quart import url_for
+from quart import redirect
+from quart import session
 from quart import Quart, render_template, request, jsonify, session, Response, redirect, url_for
 from tortoise import Tortoise, fields
 from tortoise.models import Model
@@ -1189,3 +1193,31 @@ async def course_settings(user_id, course_idx):
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 8000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
+
+class User(Model):
+    id = fields.BigIntField(pk=True)
+    username = fields.CharField(max_length=80, unique=True)
+    password = fields.CharField(max_length=120)
+    user_info = fields.JSONField(default={})
+    course_info = fields.JSONField(default=[])
+    has_completed_interview = fields.BooleanField(default=False)
+    recommendations = fields.JSONField(default=[])
+    credits = fields.IntField(default=0)
+
+
+async def require_login():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    if 'language' not in session:
+        session['language'] = 'ru'
+
+    user = await User.get(id=session['user_id'])
+
+    if not user:
+        return redirect(url_for('login'))
+
+    return user
+
+
+NEURO_API_URL = "https://" + os.getenv("NEURO_API-DOMAIN", "") + "/neuro_api"
