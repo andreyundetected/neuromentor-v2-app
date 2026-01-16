@@ -1,22 +1,15 @@
-import json
 import sqlite3
-
-
-user_id = 23
-
+import json
 
 DB_PATH = "neuromentor.db"
 
-
 conn = sqlite3.connect(DB_PATH)
-
-
 cursor = conn.cursor()
 
+user_id = 23
 
+cursor.execute("SELECT user_info FROM user WHERE id = ?", (user_id,))
 result = cursor.fetchone()
-
-
 ui = [
     {
       "course": {
@@ -160,15 +153,9 @@ ui = [
       "course_settings": {"lesson":"Understanding Variables and Coefficients"}
     }
   ]
-
-
 if result:
     updated_course_info = json.dumps(ui, ensure_ascii=False)
     cursor.execute("UPDATE user SET course_info = ? WHERE id = ?", (updated_course_info, user_id))
     conn.commit()
-
-
-cursor.execute("SELECT user_info FROM user WHERE id = ?", (user_id,))
-
 
 conn.close()

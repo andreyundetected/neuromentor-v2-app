@@ -1,7 +1,10 @@
 import asyncio
+from tortoise import Tortoise, fields
+from tortoise.models import Model
 import sqlite3
-from tortoise import Tortoise
 
+DATABASE_URL = "sqlite://neuromentor.db"
+DB_FILE = "neuromentor.db"  
 
 class User(Model):
     id = fields.IntField(pk=True)
@@ -11,14 +14,7 @@ class User(Model):
     course_info = fields.JSONField(default=[])
     has_completed_interview = fields.BooleanField(default=False)
     recommendations = fields.JSONField(default=[])
-    credits = fields.IntField(default=0)
-
-
-DB_FILE = "neuromentor.db"
-
-
-DATABASE_URL = "sqlite://neuromentor.db"
-
+    credits = fields.IntField(default=0)  
 
 async def add_column():
     
@@ -48,6 +44,5 @@ async def add_column():
 
     print("Колонка 'credits' успешно добавлена и обновлена для всех пользователей.")
     await Tortoise.close_connections()
-
 
 asyncio.run(add_column())
