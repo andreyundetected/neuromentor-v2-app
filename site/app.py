@@ -1,3 +1,4 @@
+from tortoise import Tortoise
 from quart import Response
 from quart import jsonify
 from quart import request
@@ -1327,3 +1328,38 @@ async def public_course_view(course_id):
         user=user,
         course=public_course,
     )
+
+
+async def index():
+    if "user_id" in session:
+        user = await User.get(id=session["user_id"])
+        if user:
+            session["language"] = user.user_info.get("language", "ru")
+            return redirect(url_for("library"))
+    return redirect(url_for("login"))
+
+
+async def shutdown():
+    await Tortoise.close_connections()
+
+
+async def update_course(course_id):
+    user = await require_login()
+    form = await request.form
+    if isinstance(user, Response):
+        return user
+
+    course_to_update = await PublicCourse.filter(id=course_id, creator=user.username).first()
+
+    if not course_to_update:
+        return "Курс не найден или вы не являетесь его владельцем.", 403
+
+    new_name = form.get('course_name')
+    new_topic = form.get('course_topic')
+
+    if new_name:
+        course_to_update.name = new_name
+    if new_topic:
+        course_to_update.topic = new_topic
+
+    return redirect(url_for('index'))
