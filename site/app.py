@@ -1,3 +1,4 @@
+from collections import Counter
 from tortoise import Tortoise
 from quart import Response
 from quart import jsonify
@@ -1622,3 +1623,65 @@ def generate_default_recommendations():
         ]
 
     return base_recommendation
+
+
+async def library():
+    user = await require_login()
+    if isinstance(user, Response):
+        return user
+
+    if not user.recommendations or True:
+        user.recommendations = generate_default_recommendations()
+        await User.filter(id=user.id).update(recommendations=user.recommendations)
+        
+    if not user.course_info:
+        user.course_info = []
+
+    print("Текущее состояние course_info пользователя:", user.course_info)
+
+    courses_with_indices = [{"index": idx, "course": course} for idx, course in enumerate(user.course_info)]
+    print("Курсы с индексами для шаблона:", courses_with_indices)
+
+    categories = []
+    for course_wrapper in user.course_info:
+        categories.extend(course_wrapper["course"].get("5_categories", []))
+    
+    category_counts = Counter(categories)
+    sorted_categories = sorted(category_counts.items(), key=lambda x: x[1], reverse=True)
+
+    new_course_index = len(user.course_info)
+    new_course_url = url_for('course_creation', user_id=user.id, course_idx=new_course_index)
+    print('======================')
+    print(user.username)
+    return await render_template(
+        'library.html',
+        user=user,
+        courses_with_indices=courses_with_indices,
+        new_course_url=new_course_url,
+        sorted_categories=sorted_categories, 
+        username=user.username,
+        enumerate=enumerate,
+        show_interview_modal=not user.has_completed_interview
+    )
+
+
+async def set_language(lang):
+
+    if lang not in ["ru", "en"]:
+        lang = "ru"
+
+    user_id = session.get("user_id")
+    if not user_id:
+        return "Unauthorized", 401
+
+    user = await User.get(id=user_id)
+
+    if not user:
+        return "User not found", 404
+
+    user.user_info["language"] = lang
+    await User.filter(id=user.id).update(user_info=user.user_info)
+
+    session["language"] = lang
+
+    return "", 204
