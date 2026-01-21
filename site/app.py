@@ -1363,3 +1363,262 @@ async def update_course(course_id):
         course_to_update.topic = new_topic
 
     return redirect(url_for('index'))
+
+
+async def lesson_chat(user_id, course_idx):
+    user = await require_login()
+    if isinstance(user, Response):
+        return user
+    user = await User.get(id=user_id)
+
+    if not user or user.id != session['user_id']:
+        return "Доступ запрещен", 403
+
+    if request.method == 'POST':
+        form = await request.form
+        
+        conversation_text = form['conversation']
+        conversation = session.get('conversation', [])
+        progress = session.get('progress', 0)
+        conversation.append({"role": "user", "content": conversation_text})
+
+        if len(user.course_info) <= course_idx:
+            return "Курс с указанным индексом не найден.", 404
+        
+        if not user.course_info[course_idx]["course_settings"].get("lesson"):
+            print("0000000000000000000")
+            print(user.course_info[course_idx]["course_settings"].get("lesson"))
+            user.course_info[course_idx]["course_settings"]["lesson"] = user.course_info[course_idx]["course"]["4_structure"][0]["3_lessons"][0]["name"]
+            await User.filter(id=user.id).update(course_info=user.course_info)
+        lesson_topic = user.course_info[course_idx]["course_settings"].get("lesson")
+
+        payload = {
+            "0_content": {
+                "0_conversation": conversation,
+                "1_user_info": user.user_info,
+                "2_course_info": user.course_info[course_idx]["course"],
+                "3_lesson_topic": lesson_topic,
+                "4_progress": progress
+            },
+            "1_type": "lesson"
+        }
+        response = await send_request_to_api(payload)
+        print("0=0=0=0=0=0=0==0=0=0=0=0=0")
+        if "<END>" in response.get("status"):
+            flag = False
+            stop_all = False  
+            for big_topic in user.course_info[course_idx]["course"]["4_structure"]:
+                if stop_all:  
+                    break
+                for topic in big_topic["3_lessons"]:
+                    print("LESSON: ")
+                    print(user.course_info[course_idx]["course_settings"]["lesson"])
+                    print("TOPIC NAME: ")
+                    print(topic["name"])
+                    if flag:
+                        user.course_info[course_idx]["course_settings"]["lesson"] = topic["name"]
+                        print("LESSON: ")
+                        print(user.course_info[course_idx]["course_settings"]["lesson"])
+                        print("TOPIC NAME: ")
+                        print(topic["name"])
+                        print("TOPIC: ")
+                        print(topic)
+                        stop_all = True  
+                        break  
+                    if topic["name"] == user.course_info[course_idx]["course_settings"]["lesson"]:
+                        flag = True
+                        
+            print(user.course_info[course_idx]["course_settings"]["lesson"])
+            await User.filter(id=user.id).update(course_info=user.course_info)
+
+        if response.get("response"):
+            response_type = response.get('response_type')
+            conversation.append({"role": f"teacher {response_type}", "content": response["response"]})
+
+        session['conversation'] = conversation
+        return jsonify(response)
+
+    session['conversation'] = []  
+    progress = 0
+    return await render_template('lesson_chat.html', user=user, course_idx=course_idx, username=user.username, lesson_title = user.course_info[course_idx]["course_settings"]["lesson"])
+
+
+def generate_default_recommendations():
+    base_recommendation = []
+    print(session.get("language"))
+    if session.get("language") == "ru":
+        base_recommendation = [
+            {
+                "recommendation_name": "Алгебра для 7 класса",
+                "base_json": {
+                    "0_topic": "Алгебра",
+                    "1_initial_level": "",
+                    "2_target_level": "",
+                    "3_name": "Курс по Алгебре",
+                    "4_structure": [],
+                    "5_categories": ["Математика", "Алгебра", "Школа"],
+                    "6_teaching_style": "",
+                    "7_lecture_type": "podcast"
+                },
+                "start_message": "Привет! Давай начнем создавать курс по алгебре. Что последнее ты прошел в этой теме?"
+            },
+            {
+                "recommendation_name": "Физика уровня средней школы",
+                "base_json": {
+                    "0_topic": "Физика",
+                    "1_initial_level": "",
+                    "2_target_level": "",
+                    "3_name": "Курс по физике",
+                    "4_structure": [],
+                    "5_categories": ["Физика", "Школа"],
+                    "6_teaching_style": "",
+                    "7_lecture_type": "podcast"
+                },
+                "start_message": "Привет! Давай начнем создавать курс по физике. Что последнее ты прошел в этой теме?"
+            },
+            {
+                "recommendation_name": "Химия для начинающих",
+                "base_json": {
+                    "0_topic": "Химия",
+                    "1_initial_level": "",
+                    "2_target_level": "",
+                    "3_name": "Курс по химии",
+                    "4_structure": [],
+                    "5_categories": ["Химия", "Школа"],
+                    "6_teaching_style": "",
+                    "7_lecture_type": "podcast"
+                },
+                "start_message": "Привет! Давай начнем создавать курс по химии. Что последнее ты прошел в этой теме?"
+            },
+            {
+                "recommendation_name": "Биология средних классов",
+                "base_json": {
+                    "0_topic": "Биология",
+                    "1_initial_level": "",
+                    "2_target_level": "",
+                    "3_name": "Курс по биологии",
+                    "4_structure": [],
+                    "5_categories": ["Биология", "Школа"],
+                    "6_teaching_style": "",
+                    "7_lecture_type": "podcast"
+                },
+                "start_message": "Привет! Давай начнем создавать курс по биологии. Что последнее ты прошел в этой теме?"
+            },
+            {
+                "recommendation_name": "Геометрия. Средняя школа",
+                "base_json": {
+                    "0_topic": "Геометрия",
+                    "1_initial_level": "",
+                    "2_target_level": "",
+                    "3_name": "Курс по геометрии",
+                    "4_structure": [],
+                    "5_categories": ["Математика", "Геометрия", "Школа"],
+                    "6_teaching_style": "",
+                    "7_lecture_type": "podcast"
+                },
+                "start_message": "Привет! Давай начнем создавать курс по геометрии. Что последнее ты прошел в этой теме?"
+            },
+            {
+                "recommendation_name": "Школьное обществознание",
+                "base_json": {
+                    "0_topic": "Обществознание",
+                    "1_initial_level": "",
+                    "2_target_level": "",
+                    "3_name": "Курс по обществознанию",
+                    "4_structure": [],
+                    "5_categories": ["Обществознание", "Школа"],
+                    "6_teaching_style": "",
+                    "7_lecture_type": "podcast"
+                },
+                "start_message": "Привет! Давай начнем создавать курс по обществознанию. Что последнее ты прошел в этой теме?"
+            }
+        ]
+    elif session.get("language") == "en":
+        base_recommendation = [
+            {
+                "recommendation_name": "Algebra for 7th Grade",
+                "base_json": {
+                    "0_topic": "Algebra",
+                    "1_initial_level": "",
+                    "2_target_level": "",
+                    "3_name": "Algebra Course",
+                    "4_structure": [],
+                    "5_categories": ["Mathematics", "Algebra", "School"],
+                    "6_teaching_style": "",
+                    "7_lecture_type": "podcast"
+                },
+                "start_message": "Hello! Let's start creating an algebra course. What is the last topic you studied in this subject?"
+            },
+            {
+                "recommendation_name": "High School Physics",
+                "base_json": {
+                    "0_topic": "Physics",
+                    "1_initial_level": "",
+                    "2_target_level": "",
+                    "3_name": "Physics Course",
+                    "4_structure": [],
+                    "5_categories": ["Physics", "School"],
+                    "6_teaching_style": "",
+                    "7_lecture_type": "podcast"
+                },
+                "start_message": "Hello! Let's start creating a physics course. What is the last topic you studied in this subject?"
+            },
+            {
+                "recommendation_name": "Beginner Chemistry",
+                "base_json": {
+                    "0_topic": "Chemistry",
+                    "1_initial_level": "",
+                    "2_target_level": "",
+                    "3_name": "Chemistry Course",
+                    "4_structure": [],
+                    "5_categories": ["Chemistry", "School"],
+                    "6_teaching_style": "",
+                    "7_lecture_type": "podcast"
+                },
+                "start_message": "Hello! Let's start creating a chemistry course. What is the last topic you studied in this subject?"
+            },
+            {
+                "recommendation_name": "Middle School Biology",
+                "base_json": {
+                    "0_topic": "Biology",
+                    "1_initial_level": "",
+                    "2_target_level": "",
+                    "3_name": "Biology Course",
+                    "4_structure": [],
+                    "5_categories": ["Biology", "School"],
+                    "6_teaching_style": "",
+                    "7_lecture_type": "podcast"
+                },
+                "start_message": "Hello! Let's start creating a biology course. What is the last topic you studied in this subject?"
+            },
+            {
+                "recommendation_name": "Geometry. High School",
+                "base_json": {
+                    "0_topic": "Geometry",
+                    "1_initial_level": "",
+                    "2_target_level": "",
+                    "3_name": "Geometry Course",
+                    "4_structure": [],
+                    "5_categories": ["Mathematics", "Geometry", "School"],
+                    "6_teaching_style": "",
+                    "7_lecture_type": "podcast"
+                },
+                "start_message": "Hello! Let's start creating a geometry course. What is the last topic you studied in this subject?"
+            },
+            {
+                "recommendation_name": "School Social Studies",
+                "base_json": {
+                    "0_topic": "Social Studies",
+                    "1_initial_level": "",
+                    "2_target_level": "",
+                    "3_name": "Social Studies Course",
+                    "4_structure": [],
+                    "5_categories": ["Social Studies", "School"],
+                    "6_teaching_style": "",
+                    "7_lecture_type": "podcast"
+                },
+                "start_message": "Hello! Let's start creating a social studies course. What is the last topic you studied in this subject?"
+            }
+        ]
+
+    return base_recommendation
