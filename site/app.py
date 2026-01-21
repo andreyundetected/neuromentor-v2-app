@@ -1685,3 +1685,14 @@ async def set_language(lang):
     session["language"] = lang
 
     return "", 204
+
+
+DATABASE_URL = os.getenv("DATABASE_URL").replace("postgresql://", "postgres://")
+
+
+async def init_db():
+    await Tortoise.init(
+        db_url=DATABASE_URL,
+        modules={"models": ["__main__"]}  
+    )
+    await Tortoise.generate_schemas(safe=True)
