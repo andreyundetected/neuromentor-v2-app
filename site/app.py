@@ -1696,3 +1696,22 @@ async def init_db():
         modules={"models": ["__main__"]}  
     )
     await Tortoise.generate_schemas(safe=True)
+
+
+async def startup():
+    await init_db()
+
+
+async def login():
+    if request.method == 'POST':
+        form = await request.form
+        username = form['username']
+        password = form['password']
+        user = await User.filter(username=username, password=password).first()
+        if user:
+            session['user_id'] = user.id
+            return redirect(url_for('index'))
+        else:
+            return "Неверное имя пользователя или пароль"
+
+    return await render_template('login.html')
