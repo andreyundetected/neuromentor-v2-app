@@ -1950,3 +1950,114 @@ async def get_empty_course_info():
         "6_teaching_style": "",
         "7_lecture_type": ""
     }
+
+
+async def course_creation(user_id, course_idx):
+    user = await require_login()
+    if isinstance(user, Response):
+        return user
+    if not user.has_completed_interview:
+        return await render_template('interview_modal.html')
+    user = await User.get(id=user_id)
+    if not user or user.id != session['user_id']:
+        return "Доступ запрещен", 403
+
+    if session.get("language") == "ru":
+        start_message = request.args.get("start_message", "Привет! Это снова я, менеджер. Курс по какой теме тебя интересует?")
+    elif session.get("language") == "en":
+        start_message = request.args.get("start_message", "Hello! It's me again, the manager. What course topic are you interested in?")
+
+    if start_message and not session.get('conversation'):
+        session['conversation'] = [{"role": "manager", "content": start_message}]
+
+    if request.method == 'POST':
+        form = await request.form
+        print(f"Начинаем обработку генерации курса для user_id={user_id}, course_idx={course_idx}")
+        conversation_text = form['conversation']
+        conversation = session.get('conversation', [])
+        conversation.append({"role": "user", "content": conversation_text})
+
+        if not user.course_info:
+            user.course_info = []
+
+        while len(user.course_info) <= course_idx:
+            user.course_info.append({
+                "course": await get_empty_course_info(),
+                "course_settings": {}
+            })
+
+        course_info = user.course_info[course_idx]["course"]
+
+        print("Текущее course_info:", course_info)
+
+        payload = {
+            "0_content": {
+                "0_conversation": conversation,
+                "1_user_info": user.user_info,
+                "2_course_info": course_info
+            },
+            "1_type": "course_creation"
+        }
+        response = await send_request_to_api(payload)
+
+        if "<END>" in response.get("status"):
+            first_lesson = user.course_info[course_idx]["course"]["4_structure"][0]["3_lessons"][0]["name"]
+            user.course_info[course_idx]["course_settings"] = {"lesson": first_lesson}
+            await User.filter(id=user.id).update(course_info=user.course_info)
+
+        if response.get("response"):
+            conversation.append({"role": "manager", "content": response["response"]})
+
+        session['conversation'] = conversation
+
+        if "course_info" in response:
+            print(f"Обновление course_info для индекса {course_idx}")
+            user.course_info[course_idx]["course"] = response["course_info"]
+            print(f"Новое course_info: {user.course_info[course_idx]['course']}")
+
+        try:
+            
+            await User.filter(id=user.id).update(course_info=user.course_info)
+            print("Изменения успешно сохранены в базе данных.")
+        except Exception as e:
+            print("Ошибка при сохранении в базе данных:", e)
+
+        return jsonify(response)
+
+    session['conversation'] = []  
+    
+    try:
+        course_name = user.course_info[course_idx]["course"]["3_name"]
+    except:
+        course_name = ""
+    return await render_template(
+        'course_creation.html',
+        user=user,
+        course_idx=course_idx,
+        username=user.username,
+        course_name=course_name,
+        start_message=start_message
+    )
+
+
+async def add_to_library(course_id):
+    user = await require_login()
+    if isinstance(user, Response):
+        return user
+
+    public_course = await PublicCourse.get(id=course_id)
+
+    if not public_course:
+        return "Курс не найден.", 404
+
+    if any(c.get('id') == course_id for c in user.course_info):
+        return redirect(url_for('library'))  
+
+    updated_course_info = user.course_info + [{
+        **public_course.course_info,
+        "id": course_id  
+    }]
+    
+    await User.filter(id=user.id).update(course_info=updated_course_info)
+
+    return redirect(url_for('library'))
