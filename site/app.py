@@ -1,3 +1,5 @@
+from transcription import transcribe_audio_with_prepare_data
+import re
 from collections import Counter
 from tortoise import Tortoise
 from quart import Response
@@ -1715,3 +1717,178 @@ async def login():
             return "Неверное имя пользователя или пароль"
 
     return await render_template('login.html')
+
+
+async def lesson_call(user_id, course_idx):
+
+    user = await require_login()
+    if isinstance(user, Response):
+        return user
+    user = await User.get(id=user_id)
+
+    if not user or user.id != session['user_id']:
+        return "Доступ запрещен", 403
+    
+    lesson_topic = user.course_info[course_idx]["course_settings"].get("lesson")
+    if not lesson_topic:
+        
+        lesson_topic = user.course_info[course_idx]["course"]["4_structure"][0]["3_lessons"][0]["name"]
+        user.course_info[course_idx]["course_settings"]["lesson"] = lesson_topic
+        await User.filter(id=user.id).update(course_info=user.course_info)
+
+    paid_status = False
+    for topic in user.course_info[course_idx]["course"]["4_structure"]:
+        for lesson in topic["3_lessons"]:
+            if lesson["name"] == lesson_topic:
+                paid_status = lesson.get("paid", False)
+                break
+        if paid_status:
+            break
+
+    if not paid_status:
+        
+        return redirect(url_for('course_select', user_id=user_id, course_idx=course_idx))
+
+    conversation_chat = session.get('conversation_chat', [])
+    conversation_call = session.get('conversation_call', [])
+    lesson_plan = session.get('lesson_plan', "")
+    presentation_history = session.get('presentation_history', "")
+    progress = session.get('progress', 0)
+
+    if request.method == 'POST':
+        form = await request.form
+        response_mode = form.get("response_mode", "audio")
+        
+        conversation_text = form.get('conversation', '').strip()
+        if conversation_text:
+            
+            conversation_chat.append({"role": "user", "content": conversation_text})
+        import io
+        from pydub import AudioSegment
+        import os
+
+        files = await request.files
+        audio_file = files.get("audio")  
+        transcript_result = None
+
+        if audio_file:
+            print("[LESSON_CALL] Received audio file:", audio_file.filename)
+
+            audio_bytes = io.BytesIO(audio_file.read())  
+            audio_bytes.seek(0)  
+
+            temp_audio_path = "temp_audio.webm"
+            with open(temp_audio_path, "wb") as file:
+                file.write(audio_bytes.getvalue())
+            audio = AudioSegment.from_file(temp_audio_path, format="webm")
+            
+            try:
+                transcript_result = transcribe_audio_with_prepare_data(audio) 
+                os.remove(temp_audio_path)
+                print("[LESSON_CALL] Transcription:", transcript_result)
+                conversation_call.append({"role": "user VOICE", "content": transcript_result})
+            except Exception as e:
+                print("[LESSON_CALL] Error transcribing audio:", e)
+
+        if len(user.course_info) <= course_idx:
+            return "Course not found", 404
+
+        if not user.course_info[course_idx]["course_settings"].get("lesson"):
+            user.course_info[course_idx]["course_settings"]["lesson"] = (
+                user.course_info[course_idx]["course"]["4_structure"][0]["3_lessons"][0]["name"]
+            )
+            await User.filter(id=user.id).update(course_info=user.course_info)
+
+        lesson_topic = user.course_info[course_idx]["course_settings"].get("lesson")
+
+        if lesson_plan == "":
+            print("оаоаоаоа")
+            payload = {
+                "0_content": {
+                    "1_user_info": user.user_info,
+                    "2_course_info": user.course_info[course_idx]["course"],
+                    "3_lesson_topic": lesson_topic,
+                },
+                "1_type": "lesson_plan"
+            }
+
+            response_api = await send_request_to_api(payload)
+            lesson_plan = response_api.get("lesson_plan", "")
+            print("[LESSON_CALL] API lesson_plan response:", response_api)
+
+        payload = {
+            "0_content": {
+                "0_conversation_chat": conversation_chat,   
+                "0_conversation_call": conversation_call,   
+                "1_user_info": user.user_info,
+                "2_course_info": user.course_info[course_idx]["course"],
+                "3_lesson_topic": lesson_topic,
+                "4_progress": progress,
+                "5_presentation_history": presentation_history,
+                "6_lesson_plan": lesson_plan,
+                "7_mode": response_mode,
+            },
+            "1_type": "lesson_call"
+        }
+
+        response_api = await send_request_to_api(payload)
+        print("[LESSON_CALL] API response:", response_api)
+
+        response_chat = response_api.get("response_chat", "")
+        response_call = response_api.get("response_call", None)
+        response_call_transcription = response_api.get("response_call_transcription", "")
+        response_type = response_api.get("response_type", "")
+        status = response_api.get("status", "<OK>")
+        presentation_code = response_api.get("presentation_code", "")
+        new_progress = response_api.get("progress")
+        presentation_image = response_api.get("presentation_image")
+
+        if response_chat:
+            if re.sub(r"[^a-zA-Zа-яА-Я]", "", response_chat).lower() == "none":
+                response_chat = None
+            conversation_chat.append({"role": f"teacher CHAT {response_type}", "content": response_chat})
+
+        if response_call_transcription:
+            conversation_call.append({"role": f"teacher VOICE {response_type}", "content": response_call_transcription})
+
+        if presentation_code:
+            presentation_history += (presentation_code + "\n\n")
+
+        if new_progress is not None:
+            progress = float(new_progress)
+
+        if status == "<END>":
+            print("[LESSON_CALL] Lesson ended according to API response")
+
+        session['conversation_chat'] = conversation_chat
+        session['conversation_call'] = conversation_call
+        session['progress'] = progress
+        session['lesson_plan'] = lesson_plan
+
+        response_data = {
+            "response_chat": response_chat,               
+            "response_call": response_call,        
+            "audio_input_transcription": transcript_result,
+            "response_call_transcription": response_call_transcription,  
+            "response_type": response_type,
+            "status": status,
+            "progress": progress,
+            "presentation_image": presentation_image
+        }
+        print("==========")
+        print(conversation_call)
+        print(conversation_chat)
+        return jsonify(response_data)
+
+    session['conversation_chat'] = []
+    session['conversation_call'] = []
+    session['progress'] = 0
+    lesson_title = user.course_info[course_idx]["course_settings"].get("lesson", "")
+    return await render_template(
+        'lesson_call.html',
+        user=user,
+        course_idx=course_idx,
+        username=user.username,
+        lesson_title=lesson_title,
+        transcript_history=conversation_call
+    )
