@@ -411,6 +411,23 @@
 .lang-dropdown button:hover {
   background: #f0f0f0;
 }
+.button-back {
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 6px 12px;
+  background-color: #007bff;
+  color: #fff;
+  font-size: 14px;
+  border-radius: 5px;
+  text-decoration: none;
+  transition: background-color 0.3s, transform 0.2s;
+  width: fit-content;
+}
+.button-back:hover {
+  background-color: #0056b3;
+  transform: scale(1.03);
+}
+
 
   </style>
 </head>
@@ -431,7 +448,7 @@
         <button onclick="selectLanguage('ru')">RU</button>
       </div>
     <!-- Блок с количеством кредитов -->
-    <a href="https://t.me/YourBotLink" class="credits" title="Buy Credits via Telegram" target="_blank">
+    <a href="https://t.me/NeuroMentor_payment_bot" class="credits" title="Buy Credits via Telegram" target="_blank">
       {% if session.get('language', 'ru') == 'ru' %}
         {{ user.credits }} Кредитов
       {% elif session.get('language', 'ru') == 'en' %}
@@ -447,6 +464,11 @@
   </header>
 
   <div class="container">
+    {% if session.get('language', 'ru') == 'ru' %}
+      <a href="{{ url_for('library') }}" class="button-back">← Назад</a>
+    {% elif session.get('language', 'ru') == 'en' %}
+      <a href="{{ url_for('library') }}" class="button-back">← Back</a>
+    {% endif %}
     <h1 class="course-title">{{ course_name }}</h1>
     <!-- Прогресс-бар -->
     <div class="progress-bar-container">
@@ -485,9 +507,15 @@
 
   <div class="overlay" id="overlay">
     <div class="completion-box">
-      <h2>Course creating</h2>
-      <p id="user-info">Course creation complete</p>
-      <button class="button" onclick="window.location.href='/library'">Continue</button>
+        {% if session.get('language', 'ru') == 'ru' %}
+            <h2>Создание курса</h2>
+            <p id="user-info">Создание курса завершено</p>
+            <button class="button" onclick="window.location.href='/library'">Продолжить</button>
+        {% elif session.get('language', 'ru') == 'en' %}
+            <h2>Course creating</h2>
+            <p id="user-info">Course creation complete</p>
+            <button class="button" onclick="window.location.href='/library'">Continue</button>
+        {% endif %}
     </div>
   </div>
 

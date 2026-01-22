@@ -1927,3 +1927,26 @@ async def start_recommendation(recommendation_idx):
     await User.filter(id=user.id).update(course_info=user.course_info)
 
     return redirect(url_for('course_creation', user_id=user.id, course_idx=course_idx, start_message=start_message))
+
+
+async def get_empty_course_info():
+    return {
+        "0_topic": "",
+        "1_initial_level": "",
+        "2_target_level": "",
+        "3_name": "",
+        "4_structure": [
+            {
+                "0_topic": "",
+                "1_description": "",
+                "2_instructions_for_generating_lessons": "",
+                "3_lessons": [
+                    {"name": "", "description": ""},
+                    {"name": "", "description": ""}
+                ]
+            }
+        ],
+        "5_categories": [],
+        "6_teaching_style": "",
+        "7_lecture_type": ""
+    }
