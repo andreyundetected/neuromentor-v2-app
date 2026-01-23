@@ -1,3 +1,4 @@
+from tortoise import connections
 from transcription import transcribe_audio_with_prepare_data
 import re
 from collections import Counter
@@ -2128,3 +2129,8 @@ async def update_course_info(user_id, course_idx):
     session.modified = True
     
     return redirect(url_for('course_settings', user_id=user.id, course_idx=course_idx))
+
+
+async def ensure_db_connection():
+    if not connections._get_storage():
+        await init_db()
