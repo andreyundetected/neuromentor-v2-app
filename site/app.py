@@ -2061,3 +2061,70 @@ async def add_to_library(course_id):
     await User.filter(id=user.id).update(course_info=updated_course_info)
 
     return redirect(url_for('library'))
+
+
+async def course_settings(user_id, course_idx):
+    user = await User.get(id=user_id)
+
+    if not user:
+        return redirect(url_for('login'))
+    
+    course_info = user.course_info[course_idx]["course"]
+    course_settings = session.get('course_settings', {}).get(course_idx, [])
+    
+    nearest_lesson = None
+    for setting in course_settings:
+        if not setting['completed']:
+            nearest_lesson = setting['name']
+            break
+    
+    return await render_template(
+        'course_settings.html',
+        user=user,
+        course_idx=course_idx,
+        course_info=course_info,
+        course_settings=course_settings,
+        nearest_lesson=nearest_lesson
+    )
+
+
+async def update_course_info(user_id, course_idx):
+    user = await User.get(id=user_id)
+    form = await request.form
+
+    if not user:
+        return redirect(url_for('login'))
+    
+    course_name = form.get('course_name')
+    learning_format = form.get('learning_format')
+    lecture_type = form.get('lecture_type')
+    
+    course_info = user.course_info[course_idx]["course"]
+    if course_name:
+        course_info['3_name'] = course_name
+    if learning_format:
+        course_info['learning_format'] = learning_format
+    if lecture_type:
+        course_info['lecture_type'] = lecture_type
+    
+    if 'course_settings' not in session:
+        session['course_settings'] = {}
+    
+    course_settings = session['course_settings'].get(course_idx, [])
+    updated_lessons = []
+
+    for topic in course_info['4_structure']:
+        for lesson in topic['3_lessons']:
+            
+            lesson_name = lesson['name']
+            lesson_status = next(
+                (ls['completed'] for ls in course_settings if ls['name'] == lesson_name), 
+                False
+            )
+            updated_lessons.append({'name': lesson_name, 'completed': lesson_status})
+    
+    session['course_settings'][course_idx] = updated_lessons
+    
+    session.modified = True
+    
+    return redirect(url_for('course_settings', user_id=user.id, course_idx=course_idx))
