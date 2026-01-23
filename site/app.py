@@ -2159,3 +2159,128 @@ async def check_interview_status():
         return jsonify({"has_completed_interview": False})
     
     return jsonify({"has_completed_interview": user.has_completed_interview})
+
+
+async def course_select(user_id, course_idx):
+    user = await require_login()
+    if isinstance(user, Response):
+        return user
+    user = await User.get(id=user_id)
+    if not user or user.id != session['user_id']:
+        return "Доступ запрещен", 403
+
+    if not user or course_idx >= len(user.course_info):
+        return "Курс не найден", 404
+
+    course = user.course_info[course_idx]["course"]  
+
+    if "4_structure" not in course or not course["4_structure"]:
+        print(f"Курс {course_idx} не завершен. Перенаправляем на создание.")
+        return redirect(url_for('course_creation', user_id=user_id, course_idx=course_idx))
+    
+    if "lesson" not in user.course_info[course_idx]["course_settings"]:
+        try:
+            first_lesson = course["4_structure"][0]["3_lessons"][0]["name"]
+            user.course_info[course_idx]["course_settings"]["lesson"] = first_lesson
+            await User.filter(id=user.id).update(course_info=user.course_info)
+            print(f"Задан первый урок для курса {course_idx}: {first_lesson}")
+        except (IndexError, KeyError):
+            print(f"Ошибка: невозможно задать первый урок для курса {course_idx}, 4_structure пуст или некорректен")
+
+    for topic in course["4_structure"]:
+        for i, lesson in enumerate(topic["3_lessons"]):
+            if "paid" not in lesson:
+                
+                lesson["paid"] = (topic == course["4_structure"][0] and i == 0)
+    
+    await User.filter(id=user.id).update(course_info=user.course_info)
+
+    next_lesson = user.course_info[course_idx]["course_settings"].get("lesson", None)
+    next_lesson_paid = False
+    if next_lesson:
+        for topic in course["4_structure"]:
+            for lesson in topic["3_lessons"]:
+                if lesson["name"] == next_lesson:
+                    next_lesson_paid = lesson.get("paid", False)
+                    break
+            if next_lesson_paid:
+                break
+
+    if request.method == 'POST':
+        form = await request.form
+        action = form.get('action')
+        print("0000000000", action)
+        if action == 'lesson':
+        
+            if next_lesson_paid:
+                print("oplac")
+                return redirect(url_for('lesson_call', user_id=user_id, course_idx=course_idx))
+            else:
+                
+                print("ne oplac")
+                if user.credits > 0:
+                    print(">0")
+                    
+                    user.credits -= 1
+                    await User.filter(id=user.id).update(credits=user.credits)
+                    
+                    for topic in course["4_structure"]:
+                        for lesson in topic["3_lessons"]:
+                            if lesson["name"] == next_lesson:
+                                lesson["paid"] = True
+                                break
+                    await User.filter(id=user.id).update(course_info=user.course_info)
+                    
+                    return redirect(url_for('lesson_call', user_id=user_id, course_idx=course_idx))
+                else:
+                    print("<=0")
+                    
+                    total_lessons = 0
+                    completed_lessons = 0
+                    found = False
+                    for topic in course["4_structure"]:
+                        total_lessons += len(topic["3_lessons"])
+                        for lesson in topic["3_lessons"]:
+                            
+                            if lesson["name"] == user.course_info[course_idx]["course_settings"].get("lesson"):
+                                found = True
+                            if not found:
+                                completed_lessons += 1
+
+                    progress = (completed_lessons / total_lessons) * 100
+                    return await render_template(
+                        'course_select.html',
+                        user=user,
+                        course=course,
+                        course_idx=course_idx,
+                        username=user.username,
+                        progress=progress,
+                        course_id=course_idx,
+                        next_lesson=next_lesson,
+                        next_lesson_paid=next_lesson_paid,
+                        insufficient_credits=True
+                    )
+        elif action == 'edit':
+            return redirect(url_for('course_edit', user_id=user_id, course_idx=course_idx))
+        elif action == 'settings':
+            return redirect(url_for('course_settings', user_id=user_id, course_idx=course_idx))
+    
+    progress_count = 0
+    count = 0
+    flag = False
+    for big_topic in user.course_info[course_idx]["course"]["4_structure"]:
+        count += len(big_topic["3_lessons"])
+        for topic in big_topic["3_lessons"]:
+            print(user.course_info[course_idx]["course_settings"]["lesson"])
+            print(topic)
+            if topic["name"] == user.course_info[course_idx]["course_settings"]["lesson"]:
+                flag = True
+            if flag == False:
+                progress_count += 1
+    
+    progress = int(progress_count / count * 10000)/100
+    await User.filter(id=user.id).update(course_info=user.course_info)
+
+    next_lesson = user.course_info[course_idx]["course_settings"].get("lesson", None)
+    
+    return await render_template('course_select.html', user=user, course=course, course_idx=course_idx, username=user.username, progress = progress, course_id = course_idx, next_lesson=next_lesson, next_lesson_paid=next_lesson_paid)
