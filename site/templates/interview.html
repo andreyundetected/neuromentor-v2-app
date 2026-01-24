@@ -442,9 +442,15 @@
 
   <div class="overlay" id="overlay">
     <div class="completion-box">
-      <h2>Interview</h2>
-      <p id="user-info">The interview is over</p>
-      <button class="button" onclick="window.location.href='/library'">Continue</button>
+        {% if session.get('language', 'ru') == 'ru' %}
+            <h2>Интервью</h2>
+            <p id="user-info">Интервью окончено</p>
+            <button class="button" onclick="window.location.href='/library'">Продолжить</button>
+        {% elif session.get('language', 'ru') == 'en' %}
+            <h2>Interview</h2>
+            <p id="user-info">The interview is over</p>
+            <button class="button" onclick="window.location.href='/library'">Continue</button>
+        {% endif %}
     </div>
   </div>
 
