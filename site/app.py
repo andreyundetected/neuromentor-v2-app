@@ -2284,3 +2284,11 @@ async def course_select(user_id, course_idx):
     next_lesson = user.course_info[course_idx]["course_settings"].get("lesson", None)
     
     return await render_template('course_select.html', user=user, course=course, course_idx=course_idx, username=user.username, progress = progress, course_id = course_idx, next_lesson=next_lesson, next_lesson_paid=next_lesson_paid)
+
+
+app.secret_key = 'supersecretkey'
+
+
+if __name__ == '__main__':
+    port = int(os.getenv("PORT", 8000))
+    app.run(host="0.0.0.0", port=port, debug=True)
