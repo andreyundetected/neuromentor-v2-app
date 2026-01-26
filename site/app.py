@@ -71,9 +71,7 @@ async def get_empty_course_info():
                 ]
             }
         ],
-        "5_categories": [],
-        "6_teaching_style": "",
-        "7_lecture_type": ""
+        "5_categories": []
     }
 
 async def require_login():
@@ -280,8 +278,6 @@ def generate_default_recommendations():
                     "3_name": "Курс по Алгебре",
                     "4_structure": [],
                     "5_categories": ["Математика", "Алгебра", "Школа"],
-                    "6_teaching_style": "",
-                    "7_lecture_type": "podcast"
                 },
                 "start_message": "Привет! Давай начнем создавать курс по алгебре. Что последнее ты прошел в этой теме?"
             },
@@ -294,8 +290,6 @@ def generate_default_recommendations():
                     "3_name": "Курс по физике",
                     "4_structure": [],
                     "5_categories": ["Физика", "Школа"],
-                    "6_teaching_style": "",
-                    "7_lecture_type": "podcast"
                 },
                 "start_message": "Привет! Давай начнем создавать курс по физике. Что последнее ты прошел в этой теме?"
             },
@@ -308,8 +302,6 @@ def generate_default_recommendations():
                     "3_name": "Курс по химии",
                     "4_structure": [],
                     "5_categories": ["Химия", "Школа"],
-                    "6_teaching_style": "",
-                    "7_lecture_type": "podcast"
                 },
                 "start_message": "Привет! Давай начнем создавать курс по химии. Что последнее ты прошел в этой теме?"
             },
@@ -322,8 +314,6 @@ def generate_default_recommendations():
                     "3_name": "Курс по биологии",
                     "4_structure": [],
                     "5_categories": ["Биология", "Школа"],
-                    "6_teaching_style": "",
-                    "7_lecture_type": "podcast"
                 },
                 "start_message": "Привет! Давай начнем создавать курс по биологии. Что последнее ты прошел в этой теме?"
             },
@@ -336,8 +326,6 @@ def generate_default_recommendations():
                     "3_name": "Курс по геометрии",
                     "4_structure": [],
                     "5_categories": ["Математика", "Геометрия", "Школа"],
-                    "6_teaching_style": "",
-                    "7_lecture_type": "podcast"
                 },
                 "start_message": "Привет! Давай начнем создавать курс по геометрии. Что последнее ты прошел в этой теме?"
             },
@@ -350,8 +338,6 @@ def generate_default_recommendations():
                     "3_name": "Курс по обществознанию",
                     "4_structure": [],
                     "5_categories": ["Обществознание", "Школа"],
-                    "6_teaching_style": "",
-                    "7_lecture_type": "podcast"
                 },
                 "start_message": "Привет! Давай начнем создавать курс по обществознанию. Что последнее ты прошел в этой теме?"
             }
@@ -367,8 +353,6 @@ def generate_default_recommendations():
                     "3_name": "Algebra Course",
                     "4_structure": [],
                     "5_categories": ["Mathematics", "Algebra", "School"],
-                    "6_teaching_style": "",
-                    "7_lecture_type": "podcast"
                 },
                 "start_message": "Hello! Let's start creating an algebra course. What is the last topic you studied in this subject?"
             },
@@ -381,8 +365,6 @@ def generate_default_recommendations():
                     "3_name": "Physics Course",
                     "4_structure": [],
                     "5_categories": ["Physics", "School"],
-                    "6_teaching_style": "",
-                    "7_lecture_type": "podcast"
                 },
                 "start_message": "Hello! Let's start creating a physics course. What is the last topic you studied in this subject?"
             },
@@ -395,8 +377,6 @@ def generate_default_recommendations():
                     "3_name": "Chemistry Course",
                     "4_structure": [],
                     "5_categories": ["Chemistry", "School"],
-                    "6_teaching_style": "",
-                    "7_lecture_type": "podcast"
                 },
                 "start_message": "Hello! Let's start creating a chemistry course. What is the last topic you studied in this subject?"
             },
@@ -409,8 +389,6 @@ def generate_default_recommendations():
                     "3_name": "Biology Course",
                     "4_structure": [],
                     "5_categories": ["Biology", "School"],
-                    "6_teaching_style": "",
-                    "7_lecture_type": "podcast"
                 },
                 "start_message": "Hello! Let's start creating a biology course. What is the last topic you studied in this subject?"
             },
@@ -423,8 +401,6 @@ def generate_default_recommendations():
                     "3_name": "Geometry Course",
                     "4_structure": [],
                     "5_categories": ["Mathematics", "Geometry", "School"],
-                    "6_teaching_style": "",
-                    "7_lecture_type": "podcast"
                 },
                 "start_message": "Hello! Let's start creating a geometry course. What is the last topic you studied in this subject?"
             },
@@ -437,8 +413,6 @@ def generate_default_recommendations():
                     "3_name": "Social Studies Course",
                     "4_structure": [],
                     "5_categories": ["Social Studies", "School"],
-                    "6_teaching_style": "",
-                    "7_lecture_type": "podcast"
                 },
                 "start_message": "Hello! Let's start creating a social studies course. What is the last topic you studied in this subject?"
             }

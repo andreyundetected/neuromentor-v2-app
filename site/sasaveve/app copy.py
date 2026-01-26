@@ -77,9 +77,7 @@ def get_empty_course_info():
                 ]
             }
         ],
-        "5_categories": [],
-        "6_teaching_style": "",
-        "7_lecture_type": ""
+        "5_categories": []
     }
 
 def require_login():
