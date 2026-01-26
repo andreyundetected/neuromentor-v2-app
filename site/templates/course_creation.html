@@ -427,6 +427,42 @@
   background-color: #0056b3;
   transform: scale(1.03);
 }
+/* Стилизация блока с темами */
+#structure-container .theme-block {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 12px;
+  border-left: 4px solid #007bff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+#structure-container .theme-block h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #333;
+  font-weight: bold;
+}
+
+#structure-container ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+#structure-container li {
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  background-color: #f0f4f8;
+  color: #333;
+  transition: background 0.2s;
+}
+
+#structure-container li:hover {
+  background-color: #e1eaff;
+}
 
 
   </style>
@@ -462,6 +498,7 @@
     </a>
   
   </header>
+  <div id="structure-container" style="position:absolute; top:120px; right:30px; width:300px; max-height:70vh; overflow-y:auto; background:#f8f9fa; padding:10px; border-radius:8px; box-shadow:0 0 8px rgba(0,0,0,0.1);"></div>
 
   <div class="container">
     {% if session.get('language', 'ru') == 'ru' %}
@@ -520,6 +557,7 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+
   <script>
     function toggleLanguageDropdown() {
         const dropdown = document.getElementById('lang-dropdown');
@@ -767,7 +805,31 @@
                 }, 500);
             }
             }
+            // Проверка и отображение структуры, если она появилась
+        if (data.course_info && data.course_info["4_structure"]) {
+            const structure = data.course_info["4_structure"];
+            const container = document.getElementById('structure-container');
+            if (container) {
+                container.innerHTML = ''; // очистить старое
+                structure.forEach((theme, index) => {
+                    const themeDiv = document.createElement('div');
+                    themeDiv.className = 'theme-block';
+                    const themeTitle = document.createElement('h3');
+                    themeTitle.textContent = `${index + 1}. ${theme["1_theme"] || "Тема"}`;
+                    themeDiv.appendChild(themeTitle);
 
+                    const ul = document.createElement('ul');
+                    (theme["3_lessons"] || []).forEach((lesson, i) => {
+                        const li = document.createElement('li');
+                        li.textContent = `${i + 1}. ${lesson.name || "Урок"}`;
+                        ul.appendChild(li);
+                    });
+
+                    themeDiv.appendChild(ul);
+                    container.appendChild(themeDiv);
+                });
+            }
+        }
         // Обновление прогресс-бара, если API возвращает progress (число от 0 до 100)
         if (data.progress !== undefined) {
           const progressValue = parseFloat(data.progress);

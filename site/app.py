@@ -579,7 +579,7 @@ async def course_creation(user_id, course_idx):
         course_idx=course_idx,
         username=user.username,
         course_name=course_name,
-        start_message=start_message
+        start_message=start_message,
     )
 
 @app.route('/public_course/<int:course_id>', methods=['GET', 'POST'])
@@ -1072,15 +1072,12 @@ async def update_course_info(user_id, course_idx):
     
     course_name = form.get('course_name')
     learning_format = form.get('learning_format')
-    lecture_type = form.get('lecture_type')
     
     course_info = user.course_info[course_idx]["course"]
     if course_name:
         course_info['3_name'] = course_name
     if learning_format:
         course_info['learning_format'] = learning_format
-    if lecture_type:
-        course_info['lecture_type'] = lecture_type
     
     if 'course_settings' not in session:
         session['course_settings'] = {}
