@@ -146,9 +146,7 @@ ui = [
           "Algebra",
           "Beginner",
           "Mathematics"
-        ],
-        "6_teaching_style": "friendly",
-        "7_lecture_type": "audio"
+        ]
       },
       "course_settings": {"lesson":"Understanding Variables and Coefficients"}
     }

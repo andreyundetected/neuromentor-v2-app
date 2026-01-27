@@ -737,15 +737,12 @@ def update_course_info(user_id, course_idx):
     
     course_name = request.form.get('course_name')
     learning_format = request.form.get('learning_format')
-    lecture_type = request.form.get('lecture_type')
     
     course_info = user.course_info[course_idx]["course"]
     if course_name:
         course_info['3_name'] = course_name
     if learning_format:
         course_info['learning_format'] = learning_format
-    if lecture_type:
-        course_info['lecture_type'] = lecture_type
     
     if 'course_settings' not in session:
         session['course_settings'] = {}
