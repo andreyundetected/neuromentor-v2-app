@@ -515,97 +515,97 @@ async def course_creation(user_id, course_idx):
 
     if request.method == 'POST':
         form = await request.form
-        print(f"Начинаем обработку генерации курса для user_id={user_id}, course_idx={course_idx}")
-        conversation_text = form['conversation']
-        conversation = session.get('conversation', [])
-        conversation.append({"role": "user", "content": conversation_text})
 
-        if not user.course_info:
-            user.course_info = []
+        status_payload_raw = form.get('status_payload')
+        if status_payload_raw:
+            payload = json.loads(status_payload_raw)
+            print("📦 Получен payload от клиента с set_status:", payload)
+            response = await send_request_to_api(payload)
 
-        while len(user.course_info) <= course_idx:
-            user.course_info.append({
-                "course": await get_empty_course_info(),
-                "course_settings": {}
-            })
+            if "course_info" in response:
+                user.course_info[course_idx]["course"] = response["course_info"]
+                await User.filter(id=user.id).update(course_info=user.course_info)
 
-        course_info = user.course_info[course_idx]["course"]
+            if response.get("response"):
+                session['conversation'].append({"role": "manager", "content": response["response"]})
 
-        print("Текущее course_info:", course_info)
+            return jsonify(response)
 
-        payload = {
-            "0_content": {
-                "0_conversation": conversation,
-                "1_user_info": user.user_info,
-                "2_course_info": course_info
-            },
-            "1_type": "course_creation"
-        }
-        response = await send_request_to_api(payload)
-        import asyncio
-        if "<GENERATION>" in response.get("status"):
-            lang = session.get("language", "ru")
-            wait_message = {
-                "ru": "Генерация структуры курса займет 2–3 минуты. Пожалуйста, не закрывайте страницу. Я сообщу, когда всё будет готово.",
-                "en": "The course structure will take 2–3 minutes to generate. Please don’t close the page — I’ll let you know once it’s ready."
-            }[lang]
+        else:
+            print(f"Начинаем обработку генерации курса для user_id={user_id}, course_idx={course_idx}")
+            conversation_text = form['conversation']
+            conversation = session.get('conversation', [])
+            conversation.append({"role": "user", "content": conversation_text})
 
-            conversation.append({"role": "manager", "content": wait_message})
+            if not user.course_info:
+                user.course_info = []
+
+            while len(user.course_info) <= course_idx:
+                user.course_info.append({
+                    "course": await get_empty_course_info(),
+                    "course_settings": {}
+                })
+
+            course_info = user.course_info[course_idx]["course"]
+
+            print("Текущее course_info:", course_info)
+
+            payload = {
+                "0_content": {
+                    "0_conversation": conversation,
+                    "1_user_info": user.user_info,
+                    "2_course_info": course_info
+                },
+                "1_type": "course_creation"
+            }
+            response = await send_request_to_api(payload)
+
+            if "<GENERATION>" in response.get("status"):
+                wait_message = {
+                    "ru": "Генерация структуры курса займет 2–3 минуты. Пожалуйста, не закрывайте страницу.",
+                    "en": "The course structure will take 2–3 minutes to generate. Please don’t close the page."
+                }.get(session.get("language", "ru"))
+
+                conversation.append({"role": "manager", "content": wait_message})
+                session['conversation'] = conversation
+
+                return jsonify({
+                    "response": wait_message,
+                    "status": response["status"],
+                    "status_payload": json.dumps({
+                        "0_content": {
+                            "0_conversation": conversation,
+                            "1_user_info": user.user_info,
+                            "2_course_info": course_info,
+                            "set_status": response["status"]
+                        },
+                        "1_type": "course_creation"
+                    })
+                })
+
+            if "<END>" in response.get("status"):
+                first_lesson = user.course_info[course_idx]["course"]["4_structure"][0]["3_lessons"][0]["name"]
+                user.course_info[course_idx]["course_settings"] = {"lesson": first_lesson}
+                await User.filter(id=user.id).update(course_info=user.course_info)
+
+            if response.get("response"):
+                conversation.append({"role": "manager", "content": response["response"]})
+
             session['conversation'] = conversation
 
-            async def continue_generation(user_id, course_idx, conversation, course_info, status):
-                user = await User.get(id=user_id)
-                payload = {
-                    "0_content": {
-                        "0_conversation": conversation,
-                        "1_user_info": user.user_info,
-                        "2_course_info": course_info,
-                        "set_status": status
-                    },
-                    "1_type": "course_creation"
-                }
-                result = await send_request_to_api(payload)
+            if "course_info" in response:
+                print(f"Обновление course_info для индекса {course_idx}")
+                user.course_info[course_idx]["course"] = response["course_info"]
+                print(f"Новое course_info: {user.course_info[course_idx]['course']}")
 
-                if "course_info" in result:
-                    user.course_info[course_idx]["course"] = result["course_info"]
-                    await User.filter(id=user.id).update(course_info=user.course_info)
+            try:
+                
+                await User.filter(id=user.id).update(course_info=user.course_info)
+                print("Изменения успешно сохранены в базе данных.")
+            except Exception as e:
+                print("Ошибка при сохранении в базе данных:", e)
 
-                final_response = result.get("response")
-                if final_response:
-                    conv = session.get('conversation', [])
-                    conv.append({"role": "manager", "content": final_response})
-                    session['conversation'] = conv
-
-            asyncio.create_task(continue_generation(user.id, course_idx, conversation.copy(), course_info.copy(), response["status"]))
-
-            return jsonify({
-                "response": wait_message,
-                "status": "<GENERATION>"
-            })
-
-        if "<END>" in response.get("status"):
-            first_lesson = user.course_info[course_idx]["course"]["4_structure"][0]["3_lessons"][0]["name"]
-            user.course_info[course_idx]["course_settings"] = {"lesson": first_lesson}
-            await User.filter(id=user.id).update(course_info=user.course_info)
-
-        if response.get("response"):
-            conversation.append({"role": "manager", "content": response["response"]})
-
-        session['conversation'] = conversation
-
-        if "course_info" in response:
-            print(f"Обновление course_info для индекса {course_idx}")
-            user.course_info[course_idx]["course"] = response["course_info"]
-            print(f"Новое course_info: {user.course_info[course_idx]['course']}")
-
-        try:
-            
-            await User.filter(id=user.id).update(course_info=user.course_info)
-            print("Изменения успешно сохранены в базе данных.")
-        except Exception as e:
-            print("Ошибка при сохранении в базе данных:", e)
-
-        return jsonify(response)
+            return jsonify(response)
 
     session['conversation'] = []  
     

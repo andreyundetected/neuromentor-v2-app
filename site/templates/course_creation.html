@@ -677,88 +677,107 @@
     resizeCanvas();
     animate();
   </script>
-  
   <script>
-    // Извлекаем имя пользователя из мета-тега, переданного сервером
-    const username = document.querySelector('meta[name="username"]').getAttribute('content') || 'User';
+    async function handleGenerationPolling(payload) {
+  // Показать сообщение ожидания
+  const waitMsg = (lang === "ru")
+    ? "Генерация структуры курса займет 2–3 минуты. Пожалуйста, не закрывайте страницу."
+    : "The course structure will take 2–3 minutes to generate. Please don’t close the page.";
+  addMessage("manager", waitMsg);
 
-    // Функция генерации цвета для аватарки на основе имени
-    function getUserAvatarColor(name) {
-      const colors = ['#FF5733', '#33B5FF', '#FF33F6', '#33FF57', '#FFBD33'];
-      let hash = 0;
-      for (let i = 0; i < name.length; i++) {
-        hash = name.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      const index = Math.abs(hash) % colors.length;
-      return colors[index];
+  // Отправляем повторный POST с set_status
+  const formData = new FormData();
+  formData.append("conversation", ""); // пустое сообщение
+  payload["0_content"]["set_status"] = payload.status;
+  formData.append("status_payload", JSON.stringify(payload));
+
+  try {
+    const response = await fetch(form.action, {
+      method: "POST",
+      body: formData
+    });
+    const data = await response.json();
+
+    // Выводим результат генерации
+    if (data.response) {
+      addMessage("manager", data.response);
     }
-    const userAvatarColor = getUserAvatarColor(username);
 
-    // Устанавливаем аватарку в header
-    const accountAvatar = document.querySelector('.account-avatar');
-    accountAvatar.style.backgroundColor = userAvatarColor;
-    accountAvatar.textContent = username.charAt(0).toUpperCase();
+    // Обновляем структуру, прогресс и пр.
+    if (data.course_info && data.course_info["4_structure"]) {
+      // вызвать твой отрисовщик структуры
+      renderStructure(data.course_info["4_structure"], data.course_info["3_name"]);
+    }
 
+    if (data.progress !== undefined) {
+      document.querySelector('.progress-bar').style.width = data.progress + '%';
+      document.querySelector('.progress-text').textContent = data.progress + '%';
+    }
+
+  } catch (e) {
+    console.error("Ошибка в handleGenerationPolling:", e);
+  }
+}
+
+  </script>
+<script>
+    const lang = document.getElementById('lang-text')?.textContent.trim().toLowerCase() || 'ru';
+    const username = document.querySelector('meta[name="username"]').getAttribute('content') || 'User';
+  
+    let userInfo = {{ user.user_info | tojson | safe }};
+    let currentCourse = {{ user.course_info[course_idx]["course"] | tojson | safe }};
+    let conversation = {{ session.get("conversation", []) | tojson | safe }};
+  
     const form = document.getElementById('course-creation-form');
     const messages = document.getElementById('messages');
     const textarea = document.getElementById('conversation');
     const overlay = document.getElementById('overlay');
     const userInfoElement = document.getElementById('user-info');
-
-    // Создаём аватарку пользователя для сообщений (обёрнутую в ссылку на /account)
+  
     function createUserAvatar() {
       const link = document.createElement('a');
       link.href = '/account';
       link.title = 'Профиль';
       const avatar = document.createElement('div');
       avatar.classList.add('avatar');
-      avatar.style.backgroundColor = userAvatarColor;
+      avatar.style.backgroundColor = '#33B5FF';
       avatar.textContent = username.charAt(0).toUpperCase();
       link.appendChild(avatar);
       return link;
     }
-
-    // Создаём аватарку менеджера для сообщений
+  
     function createManagerAvatar() {
       const avatar = document.createElement('div');
       avatar.classList.add('avatar');
       avatar.innerHTML = '<img src="https://img.icons8.com/color/48/000000/administrator-male.png" alt="Manager" style="width:100%;height:100%;border-radius:50%;">';
       return avatar;
     }
-
-    // Функция добавления нового сообщения с обновлённой структурой
+  
     function addMessage(sender, messageText) {
       const messageElem = document.createElement('div');
       messageElem.classList.add('message', sender);
-
-      let avatar;
-      let senderLabel = '';
-      if (sender === 'user') {
-        avatar = createUserAvatar();
-        senderLabel = username;
-      } else if (sender === 'manager') {
-        avatar = createManagerAvatar();
-        senderLabel = 'Manager';
-      }
-
+  
+      const avatar = sender === 'user' ? createUserAvatar() : createManagerAvatar();
+      const senderLabel = sender === 'user' ? username : 'Manager';
+  
       const content = document.createElement('div');
       content.classList.add('content');
-
+  
       const senderHeader = document.createElement('div');
       senderHeader.classList.add('sender-name');
       senderHeader.textContent = senderLabel;
-
+  
       const separator = document.createElement('div');
       separator.classList.add('separator');
-
+  
       const messageBody = document.createElement('div');
       messageBody.classList.add('message-text');
       messageBody.textContent = messageText;
-
+  
       content.appendChild(senderHeader);
       content.appendChild(separator);
       content.appendChild(messageBody);
-
+  
       if (sender === 'user') {
         messageElem.appendChild(content);
         messageElem.appendChild(avatar);
@@ -769,90 +788,143 @@
       messages.appendChild(messageElem);
       messages.scrollTop = messages.scrollHeight;
     }
-
-    // Обработка отправки формы
+  
+    async function handleGenerationPolling(payload) {
+      const waitMsg = (lang === "ru")
+        ? "Генерация структуры курса займет 2–3 минуты. Пожалуйста, не закрывайте страницу."
+        : "The course structure will take 2–3 minutes to generate. Please don’t close the page.";
+      
+      addMessage("manager", waitMsg);
+      conversation.push({ role: "manager", content: waitMsg });
+  
+      const formData = new FormData();
+      formData.append("conversation", ""); // пустое сообщение
+      payload["0_content"]["set_status"] = payload.status;
+      formData.append("status_payload", JSON.stringify(payload));
+  
+      await new Promise(resolve => setTimeout(resolve, 500)); // защита от гонки
+  
+      try {
+        const response = await fetch(form.action, {
+          method: "POST",
+          body: formData
+        });
+        const data = await response.json();
+  
+        if (data.response) {
+          addMessage("manager", data.response);
+          conversation.push({ role: "manager", content: data.response });
+        }
+  
+        if (data.course_info && data.course_info["4_structure"]) {
+          renderStructure(data.course_info["4_structure"], data.course_info["3_name"]);
+        }
+  
+        if (data.progress !== undefined) {
+          document.querySelector('.progress-bar').style.width = data.progress + '%';
+          document.querySelector('.progress-text').textContent = data.progress + '%';
+        }
+  
+        if (data.status === '<END>') {
+          textarea.disabled = true;
+          form.querySelector('.button').disabled = true;
+          overlay.style.display = 'flex';
+        }
+  
+      } catch (e) {
+        console.error("Ошибка в handleGenerationPolling:", e);
+      }
+    }
+  
+    function renderStructure(structure, courseName) {
+      const container = document.getElementById('structure-container');
+      if (!container) return;
+  
+      container.innerHTML = `<h2 style="font-size: 18px; margin-bottom: 12px; color: #007bff; text-align: center;">${courseName || "Курс"}</h2>`;
+  
+      if (!Array.isArray(structure) || structure.length === 0) {
+        container.innerHTML += "<div style='text-align:center; color:#777;'>Структура пока пуста</div>";
+        return;
+      }
+  
+      structure.forEach((theme, index) => {
+        const themeDiv = document.createElement('div');
+        themeDiv.className = 'theme-block';
+  
+        const themeTitle = document.createElement('h3');
+        themeTitle.textContent = `${index + 1}. ${theme["0_topic"] || "Тема"}`;
+        themeDiv.appendChild(themeTitle);
+  
+        const ul = document.createElement('ul');
+        (theme["3_lessons"] || []).forEach((lesson, i) => {
+          const li = document.createElement('li');
+          li.textContent = `${i + 1}. ${lesson.name || "Урок"}`;
+          ul.appendChild(li);
+        });
+  
+        themeDiv.appendChild(ul);
+        container.appendChild(themeDiv);
+      });
+    }
+  
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const userMessage = textarea.value.trim();
       if (!userMessage) return;
-
+  
       addMessage('user', userMessage);
+      conversation.push({ role: "user", content: userMessage });
       textarea.value = '';
       textarea.style.height = 'auto';
-
+  
       const formData = new FormData();
       formData.append('conversation', userMessage);
-
+  
       try {
         const response = await fetch(form.action, {
-            method: 'POST',
-            body: formData,
+          method: 'POST',
+          body: formData,
         });
         const data = await response.json();
-
-        addMessage('manager', data.response);
-        if (data.course_info && data.course_info["3_name"]) {
-            const newCourseName = data.course_info["3_name"];
-            const titleElem = document.querySelector('.course-title');
-            if (titleElem) {
-                // Плавно скрываем старое название
-                titleElem.style.transition = "opacity 0.5s";
-                titleElem.style.opacity = 0;
-                // Через 500 мс обновляем текст и плавно показываем
-                setTimeout(() => {
-                titleElem.textContent = newCourseName;
-                titleElem.style.opacity = 1;
-                }, 500);
-            }
-            }
-            // Проверка и отображение структуры, если она появилась
+  
+        if (data.status && data.status.includes("<GENERATION>")) {
+          await handleGenerationPolling({
+            "0_content": {
+              "0_conversation": [...conversation],
+              "1_user_info": userInfo,
+              "2_course_info": currentCourse
+            },
+            "1_type": "course_creation",
+            "status": data.status
+          });
+          return;
+        }
+  
+        if (data.response) {
+          addMessage('manager', data.response);
+          conversation.push({ role: "manager", content: data.response });
+        }
+  
         if (data.course_info && data.course_info["4_structure"]) {
-            const structure = data.course_info["4_structure"];
-            const container = document.getElementById('structure-container');
-            if (container) {
-                container.innerHTML = ''; // очистить старое
-                structure.forEach((theme, index) => {
-                    const themeDiv = document.createElement('div');
-                    themeDiv.className = 'theme-block';
-                    const themeTitle = document.createElement('h3');
-                    themeTitle.textContent = `${index + 1}. ${theme["0_topic"] || "Тема"}`;
-                    themeDiv.appendChild(themeTitle);
-
-                    const ul = document.createElement('ul');
-                    (theme["3_lessons"] || []).forEach((lesson, i) => {
-                        const li = document.createElement('li');
-                        li.textContent = `${i + 1}. ${lesson.name || "Урок"}`;
-                        ul.appendChild(li);
-                    });
-
-                    themeDiv.appendChild(ul);
-                    container.appendChild(themeDiv);
-                });
-            }
+          renderStructure(data.course_info["4_structure"], data.course_info["3_name"]);
         }
-        // Обновление прогресс-бара, если API возвращает progress (число от 0 до 100)
+  
         if (data.progress !== undefined) {
-          const progressValue = parseFloat(data.progress);
-          document.querySelector('.progress-bar').style.width = progressValue + '%';
-          document.querySelector('.progress-text').textContent = progressValue.toFixed(0) + '%';
+          document.querySelector('.progress-bar').style.width = data.progress + '%';
+          document.querySelector('.progress-text').textContent = data.progress + '%';
         }
-
-        // Если создание курса завершено
+  
         if (data.status === '<END>') {
           textarea.disabled = true;
           form.querySelector('.button').disabled = true;
-          const userInfo = data.user_info || {};
-          let userInfoHtml = '<ul>';
-          userInfoHtml += '</ul>';
-          userInfoElement.innerHTML += userInfoHtml;
           overlay.style.display = 'flex';
         }
+  
       } catch (error) {
         console.error('Ошибка отправки:', error);
       }
     });
-
-    // Отправка формы по нажатию Enter (без Shift)
+  
     textarea.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -860,5 +932,6 @@
       }
     });
   </script>
+  
 </body>
 </html>
