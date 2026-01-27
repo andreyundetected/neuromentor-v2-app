@@ -542,6 +542,46 @@ async def course_creation(user_id, course_idx):
             "1_type": "course_creation"
         }
         response = await send_request_to_api(payload)
+        import asyncio
+        if "<GENERATION>" in response.get("status"):
+            lang = session.get("language", "ru")
+            wait_message = {
+                "ru": "Генерация структуры курса займет 2–3 минуты. Пожалуйста, не закрывайте страницу. Я сообщу, когда всё будет готово.",
+                "en": "The course structure will take 2–3 minutes to generate. Please don’t close the page — I’ll let you know once it’s ready."
+            }[lang]
+
+            conversation.append({"role": "manager", "content": wait_message})
+            session['conversation'] = conversation
+
+            async def continue_generation(user_id, course_idx, conversation, course_info, status):
+                user = await User.get(id=user_id)
+                payload = {
+                    "0_content": {
+                        "0_conversation": conversation,
+                        "1_user_info": user.user_info,
+                        "2_course_info": course_info,
+                        "set_status": status
+                    },
+                    "1_type": "course_creation"
+                }
+                result = await send_request_to_api(payload)
+
+                if "course_info" in result:
+                    user.course_info[course_idx]["course"] = result["course_info"]
+                    await User.filter(id=user.id).update(course_info=user.course_info)
+
+                final_response = result.get("response")
+                if final_response:
+                    conv = session.get('conversation', [])
+                    conv.append({"role": "manager", "content": final_response})
+                    session['conversation'] = conv
+
+            asyncio.create_task(continue_generation(user.id, course_idx, conversation.copy(), course_info.copy(), response["status"]))
+
+            return jsonify({
+                "response": wait_message,
+                "status": "<GENERATION>"
+            })
 
         if "<END>" in response.get("status"):
             first_lesson = user.course_info[course_idx]["course"]["4_structure"][0]["3_lessons"][0]["name"]
