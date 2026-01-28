@@ -972,6 +972,7 @@ async def lesson_call(user_id, course_idx):
     conversation_call = session.get('conversation_call', [])
     conversation = session.get('conversation', [])
     lesson_plan = session.get('lesson_plan', "")
+    lesson_blocks = session.get('lesson_blocks', [])
     presentation_history = session.get('presentation_history', "")
     progress = session.get('progress', 0)
 
@@ -1052,6 +1053,7 @@ async def lesson_call(user_id, course_idx):
 
             response_api = await send_request_to_api(payload)
             lesson_plan = response_api.get("lesson_plan", "")
+            lesson_blocks = response_api.get("lesson_blocks", "")
             print("[LESSON_CALL] API lesson_plan response:", response_api)
 
         payload = {
@@ -1065,6 +1067,7 @@ async def lesson_call(user_id, course_idx):
                 "4_progress": progress,
                 "5_presentation_history": presentation_history,
                 "6_lesson_plan": lesson_plan,
+                "6_lesson_blocks": lesson_blocks,
                 "7_mode": response_mode,
             },
             "1_type": "lesson_call"
@@ -1081,16 +1084,17 @@ async def lesson_call(user_id, course_idx):
         presentation_code = response_api.get("presentation_code", "")
         new_progress = response_api.get("progress")
         presentation_image = response_api.get("presentation_image")
+        lesson_block_tag = response_api.get("lesson_block_tag")
 
         if response_chat:
             if re.sub(r"[^a-zA-Zа-яА-Я]", "", response_chat).lower() == "none":
                 response_chat = None
-            conversation_chat.append({"role": f"teacher CHAT {response_type}", "content": response_chat})
-            conversation.append({"type": f"CHAT {response_type}", "role": "teacher", "content": response_chat})
+            conversation_chat.append({"role": f"teacher CHAT {response_type}", "content": response_chat, "block_tag": lesson_block_tag})
+            conversation.append({"type": f"CHAT {response_type}", "role": "teacher", "content": response_chat, "block_tag": lesson_block_tag})
 
         if response_call_transcription:
-            conversation_call.append({"role": f"teacher VOICE {response_type}", "content": response_call_transcription})
-            conversation.append({"type": f"AUDIO TRANSCRIPTION {response_type}", "role": "teacher", "content": response_call_transcription})
+            conversation_call.append({"role": f"teacher VOICE {response_type}", "content": response_call_transcription, "block_tag": lesson_block_tag})
+            conversation.append({"type": f"AUDIO TRANSCRIPTION {response_type}", "role": "teacher", "content": response_call_transcription, "block_tag": lesson_block_tag})
 
         if presentation_code:
             presentation_history += (presentation_code + "\n\n")
@@ -1106,6 +1110,7 @@ async def lesson_call(user_id, course_idx):
         session['conversation'] = conversation
         session['progress'] = progress
         session['lesson_plan'] = lesson_plan
+        session['lesson_blocks'] = lesson_blocks
 
         response_data = {
             "response_chat": response_chat,               
@@ -1122,6 +1127,7 @@ async def lesson_call(user_id, course_idx):
     session['conversation_chat'] = []
     session['conversation_call'] = []
     session['conversation'] = []
+    session['lesson_blocks'] = []
     session['lesson_plan'] = ""
     session['progress'] = 0
     lesson_title = user.course_info[course_idx]["course_settings"].get("lesson", "")
