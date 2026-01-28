@@ -677,49 +677,6 @@
     resizeCanvas();
     animate();
   </script>
-  <script>
-    async function handleGenerationPolling(payload) {
-  // Показать сообщение ожидания
-  const waitMsg = (lang === "ru")
-    ? "Генерация структуры курса займет 2–3 минуты. Пожалуйста, не закрывайте страницу."
-    : "The course structure will take 2–3 minutes to generate. Please don’t close the page.";
-  addMessage("manager", waitMsg);
-
-  // Отправляем повторный POST с set_status
-  const formData = new FormData();
-  formData.append("conversation", ""); // пустое сообщение
-  payload["0_content"]["set_status"] = payload.status;
-  formData.append("status_payload", JSON.stringify(payload));
-
-  try {
-    const response = await fetch(form.action, {
-      method: "POST",
-      body: formData
-    });
-    const data = await response.json();
-
-    // Выводим результат генерации
-    if (data.response) {
-      addMessage("manager", data.response);
-    }
-
-    // Обновляем структуру, прогресс и пр.
-    if (data.course_info && data.course_info["4_structure"]) {
-      // вызвать твой отрисовщик структуры
-      renderStructure(data.course_info["4_structure"], data.course_info["3_name"]);
-    }
-
-    if (data.progress !== undefined) {
-      document.querySelector('.progress-bar').style.width = data.progress + '%';
-      document.querySelector('.progress-text').textContent = data.progress + '%';
-    }
-
-  } catch (e) {
-    console.error("Ошибка в handleGenerationPolling:", e);
-  }
-}
-
-  </script>
 <script>
     const lang = document.getElementById('lang-text')?.textContent.trim().toLowerCase() || 'ru';
     const username = document.querySelector('meta[name="username"]').getAttribute('content') || 'User';
@@ -790,51 +747,55 @@
     }
   
     async function handleGenerationPolling(payload) {
-      const waitMsg = (lang === "ru")
-        ? "Генерация структуры курса займет 2–3 минуты. Пожалуйста, не закрывайте страницу."
-        : "The course structure will take 2–3 minutes to generate. Please don’t close the page.";
-      
-      addMessage("manager", waitMsg);
-      conversation.push({ role: "manager", content: waitMsg });
-  
-      const formData = new FormData();
-      formData.append("conversation", ""); // пустое сообщение
-      payload["0_content"]["set_status"] = payload.status;
-      formData.append("status_payload", JSON.stringify(payload));
-  
-      await new Promise(resolve => setTimeout(resolve, 500)); // защита от гонки
-  
-      try {
-        const response = await fetch(form.action, {
-          method: "POST",
-          body: formData
-        });
-        const data = await response.json();
-  
-        if (data.response) {
-          addMessage("manager", data.response);
-          conversation.push({ role: "manager", content: data.response });
-        }
-  
-        if (data.course_info && data.course_info["4_structure"]) {
-          renderStructure(data.course_info["4_structure"], data.course_info["3_name"]);
-        }
-  
-        if (data.progress !== undefined) {
-          document.querySelector('.progress-bar').style.width = data.progress + '%';
-          document.querySelector('.progress-text').textContent = data.progress + '%';
-        }
-  
-        if (data.status === '<END>') {
-          textarea.disabled = true;
-          form.querySelector('.button').disabled = true;
-          overlay.style.display = 'flex';
-        }
-  
-      } catch (e) {
-        console.error("Ошибка в handleGenerationPolling:", e);
-      }
+  const formData = new FormData();
+  formData.append("conversation", ""); // пустое сообщение
+  payload["0_content"]["set_status"] = payload.status;
+  formData.append("status_payload", JSON.stringify(payload));
+
+  await new Promise(resolve => setTimeout(resolve, 300)); // анти-гонка
+
+  try {
+    const response = await fetch(form.action, {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await response.json();
+
+    // 💾 обновляем курс, если надо
+    if (data.course_info) {
+      currentCourse = data.course_info;
     }
+
+    // выводим ответ
+    if (data.response) {
+      addMessage("manager", data.response);
+      conversation.push({ role: "manager", content: data.response });
+    }
+
+    // рендерим структуру
+    if (data.course_info && data.course_info["4_structure"]) {
+      renderStructure(data.course_info["4_structure"], data.course_info["3_name"]);
+    }
+
+    // обновляем прогресс
+    if (data.progress !== undefined) {
+      document.querySelector('.progress-bar').style.width = data.progress + '%';
+      document.querySelector('.progress-text').textContent = data.progress + '%';
+    }
+
+    // если всё завершено
+    if (data.status === '<END>') {
+      textarea.disabled = true;
+      form.querySelector('.button').disabled = true;
+      overlay.style.display = 'flex';
+    }
+
+  } catch (e) {
+    console.error("Ошибка в handleGenerationPolling:", e);
+  }
+}
+
   
     function renderStructure(structure, courseName) {
       const container = document.getElementById('structure-container');
@@ -912,12 +873,6 @@
             "status": data.status
             });
             return;
-        }
-  
-        if (data.status === '<END>') {
-          textarea.disabled = true;
-          form.querySelector('.button').disabled = true;
-          overlay.style.display = 'flex';
         }
   
       } catch (error) {

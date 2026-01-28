@@ -970,11 +970,28 @@ async def lesson_call(user_id, course_idx):
 
     conversation_chat = session.get('conversation_chat', [])
     conversation_call = session.get('conversation_call', [])
+    conversation = session.get('conversation', [])
     lesson_plan = session.get('lesson_plan', "")
     presentation_history = session.get('presentation_history', "")
     progress = session.get('progress', 0)
 
     if request.method == 'POST':
+
+        form = await request.form
+        files = await request.files
+        
+        print("[DEBUG] Full POST form:")
+        for key, value in form.items():
+            print(f"    {key} = {value}")
+
+        print("[DEBUG] POST files:")
+        for key, file in files.items():
+            print(f"    {key} = {file.filename}, content_type: {file.content_type}, size: {len(file.read())} bytes")
+            file.seek(0)  
+
+        print("[DEBUG] Field 'conversation':", form.get("conversation"))
+        print("[DEBUG] Field 'response_mode':", form.get("response_mode"))
+
         form = await request.form
         response_mode = form.get("response_mode", "audio")
         
@@ -982,6 +999,7 @@ async def lesson_call(user_id, course_idx):
         if conversation_text:
             
             conversation_chat.append({"role": "user", "content": conversation_text})
+            conversation.append({"type": "CHAT", "role": "user", "content": conversation_text})
         import io
         from pydub import AudioSegment
         import os
@@ -1006,6 +1024,7 @@ async def lesson_call(user_id, course_idx):
                 os.remove(temp_audio_path)
                 print("[LESSON_CALL] Transcription:", transcript_result)
                 conversation_call.append({"role": "user VOICE", "content": transcript_result})
+                conversation.append({"type": "AUDIO TRANSCRIPTION", "role": "user", "content": transcript_result})
             except Exception as e:
                 print("[LESSON_CALL] Error transcribing audio:", e)
 
@@ -1039,6 +1058,7 @@ async def lesson_call(user_id, course_idx):
             "0_content": {
                 "0_conversation_chat": conversation_chat,   
                 "0_conversation_call": conversation_call,   
+                "0_conversation": conversation,   
                 "1_user_info": user.user_info,
                 "2_course_info": user.course_info[course_idx]["course"],
                 "3_lesson_topic": lesson_topic,
@@ -1066,9 +1086,11 @@ async def lesson_call(user_id, course_idx):
             if re.sub(r"[^a-zA-Zа-яА-Я]", "", response_chat).lower() == "none":
                 response_chat = None
             conversation_chat.append({"role": f"teacher CHAT {response_type}", "content": response_chat})
+            conversation.append({"type": f"CHAT {response_type}", "role": "teacher", "content": response_chat})
 
         if response_call_transcription:
             conversation_call.append({"role": f"teacher VOICE {response_type}", "content": response_call_transcription})
+            conversation.append({"type": f"AUDIO TRANSCRIPTION {response_type}", "role": "teacher", "content": response_call_transcription})
 
         if presentation_code:
             presentation_history += (presentation_code + "\n\n")
@@ -1081,6 +1103,7 @@ async def lesson_call(user_id, course_idx):
 
         session['conversation_chat'] = conversation_chat
         session['conversation_call'] = conversation_call
+        session['conversation'] = conversation
         session['progress'] = progress
         session['lesson_plan'] = lesson_plan
 
@@ -1094,13 +1117,12 @@ async def lesson_call(user_id, course_idx):
             "progress": progress,
             "presentation_image": presentation_image
         }
-        print("==========")
-        print(conversation_call)
-        print(conversation_chat)
         return jsonify(response_data)
 
     session['conversation_chat'] = []
     session['conversation_call'] = []
+    session['conversation'] = []
+    session['lesson_plan'] = ""
     session['progress'] = 0
     lesson_title = user.course_info[course_idx]["course_settings"].get("lesson", "")
     return await render_template(

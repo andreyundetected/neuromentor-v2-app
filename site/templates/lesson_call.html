@@ -833,9 +833,10 @@ input:checked + .slider:before {
           const userMessage = textarea.value.trim();
           if (!userMessage) return;
           addMessage('user', userMessage);
+          const formData = new FormData(form);
+          formData.set("conversation", userMessage); 
           textarea.value = '';
           formData.append("response_mode", responseMode);
-          const formData = new FormData(form);
           try {
             const response_chat = await fetch(form.action, { method: 'POST', body: formData });
             const data = await response_chat.json();
@@ -854,8 +855,9 @@ input:checked + .slider:before {
               addTranscriptLine({ role: 'teacher_voice', content: data.response_call_transcription });
             }
             if (data.presentation_image) {
+            console.log("[img base64]", data.presentation_image);
             const presentationImage = document.getElementById('presentationImage');
-            presentationImage.src = `data:image/png;base64,${data.presentation_image}`;
+            presentationImage.src = data.presentation_image;
         
             presentationImage.onload = function() { // Вызываем resizeImage после загрузки изображения
                 const presentationZone = document.getElementById('presentationZone');
@@ -947,10 +949,11 @@ input:checked + .slider:before {
                 addTranscriptLine({ role: 'teacher_voice', content: data.response_call_transcription });
               }
               if (data.presentation_image) {
-            const presentationImage = document.getElementById('presentationImage');
-            presentationImage.src = `data:image/png;base64,${data.presentation_image}`;
-        
-            presentationImage.onload = function() { // Вызываем resizeImage после загрузки изображения
+                console.log("[img base64]", data.presentation_image);
+                const presentationImage = document.getElementById('presentationImage');
+                presentationImage.src = data.presentation_image;
+            
+                presentationImage.onload = function() { // Вызываем resizeImage после загрузки изображения
                 const presentationZone = document.getElementById('presentationZone');
                 const p_x = presentationZone.offsetWidth;
                 const p_y = presentationZone.offsetHeight;
