@@ -608,7 +608,17 @@ async def course_creation(user_id, course_idx):
             return jsonify(response)
 
     session['conversation'] = []  
-    
+    if not user.course_info:
+        user.course_info = []
+
+    while len(user.course_info) <= course_idx:
+        user.course_info.append({
+            "course": await get_empty_course_info(),
+            "course_settings": {}
+        })
+
+    await User.filter(id=user.id).update(course_info=user.course_info)
+
     try:
         course_name = user.course_info[course_idx]["course"]["3_name"]
     except:

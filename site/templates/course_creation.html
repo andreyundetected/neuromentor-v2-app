@@ -887,19 +887,6 @@
         });
         const data = await response.json();
   
-        if (data.status && data.status.includes("<GENERATION>")) {
-          await handleGenerationPolling({
-            "0_content": {
-              "0_conversation": [...conversation],
-              "1_user_info": userInfo,
-              "2_course_info": currentCourse
-            },
-            "1_type": "course_creation",
-            "status": data.status
-          });
-          return;
-        }
-  
         if (data.response) {
           addMessage('manager', data.response);
           conversation.push({ role: "manager", content: data.response });
@@ -912,6 +899,19 @@
         if (data.progress !== undefined) {
           document.querySelector('.progress-bar').style.width = data.progress + '%';
           document.querySelector('.progress-text').textContent = data.progress + '%';
+        }
+  
+        if (data.status && data.status.includes("<GENERATION>")) {
+            await handleGenerationPolling({
+            "0_content": {
+                "0_conversation": [...conversation],
+                "1_user_info": userInfo,
+                "2_course_info": currentCourse
+            },
+            "1_type": "course_creation",
+            "status": data.status
+            });
+            return;
         }
   
         if (data.status === '<END>') {
@@ -932,6 +932,26 @@
       }
     });
   </script>
-  
+  <script>
+    function getUserAvatarColor(name) {
+  const colors = ['#FF5733', '#33B5FF', '#FF33F6', '#33FF57', '#FFBD33'];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+}
+
+const userAvatarColor = getUserAvatarColor(username);
+
+// Устанавливаем аватарку в header
+const accountAvatar = document.querySelector('.account-avatar');
+if (accountAvatar) {
+  accountAvatar.style.backgroundColor = userAvatarColor;
+  accountAvatar.textContent = username.charAt(0).toUpperCase();
+}
+
+  </script>
 </body>
 </html>
