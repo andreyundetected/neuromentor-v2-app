@@ -796,6 +796,7 @@
   }
 }
 
+
   
     function renderStructure(structure, courseName) {
       const container = document.getElementById('structure-container');
@@ -847,7 +848,9 @@
           body: formData,
         });
         const data = await response.json();
-  
+        if (data.course_info && data.course_info["3_name"]) {
+            document.querySelector('.course-title').textContent = data.course_info["3_name"];
+        }
         if (data.response) {
           addMessage('manager', data.response);
           conversation.push({ role: "manager", content: data.response });
@@ -874,7 +877,11 @@
             });
             return;
         }
-  
+        if (data.status && data.status.includes("<END>")) {
+          textarea.disabled = true;
+          form.querySelector('.button').disabled = true;
+          overlay.style.display = 'flex';
+        }
       } catch (error) {
         console.error('Ошибка отправки:', error);
       }
