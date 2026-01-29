@@ -971,8 +971,16 @@ async def lesson_call(user_id, course_idx):
     conversation_chat = session.get('conversation_chat', [])
     conversation_call = session.get('conversation_call', [])
     conversation = session.get('conversation', [])
+    
+    with open("conversation_chat.json", "r", encoding="utf-8") as f:
+        conversation_chat = json.load(f)
+    with open("conversation_call.json", "r", encoding="utf-8") as f:
+        conversation_call = json.load(f)
+    with open("conversation.json", "r", encoding="utf-8") as f:
+        conversation = json.load(f)
+    
     lesson_plan = session.get('lesson_plan', "")
-    lesson_blocks = session.get('lesson_blocks', [])
+    lesson_blocks = session.get('lesson_plan', "").split("<BLOCKS>")[-1].split("</BLOCKS>")[0].split("</block>")
     presentation_history = session.get('presentation_history', "")
     progress = session.get('progress', 0)
 
@@ -1053,7 +1061,7 @@ async def lesson_call(user_id, course_idx):
 
             response_api = await send_request_to_api(payload)
             lesson_plan = response_api.get("lesson_plan", "")
-            lesson_blocks = response_api.get("lesson_blocks", "")
+            lesson_blocks = response_api.get("lesson_plan", "").split("<BLOCKS>")[-1].split("</BLOCKS>")[0].split("</block>")
             print("[LESSON_CALL] API lesson_plan response:", response_api)
 
         payload = {
@@ -1081,24 +1089,24 @@ async def lesson_call(user_id, course_idx):
         response_call_transcription = response_api.get("response_call_transcription", "")
         response_type = response_api.get("response_type", "")
         status = response_api.get("status", "<OK>")
-        presentation_code = response_api.get("presentation_code", "")
+        presentation_description = response_api.get("presentation_description", "")
         new_progress = response_api.get("progress")
         presentation_image = response_api.get("presentation_image")
-        lesson_block_tag = response_api.get("lesson_block_tag")
+        block_tag = response_api.get("block_tag")
 
         if response_chat:
             if re.sub(r"[^a-zA-Zа-яА-Я]", "", response_chat).lower() == "none":
                 response_chat = None
-            conversation_chat.append({"role": f"teacher CHAT {response_type}", "content": response_chat, "block_tag": lesson_block_tag})
-            conversation.append({"type": f"CHAT {response_type}", "role": "teacher", "content": response_chat, "block_tag": lesson_block_tag})
+            conversation_chat.append({"role": f"teacher CHAT {response_type}", "content": response_chat, "block_tag": block_tag})
+            conversation.append({"type": f"CHAT {response_type}", "role": "teacher", "content": response_chat, "block_tag": block_tag})
 
         if response_call_transcription:
-            conversation_call.append({"role": f"teacher VOICE {response_type}", "content": response_call_transcription, "block_tag": lesson_block_tag})
-            conversation.append({"type": f"AUDIO TRANSCRIPTION {response_type}", "role": "teacher", "content": response_call_transcription, "block_tag": lesson_block_tag})
+            conversation_call.append({"role": f"teacher VOICE {response_type}", "content": response_call_transcription, "block_tag": block_tag})
+            conversation.append({"type": f"AUDIO TRANSCRIPTION {response_type}", "role": "teacher", "content": response_call_transcription, "block_tag": block_tag})
 
-        if presentation_code:
-            presentation_history += (presentation_code + "\n\n")
-
+        if presentation_description:
+            presentation_history += (presentation_description + "\n\n")
+        
         if new_progress is not None:
             progress = float(new_progress)
 
@@ -1110,8 +1118,15 @@ async def lesson_call(user_id, course_idx):
         session['conversation'] = conversation
         session['progress'] = progress
         session['lesson_plan'] = lesson_plan
-        session['lesson_blocks'] = lesson_blocks
-
+        session['presentation_history'] = presentation_history
+    
+        with open("conversation_chat.json", "w", encoding="utf-8") as f:
+            json.dump(conversation_chat, f, ensure_ascii=False, indent=2)
+        with open("conversation_call.json", "w", encoding="utf-8") as f:
+            json.dump(conversation_call, f, ensure_ascii=False, indent=2)
+        with open("conversation.json", "w", encoding="utf-8") as f:
+            json.dump(conversation, f, ensure_ascii=False, indent=2)
+    
         response_data = {
             "response_chat": response_chat,               
             "response_call": response_call,        
@@ -1127,10 +1142,18 @@ async def lesson_call(user_id, course_idx):
     session['conversation_chat'] = []
     session['conversation_call'] = []
     session['conversation'] = []
-    session['lesson_blocks'] = []
+    
+    with open("conversation_chat.json", "w", encoding="utf-8") as f:
+        json.dump([], f, ensure_ascii=False, indent=2)
+    with open("conversation_call.json", "w", encoding="utf-8") as f:
+        json.dump([], f, ensure_ascii=False, indent=2)
+    with open("conversation.json", "w", encoding="utf-8") as f:
+        json.dump([], f, ensure_ascii=False, indent=2)
+    
     session['lesson_plan'] = ""
     session['progress'] = 0
     lesson_title = user.course_info[course_idx]["course_settings"].get("lesson", "")
+    print("ПРОИЗОШЕЛ ЖЕСТКИЙ GET СУЧКИ")
     return await render_template(
         'lesson_call.html',
         user=user,
