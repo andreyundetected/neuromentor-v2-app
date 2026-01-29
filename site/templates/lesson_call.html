@@ -214,6 +214,11 @@
       transition: background-color 0.3s, transform 0.2s;
     }
     .button:hover { background-color: #0056b3; transform: scale(1.02); }
+    .button:disabled {
+    background: #999;          /* серый фон */
+    cursor: not-allowed;
+    color: #eee;
+    }
 
     /* Модальное окно (если нужно) */
     .overlay {
@@ -829,10 +834,19 @@ input:checked + .slider:before {
         const overlay = document.getElementById('overlay');
       
         form.addEventListener('submit', async (e) => {
+          if (micLocked || chatLocked) return;
           e.preventDefault();
           const userMessage = textarea.value.trim();
           if (!userMessage) return;
           addMessage('user', userMessage);
+          // БЛОКИРУЕМ всё до ответа учителя
+          chatLocked  = true;
+          micLocked   = true;
+          form.querySelector('.button').disabled = true;
+          micButton.disabled = true;
+          micButton.style.backgroundColor = "#999";
+          micButton.style.cursor         = "not-allowed";
+
           const formData = new FormData(form);
           formData.set("conversation", userMessage); 
           textarea.value = '';
@@ -879,12 +893,19 @@ input:checked + .slider:before {
               form.querySelector('.button').disabled = true;
               overlay.style.display = 'flex';
             }
+            unlockMicButton();  
           } catch (err) {
             console.error("[TEXT] error:", err);
+            unlockMicButton();
           }
         });
       
         textarea.addEventListener('keydown', (e) => {
+          if (chatLocked) {              // 🚫 чат заблокирован — ничего не отправляем
+            e.preventDefault();
+            return;
+          }
+
           if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             form.requestSubmit();
@@ -897,9 +918,10 @@ input:checked + .slider:before {
         let mediaRecorder;
         let audioChunks = [];
         const micButton = document.getElementById("micButton");
-      
         micButton.addEventListener("mousedown", async function() {
-          micButton.classList.add("active");
+          micButton.style.backgroundColor = "";   // ⬅ сбрасываем красный inline
+          micButton.classList.add("active");       // фон снова управляет класс .active
+
           try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             console.log("Supported MIME types:",
@@ -917,12 +939,22 @@ input:checked + .slider:before {
             });
           } catch (err) {
             console.error("[MIC] Error accessing microphone:", err);
+            unlockMicButton();
           }
         });
       
         micButton.addEventListener("mouseup", function() {
           micButton.classList.remove("active");
           if (!mediaRecorder) return;
+          // БББ — блокируем всё до ответа учителя или 30 с
+          micLocked = true;
+          chatLocked = true;                      // 🚫 запрет на отправку
+          form.querySelector('.button').disabled = true;
+          micButton.disabled = true;
+          micButton.style.backgroundColor = "#999";
+          micButton.style.cursor = "not-allowed";
+          micUnlockTimeout = setTimeout(unlockMicButton, 30000);
+
           mediaRecorder.stop();
           mediaRecorder.addEventListener('stop', async () => {
             console.log("[MIC] Recorder stopped, sending audio...");
@@ -934,6 +966,9 @@ input:checked + .slider:before {
             try {
               const resp = await fetch(lessonCallUrl, { method: 'POST', body: formData });
               const data = await resp.json();
+              if (micUnlockTimeout) { clearTimeout(micUnlockTimeout); micUnlockTimeout = null; }
+              unlockMicButton();
+
               console.log("[MIC] lesson_call response_chat:", data);
               if (data.response_chat) {
                 addMessage('teacher', data.response_chat);
@@ -975,10 +1010,22 @@ input:checked + .slider:before {
               }
             } catch (err) {
               console.error("[MIC] Error sending audio:", err);
+              if (micUnlockTimeout) { clearTimeout(micUnlockTimeout); micUnlockTimeout = null; }
+              unlockMicButton();
+
             }
           });
         });
+      function unlockMicButton() {
+        micLocked = false;
+        chatLocked = false;                     // ✅ снова можно
+        form.querySelector('.button').disabled = false;
+        micButton.disabled = false;
+        micButton.style.backgroundColor = "";   // вернём стиль к CSS-по-умолчанию
+        micButton.style.cursor = "pointer";
+      }
       </script>
+
       
       <script type="module">
         // 7) Скрипт рендера транскрипций
@@ -1062,6 +1109,11 @@ input:checked + .slider:before {
         // Фоновая анимация фигур (оставляем без изменений)
         const userId = "{{ user.id }}";
         const courseIdx = "{{ course_idx }}";
+        // --- глобальные флаги ---
+        let micLocked = false;      // блок микрофона
+        let chatLocked = false;     // блок отправки чата
+        let micUnlockTimeout = null;
+
         console.log("Global userId:", userId, "courseIdx:", courseIdx);
       
         const canvas = document.getElementById("backgroundCanvas");
