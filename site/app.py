@@ -70,18 +70,7 @@ async def get_empty_course_info():
         "5_categories": []
     }
 
-async def require_login():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    if 'language' not in session:
-        session['language'] = 'ru'
-
-    user = await User.get(id=session['user_id'])
-
-    if not user:
-        return redirect(url_for('login'))
-
-    return user  
+  
 
 @app.route('/')
 async def index():
@@ -93,19 +82,7 @@ async def index():
     return redirect(url_for("login"))
 
 @app.route('/login', methods=['GET', 'POST'])
-async def login():
-    if request.method == 'POST':
-        form = await request.form
-        username = form['username']
-        password = form['password']
-        user = await User.filter(username=username, password=password).first()
-        if user:
-            session['user_id'] = user.id
-            return redirect(url_for('index'))
-        else:
-            return "Неверное имя пользователя или пароль"
 
-    return await render_template('login.html')
 
 async def ensure_db_connection():
     if not connections._get_storage():
@@ -129,9 +106,7 @@ async def register():
     return await render_template('register.html')
 
 @app.route('/logout')
-async def logout():
-    session.pop('user_id', None)
-    return redirect(url_for('index'))
+
 
 @app.route('/api/check_interview_status')
 async def check_interview_status():
