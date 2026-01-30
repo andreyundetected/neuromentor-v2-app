@@ -1,3 +1,4 @@
+from routes import blueprints
 from models import init_db
 from quart import Quart, render_template, request, jsonify, session, Response, redirect, url_for
 from tortoise import Tortoise, fields, connections
@@ -1201,3 +1202,7 @@ async def course_settings(user_id, course_idx):
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 8000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
+
+for bp in blueprints:
+    app.register_blueprint(bp)
