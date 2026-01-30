@@ -1,3 +1,4 @@
+from models import init_db
 from quart import Quart, render_template, request, jsonify, session, Response, redirect, url_for
 from tortoise import Tortoise, fields, connections
 from tortoise.models import Model
@@ -33,16 +34,11 @@ class PublicCourse(Model):
     course_info = fields.JSONField()
     rating = fields.FloatField(default=10.0)
 
-async def init_db():
-    await Tortoise.init(
-        db_url=DATABASE_URL,
-        modules={"models": ["__main__"]}  
-    )
-    await Tortoise.generate_schemas(safe=True)  
+  
 
 @app.before_serving
 async def startup():
-    await init_db()
+    await init_db(DATABASE_URL)
 
 @app.after_serving
 async def shutdown():
