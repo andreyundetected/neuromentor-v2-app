@@ -17,15 +17,7 @@ DATABASE_URL = os.getenv("DATABASE_URL").replace("postgresql://", "postgres://")
 
 NEURO_API_URL = "https://" + os.getenv("NEURO_API-DOMAIN", "") + "/neuro_api"
 
-class User(Model):
-    id = fields.BigIntField(pk=True)
-    username = fields.CharField(max_length=80, unique=True)
-    password = fields.CharField(max_length=120)
-    user_info = fields.JSONField(default={})
-    course_info = fields.JSONField(default=[])
-    has_completed_interview = fields.BooleanField(default=False)
-    recommendations = fields.JSONField(default=[])
-    credits = fields.IntField(default=0)
+
 
 class PublicCourse(Model):
     id = fields.BigIntField(pk=True)
