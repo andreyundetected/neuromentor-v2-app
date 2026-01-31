@@ -82,21 +82,7 @@ async def ensure_db_connection():
         await init_db()
 
 @app.route('/register', methods=['GET', 'POST'])
-async def register():
-    await ensure_db_connection()
-    if request.method == 'POST':
-        form = await request.form
-        username = form['username']
-        password = form['password']
 
-        if await User.filter(username=username).first():
-            return "Пользователь уже существует"
-
-        user = await User.create(username=username, password=password)
-        session['user_id'] = user.id
-        return redirect(url_for('library'))
-
-    return await render_template('register.html')
 
 @app.route('/logout')
 
