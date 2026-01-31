@@ -29,3 +29,22 @@ async def register():
         return redirect(url_for('library'))
 
     return await render_template('register.html')
+
+
+async def login():
+    if request.method == 'POST':
+        form = await request.form
+        username = form['username']
+        password = form['password']
+        user = await User.filter(username=username, password=password).first()
+        if user:
+            session['user_id'] = user.id
+            return redirect(url_for('index'))
+        else:
+            return "Неверное имя пользователя или пароль"
+    return await render_template('login.html')
+
+
+async def logout():
+    session.pop('user_id', None)
+    return redirect(url_for('index'))
