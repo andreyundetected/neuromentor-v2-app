@@ -1,5 +1,3 @@
-from routes import blueprints
-from models import init_db
 from quart import Quart, render_template, request, jsonify, session, Response, redirect, url_for
 from tortoise import Tortoise, fields, connections
 from tortoise.models import Model
@@ -8,16 +6,19 @@ from transcription import transcribe_audio_with_prepare_data
 import aiohttp
 import json
 import os
+from models import init_db
+from routes import blueprints
 from collections import Counter
 
 app = Quart(__name__)
 app.secret_key = 'supersecretkey'
 
+for bp in blueprints:
+    app.register_blueprint(bp)
+
 DATABASE_URL = os.getenv("DATABASE_URL").replace("postgresql://", "postgres://")
 
 NEURO_API_URL = "https://" + os.getenv("NEURO_API-DOMAIN", "") + "/neuro_api"
-
-
 
 class PublicCourse(Model):
     id = fields.BigIntField(pk=True)
@@ -26,8 +27,6 @@ class PublicCourse(Model):
     creator = fields.CharField(max_length=80)
     course_info = fields.JSONField()
     rating = fields.FloatField(default=10.0)
-
-  
 
 @app.before_serving
 async def startup():
@@ -63,8 +62,6 @@ async def get_empty_course_info():
         "5_categories": []
     }
 
-  
-
 @app.route('/')
 async def index():
     if "user_id" in session:
@@ -74,18 +71,9 @@ async def index():
             return redirect(url_for("library"))
     return redirect(url_for("login"))
 
-@app.route('/login', methods=['GET', 'POST'])
-
-
 async def ensure_db_connection():
     if not connections._get_storage():
         await init_db()
-
-@app.route('/register', methods=['GET', 'POST'])
-
-
-@app.route('/logout')
-
 
 @app.route('/api/check_interview_status')
 async def check_interview_status():
@@ -1180,7 +1168,3 @@ async def course_settings(user_id, course_idx):
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 8000))
     app.run(host="0.0.0.0", port=port, debug=True)
-
-
-for bp in blueprints:
-    app.register_blueprint(bp)

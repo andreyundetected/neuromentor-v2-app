@@ -1,18 +1,26 @@
-from models import init_db
-from models.user import User
+from quart import Blueprint, request, session, redirect, url_for, render_template, jsonify, Response
 from tortoise import connections
-from quart import render_template
-from quart import url_for
-from quart import redirect
-from quart import session
-from quart import request
-from quart import Blueprint
-
-
+from models.user import User
+from models import init_db
+from services.user_service import require_login
 
 auth_bp = Blueprint('auth', __name__)
 
+@auth_bp.route('/login', methods=['GET', 'POST'])
+async def login():
+    if request.method == 'POST':
+        form = await request.form
+        username = form['username']
+        password = form['password']
+        user = await User.filter(username=username, password=password).first()
+        if user:
+            session['user_id'] = user.id
+            return redirect(url_for('index'))
+        else:
+            return "Неверное имя пользователя или пароль"
+    return await render_template('login.html')
 
+@auth_bp.route('/register', methods=['GET', 'POST'])
 async def register():
     if not connections._get_storage():
         await init_db()
@@ -30,25 +38,10 @@ async def register():
 
     return await render_template('register.html')
 
-
-async def login():
-    if request.method == 'POST':
-        form = await request.form
-        username = form['username']
-        password = form['password']
-        user = await User.filter(username=username, password=password).first()
-        if user:
-            session['user_id'] = user.id
-            return redirect(url_for('index'))
-        else:
-            return "Неверное имя пользователя или пароль"
-    return await render_template('login.html')
-
-
+@auth_bp.route('/logout')
 async def logout():
     session.pop('user_id', None)
     return redirect(url_for('index'))
-
 
 async def require_login():
     if 'user_id' not in session:

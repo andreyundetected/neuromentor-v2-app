@@ -1,6 +1,5 @@
 from tortoise import Tortoise
-
-
+from models import user
 
 async def init_db(DATABASE_URL):
     await Tortoise.init(
