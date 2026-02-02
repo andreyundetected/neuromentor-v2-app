@@ -2,7 +2,6 @@ from quart import Blueprint, request, session, redirect, url_for, render_templat
 from tortoise import connections
 from models.user import User
 from models import init_db
-from services.user_service import require_login
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -42,4 +41,3 @@ async def register():
 async def logout():
     session.pop('user_id', None)
     return redirect(url_for('index'))
-

@@ -1,4 +1,3 @@
-from models.user import User
 from quart import Quart, render_template, request, jsonify, session, Response, redirect, url_for
 from tortoise import Tortoise, fields, connections
 from tortoise.models import Model
@@ -9,6 +8,8 @@ import json
 import os
 from models import init_db
 from routes import blueprints
+from models.user import User
+from services.user_service import require_login
 from collections import Counter
 
 app = Quart(__name__)
