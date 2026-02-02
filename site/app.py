@@ -1,3 +1,4 @@
+from models.user import User
 from quart import Quart, render_template, request, jsonify, session, Response, redirect, url_for
 from tortoise import Tortoise, fields, connections
 from tortoise.models import Model
@@ -1107,7 +1108,7 @@ async def update_course_info(user_id, course_idx):
     form = await request.form
 
     if not user:
-        return redirect(url_for('login'))
+        return redirect(url_for("auth.login"))
     
     course_name = form.get('course_name')
     learning_format = form.get('learning_format')
@@ -1145,7 +1146,7 @@ async def course_settings(user_id, course_idx):
     user = await User.get(id=user_id)
 
     if not user:
-        return redirect(url_for('login'))
+        return redirect(url_for("auth.login"))
     
     course_info = user.course_info[course_idx]["course"]
     course_settings = session.get('course_settings', {}).get(course_idx, [])
