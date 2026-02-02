@@ -70,7 +70,7 @@ async def index():
         if user:
             session["language"] = user.user_info.get("language", "ru")
             return redirect(url_for("library"))
-    return redirect(url_for("login"))
+    return redirect(url_for("auth.login"))
 
 async def ensure_db_connection():
     if not connections._get_storage():
@@ -87,7 +87,7 @@ async def check_interview_status():
 @app.route('/interview', methods=['GET', 'POST'])
 async def interview():
     if 'user_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for("auth.login"))
 
     user = await User.get(id=session['user_id'])
 
