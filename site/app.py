@@ -125,27 +125,7 @@ async def interview():
     return await render_template('interview.html', username=user.username)
 
 @app.route('/add_to_library/<int:course_id>', methods=['POST'])
-async def add_to_library(course_id):
-    user = await require_login()
-    if isinstance(user, Response):
-        return user
 
-    public_course = await PublicCourse.get(id=course_id)
-
-    if not public_course:
-        return "Курс не найден.", 404
-
-    if any(c.get('id') == course_id for c in user.course_info):
-        return redirect(url_for('library'))  
-
-    updated_course_info = user.course_info + [{
-        **public_course.course_info,
-        "id": course_id  
-    }]
-    
-    await User.filter(id=user.id).update(course_info=updated_course_info)
-
-    return redirect(url_for('library'))
 
 @app.route('/delete_course/<int:course_idx>', methods=['POST'])
 
