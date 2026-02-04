@@ -131,26 +131,7 @@ async def interview():
 
 
 @app.route('/update_course/<int:course_id>', methods=['POST'])
-async def update_course(course_id):
-    user = await require_login()
-    form = await request.form
-    if isinstance(user, Response):
-        return user
 
-    course_to_update = await PublicCourse.filter(id=course_id, creator=user.username).first()
-
-    if not course_to_update:
-        return "Курс не найден или вы не являетесь его владельцем.", 403
-
-    new_name = form.get('course_name')
-    new_topic = form.get('course_topic')
-
-    if new_name:
-        course_to_update.name = new_name
-    if new_topic:
-        course_to_update.topic = new_topic
-
-    return redirect(url_for('index'))
 
 @app.route('/start_recommendation/<int:recommendation_idx>', methods=['GET', 'POST'])
 async def start_recommendation(recommendation_idx):

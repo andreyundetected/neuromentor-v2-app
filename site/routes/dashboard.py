@@ -60,3 +60,12 @@ async def delete_course(course_idx):
     await user.save()
 
     return redirect(url_for('dashboard.library'))
+
+
+async def index():
+    if "user_id" in session:
+        user = await User.get(id=session["user_id"])
+        if user:
+            session["language"] = user.user_info.get("language", "ru")
+            return redirect(url_for("dashboard.library"))
+    return redirect(url_for("auth.login"))
