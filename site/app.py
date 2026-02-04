@@ -359,59 +359,7 @@ async def course_creation(user_id, course_idx):
     )
 
 @app.route('/course_edit/<int:user_id>/<int:course_idx>', methods=['GET', 'POST'])
-async def course_edit(user_id, course_idx):
-    user = await require_login()
-    if isinstance(user, Response):
-        return user
-    user = await User.get(id=user_id)
 
-    if not user or user.id != session['user_id']:
-        return "Доступ запрещен", 403
-
-    if request.method == 'POST':
-        form = await request.form
-        print(f"Начинаем редактирование курса для user_id={user_id}, course_idx={course_idx}")
-        conversation_text = form['conversation']
-        conversation = session.get('conversation', [])
-        conversation.append({"role": "user", "content": conversation_text})
-
-        if len(user.course_info) <= course_idx:
-            return "Курс с указанным индексом не найден.", 404
-
-        course_info = user.course_info[course_idx]["course"]
-
-        print("Текущее course_info для редактирования:", course_info)
-
-        payload = {
-            "0_content": {
-                "0_conversation": conversation,
-                "1_user_info": user.user_info,
-                "2_course_info": course_info
-            },
-            "1_type": "course_edit"
-        }
-        response = await send_request_to_api(payload)
-
-        if response.get("response"):
-            conversation.append({"role": "manager", "content": response["response"]})
-
-        session['conversation'] = conversation
-
-        if "course_info" in response:
-            print(f"Обновление course_info для индекса {course_idx}")
-            user.course_info[course_idx]["course"] = response["course_info"]
-            print(f"Новое course_info: {user.course_info[course_idx]['course']}")
-
-        try:
-            await User.filter(id=user.id).update(course_info=user.course_info)
-            print("Изменения успешно сохранены в базе данных.")
-        except Exception as e:
-            print("Ошибка при сохранении в базе данных:", e)
-
-        return jsonify(response)
-
-    session['conversation'] = []  
-    return await render_template('course_edit.html', user=user, course_idx=course_idx, username=user.username, course_name = user.course_info[course_idx]["course"]["3_name"])
 
 @app.route("/set_language/<lang>", methods=["POST"])
 async def set_language(lang):
