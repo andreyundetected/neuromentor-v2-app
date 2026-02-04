@@ -1,3 +1,4 @@
+from quart import redirect
 from services.recommendations import generate_default_recommendations
 from models.user import User
 from services.user_service import require_login
@@ -45,3 +46,17 @@ async def library():
         enumerate=enumerate,
         show_interview_modal=not user.has_completed_interview
     )
+
+
+async def delete_course(course_idx):
+    user = await require_login()
+    if isinstance(user, Response):
+        return user
+
+    if course_idx < 0 or course_idx >= len(user.course_info):
+        return "Course not found", 404
+
+    user.course_info.pop(course_idx)
+    await user.save()
+
+    return redirect(url_for('dashboard.library'))

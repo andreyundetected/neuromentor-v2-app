@@ -70,7 +70,7 @@ async def index():
         user = await User.get(id=session["user_id"])
         if user:
             session["language"] = user.user_info.get("language", "ru")
-            return redirect(url_for("library"))
+            return redirect(url_for("dashboard.library"))
     return redirect(url_for("auth.login"))
 
 async def ensure_db_connection():
