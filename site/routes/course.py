@@ -117,3 +117,52 @@ async def course_creation(user_id, course_idx):
 
 
 course_bp = Blueprint("course", __name__)
+
+
+async def course_edit(user_id, course_idx):
+    user = await require_login()
+    if isinstance(user, Response):
+        return user
+    user = await User.get(id=user_id)
+
+    if not user or user.id != session['user_id']:
+        return "Доступ запрещен", 403
+
+    if request.method == 'POST':
+        form = await request.form
+        conversation_text = form['conversation']
+        conversation = session.get('conversation', [])
+        conversation.append({"role": "user", "content": conversation_text})
+
+        if len(user.course_info) <= course_idx:
+            return "Курс с указанным индексом не найден.", 404
+
+        course_info = user.course_info[course_idx]["course"]
+
+        payload = {
+            "0_content": {
+                "0_conversation": conversation,
+                "1_user_info": user.user_info,
+                "2_course_info": course_info
+            },
+            "1_type": "course_edit"
+        }
+        response = await send_request_to_api(payload)
+
+        if response.get("response"):
+            conversation.append({"role": "manager", "content": response["response"]})
+        session['conversation'] = conversation
+
+        if "course_info" in response:
+            user.course_info[course_idx]["course"] = response["course_info"]
+            await User.filter(id=user.id).update(course_info=user.course_info)
+
+        return jsonify(response)
+
+    session['conversation'] = []
+    course_name = user.course_info[course_idx]["course"].get("3_name", "")
+    return await render_template(
+        'course_edit.html',
+        user=user, course_idx=course_idx,
+        username=user.username, course_name=course_name
+    )
