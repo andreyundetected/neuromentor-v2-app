@@ -124,15 +124,6 @@ async def interview():
     session['conversation'] = []  
     return await render_template('interview.html', username=user.username)
 
-@app.route('/add_to_library/<int:course_id>', methods=['POST'])
-
-
-@app.route('/delete_course/<int:course_idx>', methods=['POST'])
-
-
-@app.route('/update_course/<int:course_id>', methods=['POST'])
-
-
 @app.route('/start_recommendation/<int:recommendation_idx>', methods=['GET', 'POST'])
 async def start_recommendation(recommendation_idx):
     user = await require_login()
@@ -154,8 +145,6 @@ async def start_recommendation(recommendation_idx):
     await User.filter(id=user.id).update(course_info=user.course_info)
 
     return redirect(url_for('course_creation', user_id=user.id, course_idx=course_idx, start_message=start_message))
-
- 
 
 @app.route('/library')
 async def library():
@@ -368,9 +357,6 @@ async def course_creation(user_id, course_idx):
         course_name=course_name,
         start_message=start_message,
     )
-
-@app.route('/public_course/<int:course_id>', methods=['GET', 'POST'])
-
 
 @app.route('/course_edit/<int:user_id>/<int:course_idx>', methods=['GET', 'POST'])
 async def course_edit(user_id, course_idx):

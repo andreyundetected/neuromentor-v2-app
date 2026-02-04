@@ -1,18 +1,21 @@
-from quart import redirect
-from services.recommendations import generate_default_recommendations
-from models.user import User
-from services.user_service import require_login
+from quart import Blueprint, render_template, request, redirect, url_for, session, Response
 from collections import Counter
-from quart import Response
-from quart import session
-from quart import url_for
-from quart import render_template
-from quart import Blueprint
-
+from services.user_service import require_login
+from models.user import User
+from services.recommendations import generate_default_recommendations  
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
+@dashboard_bp.route('/')
+async def index():
+    if "user_id" in session:
+        user = await User.get(id=session["user_id"])
+        if user:
+            session["language"] = user.user_info.get("language", "ru")
+            return redirect(url_for("dashboard.library"))
+    return redirect(url_for("auth.login"))
 
+@dashboard_bp.route('/library')
 async def library():
     user = await require_login()
     if isinstance(user, Response):
@@ -47,7 +50,7 @@ async def library():
         show_interview_modal=not user.has_completed_interview
     )
 
-
+@dashboard_bp.route('/delete_course/<int:course_idx>', methods=['POST'])
 async def delete_course(course_idx):
     user = await require_login()
     if isinstance(user, Response):
@@ -60,12 +63,3 @@ async def delete_course(course_idx):
     await user.save()
 
     return redirect(url_for('dashboard.library'))
-
-
-async def index():
-    if "user_id" in session:
-        user = await User.get(id=session["user_id"])
-        if user:
-            session["language"] = user.user_info.get("language", "ru")
-            return redirect(url_for("dashboard.library"))
-    return redirect(url_for("auth.login"))

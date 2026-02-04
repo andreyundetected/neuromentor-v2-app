@@ -1,5 +1,3 @@
-
-
 def generate_default_recommendations(language):
     base_recommendation = []
     if language == "ru":
@@ -153,4 +151,4 @@ def generate_default_recommendations(language):
             }
         ]
 
-    return base_recommendation
+    return base_recommendation 
