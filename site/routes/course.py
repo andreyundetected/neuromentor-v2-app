@@ -1,3 +1,5 @@
+from quart import url_for
+from quart import redirect
 from quart import Blueprint
 import json
 from services.api_service import get_empty_course_info
@@ -166,3 +168,17 @@ async def course_edit(user_id, course_idx):
         user=user, course_idx=course_idx,
         username=user.username, course_name=course_name
     )
+
+
+async def delete_course(course_idx):
+    user = await require_login()
+    if isinstance(user, Response):
+        return user
+
+    if course_idx < 0 or course_idx >= len(user.course_info):
+        return "Course not found", 404
+
+    user.course_info.pop(course_idx)
+    await user.save()
+
+    return redirect(url_for('dashboard.library'))

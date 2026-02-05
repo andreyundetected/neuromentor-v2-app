@@ -678,68 +678,10 @@ async def lesson_call(user_id, course_idx):
     )
 
 @app.route('/update_course_info/<int:user_id>/<int:course_idx>', methods=['POST'])
-async def update_course_info(user_id, course_idx):
-    user = await User.get(id=user_id)
-    form = await request.form
 
-    if not user:
-        return redirect(url_for("auth.login"))
-    
-    course_name = form.get('course_name')
-    learning_format = form.get('learning_format')
-    
-    course_info = user.course_info[course_idx]["course"]
-    if course_name:
-        course_info['3_name'] = course_name
-    if learning_format:
-        course_info['learning_format'] = learning_format
-    
-    if 'course_settings' not in session:
-        session['course_settings'] = {}
-    
-    course_settings = session['course_settings'].get(course_idx, [])
-    updated_lessons = []
-
-    for topic in course_info['4_structure']:
-        for lesson in topic['3_lessons']:
-            
-            lesson_name = lesson['name']
-            lesson_status = next(
-                (ls['completed'] for ls in course_settings if ls['name'] == lesson_name), 
-                False
-            )
-            updated_lessons.append({'name': lesson_name, 'completed': lesson_status})
-    
-    session['course_settings'][course_idx] = updated_lessons
-    
-    session.modified = True
-    
-    return redirect(url_for('course_settings', user_id=user.id, course_idx=course_idx))
 
 @app.route('/course_settings/<int:user_id>/<int:course_idx>')
-async def course_settings(user_id, course_idx):
-    user = await User.get(id=user_id)
 
-    if not user:
-        return redirect(url_for("auth.login"))
-    
-    course_info = user.course_info[course_idx]["course"]
-    course_settings = session.get('course_settings', {}).get(course_idx, [])
-    
-    nearest_lesson = None
-    for setting in course_settings:
-        if not setting['completed']:
-            nearest_lesson = setting['name']
-            break
-    
-    return await render_template(
-        'course_settings.html',
-        user=user,
-        course_idx=course_idx,
-        course_info=course_info,
-        course_settings=course_settings,
-        nearest_lesson=nearest_lesson
-    )
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 8000))
