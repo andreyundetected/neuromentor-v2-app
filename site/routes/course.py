@@ -182,3 +182,104 @@ async def delete_course(course_idx):
     await user.save()
 
     return redirect(url_for('dashboard.library'))
+
+
+async def course_select(user_id, course_idx):
+    user = await require_login()
+    if isinstance(user, Response):
+        return user
+    user = await User.get(id=user_id)
+    if not user or user.id != session['user_id']:
+        return "Доступ запрещен", 403
+
+    if course_idx >= len(user.course_info):
+        return "Курс не найден", 404
+
+    course = user.course_info[course_idx]["course"]
+
+    if "4_structure" not in course or not course["4_structure"]:
+        return redirect(url_for('course.course_creation', user_id=user_id, course_idx=course_idx))
+
+    if "lesson" not in user.course_info[course_idx]["course_settings"]:
+        try:
+            first_lesson = course["4_structure"][0]["3_lessons"][0]["name"]
+            user.course_info[course_idx]["course_settings"]["lesson"] = first_lesson
+            await User.filter(id=user.id).update(course_info=user.course_info)
+        except (IndexError, KeyError):
+            pass
+
+    for topic in course["4_structure"]:
+        for i, lesson in enumerate(topic["3_lessons"]):
+            if "paid" not in lesson:
+                lesson["paid"] = (topic == course["4_structure"][0] and i == 0)
+    await User.filter(id=user.id).update(course_info=user.course_info)
+
+    next_lesson = user.course_info[course_idx]["course_settings"].get("lesson")
+    next_lesson_paid = False
+    if next_lesson:
+        for topic in course["4_structure"]:
+            for lesson in topic["3_lessons"]:
+                if lesson["name"] == next_lesson:
+                    next_lesson_paid = lesson.get("paid", False)
+                    break
+            if next_lesson_paid:
+                break
+
+    if request.method == 'POST':
+        form = await request.form
+        action = form.get('action')
+        if action == 'lesson':
+            if next_lesson_paid:
+                return redirect(url_for('lesson_call', user_id=user_id, course_idx=course_idx))
+            elif user.credits > 0:
+                user.credits -= 1
+                await User.filter(id=user.id).update(credits=user.credits)
+                for topic in course["4_structure"]:
+                    for lesson in topic["3_lessons"]:
+                        if lesson["name"] == next_lesson:
+                            lesson["paid"] = True
+                            break
+                await User.filter(id=user.id).update(course_info=user.course_info)
+                return redirect(url_for('lesson_call', user_id=user_id, course_idx=course_idx))
+            else:
+                total_lessons = sum(len(t["3_lessons"]) for t in course["4_structure"])
+                completed_lessons = 0
+                found = False
+                for topic in course["4_structure"]:
+                    for lesson in topic["3_lessons"]:
+                        if lesson["name"] == next_lesson:
+                            found = True
+                        if not found:
+                            completed_lessons += 1
+                progress = (completed_lessons / total_lessons) * 100
+                return await render_template(
+                    'course_select.html',
+                    user=user, course=course, course_idx=course_idx,
+                    username=user.username, progress=progress,
+                    course_id=course_idx, next_lesson=next_lesson,
+                    next_lesson_paid=next_lesson_paid,
+                    insufficient_credits=True
+                )
+        elif action == 'edit':
+            return redirect(url_for('course.course_edit', user_id=user_id, course_idx=course_idx))
+        elif action == 'settings':
+            return redirect(url_for('course_settings', user_id=user_id, course_idx=course_idx))
+
+    total = sum(len(topic["3_lessons"]) for topic in course["4_structure"])
+    completed = 0
+    flag = False
+    for topic in course["4_structure"]:
+        for lesson in topic["3_lessons"]:
+            if lesson["name"] == next_lesson:
+                flag = True
+            if not flag:
+                completed += 1
+    progress = (completed / total * 100) if total else 0
+
+    return await render_template(
+        'course_select.html',
+        user=user, course=course, course_idx=course_idx,
+        username=user.username, progress=progress,
+        course_id=course_idx, next_lesson=next_lesson,
+        next_lesson_paid=next_lesson_paid
+    )
