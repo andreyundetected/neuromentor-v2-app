@@ -561,6 +561,4 @@ async def lesson_call(user_id, course_idx):
 @app.route('/course_settings/<int:user_id>/<int:course_idx>')
 
 
-if __name__ == '__main__':
-    port = int(os.getenv("PORT", 8000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+
