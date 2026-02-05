@@ -220,12 +220,6 @@ async def account():
             interview_results.append((clean_key(key), value))
     return await render_template('account.html', user=user, message=message, interview_results=interview_results)
 
-@app.route('/course_creation/<int:user_id>/<int:course_idx>', methods=['GET', 'POST'])
-
-
-@app.route('/course_edit/<int:user_id>/<int:course_idx>', methods=['GET', 'POST'])
-
-
 @app.route("/set_language/<lang>", methods=["POST"])
 async def set_language(lang):
 
@@ -247,9 +241,6 @@ async def set_language(lang):
     session["language"] = lang
 
     return "", 204  
-
-@app.route('/course_select/<int:user_id>/<int:course_idx>', methods=['GET', 'POST'])
-
 
 @app.route('/course_select/<int:user_id>/<int:course_idx>/lesson_chat', methods=['GET', 'POST'])
 async def lesson_chat(user_id, course_idx):
@@ -554,11 +545,3 @@ async def lesson_call(user_id, course_idx):
         lesson_title=lesson_title,
         transcript_history=conversation_call
     )
-
-@app.route('/update_course_info/<int:user_id>/<int:course_idx>', methods=['POST'])
-
-
-@app.route('/course_settings/<int:user_id>/<int:course_idx>')
-
-
-

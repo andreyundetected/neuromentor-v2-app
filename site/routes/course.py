@@ -1,18 +1,12 @@
-from quart import url_for
-from quart import redirect
-from quart import Blueprint
-import json
-from services.api_service import get_empty_course_info
-from services.api_service import send_request_to_api
-from services.user_service import require_login
+from quart import Blueprint, request, session, redirect, url_for, render_template, jsonify, Response
 from models.user import User
-from quart import Response
-from quart import jsonify
-from quart import render_template
-from quart import session
-from quart import request
+from services.user_service import require_login
+from services.api_service import send_request_to_api, get_empty_course_info
+import json
 
+course_bp = Blueprint("course", __name__)
 
+@course_bp.route('/course_creation/<int:user_id>/<int:course_idx>', methods=['GET', 'POST'])
 async def course_creation(user_id, course_idx):
     user = await require_login()
     if isinstance(user, Response):
@@ -117,73 +111,7 @@ async def course_creation(user_id, course_idx):
     course_name = user.course_info[course_idx]["course"].get("3_name", "")
     return await render_template('course_creation.html', user=user, course_idx=course_idx, username=user.username, course_name=course_name, start_message=start_message)
 
-
-course_bp = Blueprint("course", __name__)
-
-
-async def course_edit(user_id, course_idx):
-    user = await require_login()
-    if isinstance(user, Response):
-        return user
-    user = await User.get(id=user_id)
-
-    if not user or user.id != session['user_id']:
-        return "Доступ запрещен", 403
-
-    if request.method == 'POST':
-        form = await request.form
-        conversation_text = form['conversation']
-        conversation = session.get('conversation', [])
-        conversation.append({"role": "user", "content": conversation_text})
-
-        if len(user.course_info) <= course_idx:
-            return "Курс с указанным индексом не найден.", 404
-
-        course_info = user.course_info[course_idx]["course"]
-
-        payload = {
-            "0_content": {
-                "0_conversation": conversation,
-                "1_user_info": user.user_info,
-                "2_course_info": course_info
-            },
-            "1_type": "course_edit"
-        }
-        response = await send_request_to_api(payload)
-
-        if response.get("response"):
-            conversation.append({"role": "manager", "content": response["response"]})
-        session['conversation'] = conversation
-
-        if "course_info" in response:
-            user.course_info[course_idx]["course"] = response["course_info"]
-            await User.filter(id=user.id).update(course_info=user.course_info)
-
-        return jsonify(response)
-
-    session['conversation'] = []
-    course_name = user.course_info[course_idx]["course"].get("3_name", "")
-    return await render_template(
-        'course_edit.html',
-        user=user, course_idx=course_idx,
-        username=user.username, course_name=course_name
-    )
-
-
-async def delete_course(course_idx):
-    user = await require_login()
-    if isinstance(user, Response):
-        return user
-
-    if course_idx < 0 or course_idx >= len(user.course_info):
-        return "Course not found", 404
-
-    user.course_info.pop(course_idx)
-    await user.save()
-
-    return redirect(url_for('dashboard.library'))
-
-
+@course_bp.route('/course_select/<int:user_id>/<int:course_idx>', methods=['GET', 'POST'])
 async def course_select(user_id, course_idx):
     user = await require_login()
     if isinstance(user, Response):
@@ -283,3 +211,66 @@ async def course_select(user_id, course_idx):
         course_id=course_idx, next_lesson=next_lesson,
         next_lesson_paid=next_lesson_paid
     )
+
+@course_bp.route('/course_edit/<int:user_id>/<int:course_idx>', methods=['GET', 'POST'])
+async def course_edit(user_id, course_idx):
+    user = await require_login()
+    if isinstance(user, Response):
+        return user
+    user = await User.get(id=user_id)
+
+    if not user or user.id != session['user_id']:
+        return "Доступ запрещен", 403
+
+    if request.method == 'POST':
+        form = await request.form
+        conversation_text = form['conversation']
+        conversation = session.get('conversation', [])
+        conversation.append({"role": "user", "content": conversation_text})
+
+        if len(user.course_info) <= course_idx:
+            return "Курс с указанным индексом не найден.", 404
+
+        course_info = user.course_info[course_idx]["course"]
+
+        payload = {
+            "0_content": {
+                "0_conversation": conversation,
+                "1_user_info": user.user_info,
+                "2_course_info": course_info
+            },
+            "1_type": "course_edit"
+        }
+        response = await send_request_to_api(payload)
+
+        if response.get("response"):
+            conversation.append({"role": "manager", "content": response["response"]})
+        session['conversation'] = conversation
+
+        if "course_info" in response:
+            user.course_info[course_idx]["course"] = response["course_info"]
+            await User.filter(id=user.id).update(course_info=user.course_info)
+
+        return jsonify(response)
+
+    session['conversation'] = []
+    course_name = user.course_info[course_idx]["course"].get("3_name", "")
+    return await render_template(
+        'course_edit.html',
+        user=user, course_idx=course_idx,
+        username=user.username, course_name=course_name
+    )
+
+@course_bp.route('/delete_course/<int:course_idx>', methods=['POST'])
+async def delete_course(course_idx):
+    user = await require_login()
+    if isinstance(user, Response):
+        return user
+
+    if course_idx < 0 or course_idx >= len(user.course_info):
+        return "Course not found", 404
+
+    user.course_info.pop(course_idx)
+    await user.save()
+
+    return redirect(url_for('dashboard.library'))
