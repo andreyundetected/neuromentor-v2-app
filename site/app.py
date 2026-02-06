@@ -546,3 +546,8 @@ async def lesson_call(user_id, course_idx):
         lesson_title=lesson_title,
         transcript_history=conversation_call
     )
+
+
+if __name__ == '__main__':
+    port = int(os.getenv("PORT", 8000))
+    app.run(host="0.0.0.0", port=port, debug=True)

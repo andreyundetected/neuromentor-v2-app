@@ -40,4 +40,4 @@ async def register():
 @auth_bp.route('/logout')
 async def logout():
     session.pop('user_id', None)
-    return redirect(url_for('index'))
+    return redirect(url_for('dashboard.index'))
