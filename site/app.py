@@ -1,3 +1,4 @@
+from services.require_login import require_login
 from quart import Quart, render_template, request, jsonify, session, Response, redirect, url_for
 from tortoise import Tortoise, fields, connections
 from tortoise.models import Model
@@ -349,7 +350,7 @@ async def lesson_call(user_id, course_idx):
 
     if not paid_status:
         
-        return redirect(url_for('course_select', user_id=user_id, course_idx=course_idx))
+        return redirect(url_for('course.course_select', user_id=user_id, course_idx=course_idx))
 
     conversation_chat = session.get('conversation_chat', [])
     conversation_call = session.get('conversation_call', [])
