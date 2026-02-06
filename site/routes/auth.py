@@ -14,7 +14,7 @@ async def login():
         user = await User.filter(username=username, password=password).first()
         if user:
             session['user_id'] = user.id
-            return redirect(url_for('index'))
+            return redirect(url_for('dashboard.index'))
         else:
             return "Неверное имя пользователя или пароль"
     return await render_template('login.html')

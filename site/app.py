@@ -173,7 +173,7 @@ async def library():
     sorted_categories = sorted(category_counts.items(), key=lambda x: x[1], reverse=True)
 
     new_course_index = len(user.course_info)
-    new_course_url = url_for('course_creation', user_id=user.id, course_idx=new_course_index)
+    new_course_url = url_for('course.course_creation', user_id=user.id, course_idx=new_course_index)
     print('======================')
     print(user.username)
     return await render_template(
