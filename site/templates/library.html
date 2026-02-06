@@ -761,7 +761,7 @@
       </div>
       <!-- Существующие курсы -->
       {% for course in courses_with_indices %}
-      <div class="course-card" onclick="window.location.href='{{ url_for('course_select', user_id=user.id, course_idx=course.index) }}'">
+      <div class="course-card" onclick="window.location.href='{{ url_for('course.course_select', user_id=user.id, course_idx=course.index) }}'">
         <div class="course-avatar" data-categories="{{ course.course['course']['5_categories'] | join(', ') }}"></div>
         <h2>{{ course.course["course"]["3_name"] or "Untitled" }}</h2>
         {% if session.get('language', 'ru') == 'ru' %}

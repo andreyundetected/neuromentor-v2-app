@@ -145,7 +145,7 @@ async def start_recommendation(recommendation_idx):
     user.course_info.append({"course": base_json, "course_settings": {}})
     await User.filter(id=user.id).update(course_info=user.course_info)
 
-    return redirect(url_for('course_creation', user_id=user.id, course_idx=course_idx, start_message=start_message))
+    return redirect(url_for('course.course_creation', user_id=user.id, course_idx=course_idx, start_message=start_message))
 
 @app.route('/library')
 async def library():
