@@ -1,4 +1,3 @@
-from services.require_login import require_login
 from quart import Quart, render_template, request, jsonify, session, Response, redirect, url_for
 from tortoise import Tortoise, fields, connections
 from tortoise.models import Model
@@ -10,7 +9,7 @@ import os
 from models import init_db
 from routes import blueprints
 from models.user import User
-from services.user_service import require_login
+from services.require_login import require_login
 from collections import Counter
 
 app = Quart(__name__)
@@ -546,7 +545,6 @@ async def lesson_call(user_id, course_idx):
         lesson_title=lesson_title,
         transcript_history=conversation_call
     )
-
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 8000))

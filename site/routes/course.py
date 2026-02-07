@@ -1,6 +1,6 @@
 from quart import Blueprint, request, session, redirect, url_for, render_template, jsonify, Response
 from models.user import User
-from services.user_service import require_login
+from services.require_login import require_login
 from services.api_service import send_request_to_api, get_empty_course_info
 import json
 

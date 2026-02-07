@@ -1,9 +1,5 @@
+from quart import session, redirect, url_for
 from models.user import User
-from quart import url_for
-from quart import redirect
-from quart import session
-
-
 
 async def require_login():
     if 'user_id' not in session:

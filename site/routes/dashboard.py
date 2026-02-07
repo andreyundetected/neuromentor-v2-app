@@ -1,7 +1,6 @@
-from services.require_login import require_login
 from quart import Blueprint, render_template, request, redirect, url_for, session, Response
 from collections import Counter
-from services.user_service import require_login
+from services.require_login import require_login
 from models.user import User
 from services.recommendations import generate_default_recommendations  
 
