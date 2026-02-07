@@ -871,9 +871,9 @@
             {% endif %}
           </form>
           {% if session.get('language', 'ru') == 'ru' %}
-          <a href="{{ url_for('course_edit', user_id=user.id, course_idx=course_idx) }}" class="button">Редактировать курс</a>
+          <a href="{{ url_for('course.course_edit', user_id=user.id, course_idx=course_idx) }}" class="button">Редактировать курс</a>
           {% elif session.get('language', 'ru') == 'en' %}
-          <a href="{{ url_for('course_edit', user_id=user.id, course_idx=course_idx) }}" class="button">Edit course</a>
+          <a href="{{ url_for('course.course_edit', user_id=user.id, course_idx=course_idx) }}" class="button">Edit course</a>
           {% endif %}
         <!-- Новая кнопка Delete -->
         <a href="#" class="delete-button" onclick="showDeleteModal(event)">
