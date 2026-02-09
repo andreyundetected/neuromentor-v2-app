@@ -28,3 +28,16 @@ def transcribe_audio(audio_data: bytes) -> str:
         return response.json().get("text", "")
     else:
         raise Exception(f"Ошибка при транскрипции: {response.status_code} - {response.text}")
+
+
+def transcribe_audio_with_prepare_data(audio):
+    output_file_path = "temp_audio.wav"
+    audio.export(output_file_path, format="wav")
+    with open(output_file_path, "rb") as audio_file:
+        audio_data = audio_file.read()
+    try:
+        transcription = transcribe_audio(audio_data)
+    except Exception as e:
+        print(str(e))
+    os.remove(output_file_path)
+    return transcription
