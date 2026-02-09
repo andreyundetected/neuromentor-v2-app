@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-WHISPER_MODEL = "whisper-1"
+
 
 
 
