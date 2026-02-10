@@ -2,14 +2,12 @@ from quart import Quart, render_template, request, jsonify, session, Response, r
 from tortoise import Tortoise, fields, connections
 from tortoise.models import Model
 import re
-import aiohttp
-import json
+from services.api_service import send_request_to_api
 import os
 from models import init_db
 from routes import blueprints
 from models.user import User
 from services.require_login import require_login
-from collections import Counter
 
 app = Quart(__name__)
 app.secret_key = 'supersecretkey'
@@ -37,8 +35,6 @@ async def startup():
 async def shutdown():
     await Tortoise.close_connections()
 
-
-
 async def get_empty_course_info():
     return {
         "0_topic": "",
@@ -58,9 +54,6 @@ async def get_empty_course_info():
         ],
         "5_categories": []
     }
-
-@app.route('/')
-
 
 async def ensure_db_connection():
     if not connections._get_storage():
@@ -135,9 +128,6 @@ async def start_recommendation(recommendation_idx):
 
     return redirect(url_for('course.course_creation', user_id=user.id, course_idx=course_idx, start_message=start_message))
 
-@app.route('/library')
-
-
 @app.route('/account', methods=['GET', 'POST'])
 async def account():
     user = await require_login()
@@ -193,9 +183,6 @@ async def set_language(lang):
     session["language"] = lang
 
     return "", 204  
-
-@app.route('/course_select/<int:user_id>/<int:course_idx>/lesson_chat', methods=['GET', 'POST'])
-
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 8000))
