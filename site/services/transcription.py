@@ -1,17 +1,24 @@
+import os
+import requests
 from pydub import AudioSegment
 from dotenv import load_dotenv
-import requests
-import os
 
-
+load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 WHISPER_ENDPOINT = "https://api.openai.com/v1/audio/transcriptions"
-
-
 WHISPER_MODEL = "whisper-1"
 
-
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
+def transcribe_audio_with_prepare_data(audio):
+    output_file_path = "temp_audio.wav"
+    audio.export(output_file_path, format="wav")
+    with open(output_file_path, "rb") as audio_file:
+        audio_data = audio_file.read()
+    try:
+        transcription = transcribe_audio(audio_data)
+    except Exception as e:
+        print(str(e))
+    os.remove(output_file_path)
+    return transcription
 
 def transcribe_audio(audio_data: bytes) -> str:
 
@@ -30,23 +37,6 @@ def transcribe_audio(audio_data: bytes) -> str:
         return response.json().get("text", "")
     else:
         raise Exception(f"Ошибка при транскрипции: {response.status_code} - {response.text}")
-
-
-def transcribe_audio_with_prepare_data(audio):
-    output_file_path = "temp_audio.wav"
-    audio.export(output_file_path, format="wav")
-    with open(output_file_path, "rb") as audio_file:
-        audio_data = audio_file.read()
-    try:
-        transcription = transcribe_audio(audio_data)
-    except Exception as e:
-        print(str(e))
-    os.remove(output_file_path)
-    return transcription
-
-
-load_dotenv()
-
 
 if __name__ == "__main__":
     input_file_path = "temp_audio.webm"

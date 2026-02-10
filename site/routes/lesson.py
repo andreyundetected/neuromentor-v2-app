@@ -1,22 +1,14 @@
-from services.transcription import transcribe_audio_with_prepare_data
-from services.api_service import send_request_to_api
-from models.user import User
-import re
-import json
+from quart import Blueprint, render_template, request, redirect, url_for, session, Response, jsonify
 from services.require_login import require_login
-from quart import jsonify
-from quart import Response
-from quart import session
-from quart import url_for
-from quart import redirect
-from quart import request
-from quart import render_template
-from quart import Blueprint
-
+import json
+import re
+from models.user import User  
+from services.api_service import send_request_to_api
+from services.transcription import transcribe_audio_with_prepare_data  
 
 lesson_bp = Blueprint('lesson', __name__)
 
-
+@lesson_bp.route('/course_select/<int:user_id>/<int:course_idx>/lesson_call', methods=['GET', 'POST'])
 async def lesson_call(user_id, course_idx):
 
     user = await require_login()

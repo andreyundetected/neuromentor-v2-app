@@ -2,7 +2,6 @@ from quart import Quart, render_template, request, jsonify, session, Response, r
 from tortoise import Tortoise, fields, connections
 from tortoise.models import Model
 import re
-from transcription import transcribe_audio_with_prepare_data
 import aiohttp
 import json
 import os
@@ -319,9 +318,6 @@ async def lesson_chat(user_id, course_idx):
     session['conversation'] = []  
     progress = 0
     return await render_template('lesson_chat.html', user=user, course_idx=course_idx, username=user.username, lesson_title = user.course_info[course_idx]["course_settings"]["lesson"])
-
-@app.route('/course_select/<int:user_id>/<int:course_idx>/lesson_call', methods=['GET', 'POST'])
-
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 8000))
