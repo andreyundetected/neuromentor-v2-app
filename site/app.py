@@ -37,11 +37,7 @@ async def startup():
 async def shutdown():
     await Tortoise.close_connections()
 
-async def send_request_to_api(payload):
-    print("Отправка запроса к API с payload:", payload)
-    async with aiohttp.ClientSession() as session:
-        async with session.post(NEURO_API_URL, json=payload) as response:
-            return await response.json()
+
 
 async def get_empty_course_info():
     return {
@@ -64,13 +60,7 @@ async def get_empty_course_info():
     }
 
 @app.route('/')
-async def index():
-    if "user_id" in session:
-        user = await User.get(id=session["user_id"])
-        if user:
-            session["language"] = user.user_info.get("language", "ru")
-            return redirect(url_for("dashboard.library"))
-    return redirect(url_for("auth.login"))
+
 
 async def ensure_db_connection():
     if not connections._get_storage():
@@ -146,44 +136,7 @@ async def start_recommendation(recommendation_idx):
     return redirect(url_for('course.course_creation', user_id=user.id, course_idx=course_idx, start_message=start_message))
 
 @app.route('/library')
-async def library():
-    user = await require_login()
-    if isinstance(user, Response):
-        return user
 
-    if not user.recommendations or True:
-        user.recommendations = generate_default_recommendations()
-        await User.filter(id=user.id).update(recommendations=user.recommendations)
-        
-    if not user.course_info:
-        user.course_info = []
-
-    print("Текущее состояние course_info пользователя:", user.course_info)
-
-    courses_with_indices = [{"index": idx, "course": course} for idx, course in enumerate(user.course_info)]
-    print("Курсы с индексами для шаблона:", courses_with_indices)
-
-    categories = []
-    for course_wrapper in user.course_info:
-        categories.extend(course_wrapper["course"].get("5_categories", []))
-    
-    category_counts = Counter(categories)
-    sorted_categories = sorted(category_counts.items(), key=lambda x: x[1], reverse=True)
-
-    new_course_index = len(user.course_info)
-    new_course_url = url_for('course.course_creation', user_id=user.id, course_idx=new_course_index)
-    print('======================')
-    print(user.username)
-    return await render_template(
-        'library.html',
-        user=user,
-        courses_with_indices=courses_with_indices,
-        new_course_url=new_course_url,
-        sorted_categories=sorted_categories, 
-        username=user.username,
-        enumerate=enumerate,
-        show_interview_modal=not user.has_completed_interview
-    )
 
 @app.route('/account', methods=['GET', 'POST'])
 async def account():
@@ -242,82 +195,7 @@ async def set_language(lang):
     return "", 204  
 
 @app.route('/course_select/<int:user_id>/<int:course_idx>/lesson_chat', methods=['GET', 'POST'])
-async def lesson_chat(user_id, course_idx):
-    user = await require_login()
-    if isinstance(user, Response):
-        return user
-    user = await User.get(id=user_id)
 
-    if not user or user.id != session['user_id']:
-        return "Доступ запрещен", 403
-
-    if request.method == 'POST':
-        form = await request.form
-        
-        conversation_text = form['conversation']
-        conversation = session.get('conversation', [])
-        progress = session.get('progress', 0)
-        conversation.append({"role": "user", "content": conversation_text})
-
-        if len(user.course_info) <= course_idx:
-            return "Курс с указанным индексом не найден.", 404
-        
-        if not user.course_info[course_idx]["course_settings"].get("lesson"):
-            print("0000000000000000000")
-            print(user.course_info[course_idx]["course_settings"].get("lesson"))
-            user.course_info[course_idx]["course_settings"]["lesson"] = user.course_info[course_idx]["course"]["4_structure"][0]["3_lessons"][0]["name"]
-            await User.filter(id=user.id).update(course_info=user.course_info)
-        lesson_topic = user.course_info[course_idx]["course_settings"].get("lesson")
-
-        payload = {
-            "0_content": {
-                "0_conversation": conversation,
-                "1_user_info": user.user_info,
-                "2_course_info": user.course_info[course_idx]["course"],
-                "3_lesson_topic": lesson_topic,
-                "4_progress": progress
-            },
-            "1_type": "lesson"
-        }
-        response = await send_request_to_api(payload)
-        print("0=0=0=0=0=0=0==0=0=0=0=0=0")
-        if "<END>" in response.get("status"):
-            flag = False
-            stop_all = False  
-            for big_topic in user.course_info[course_idx]["course"]["4_structure"]:
-                if stop_all:  
-                    break
-                for topic in big_topic["3_lessons"]:
-                    print("LESSON: ")
-                    print(user.course_info[course_idx]["course_settings"]["lesson"])
-                    print("TOPIC NAME: ")
-                    print(topic["name"])
-                    if flag:
-                        user.course_info[course_idx]["course_settings"]["lesson"] = topic["name"]
-                        print("LESSON: ")
-                        print(user.course_info[course_idx]["course_settings"]["lesson"])
-                        print("TOPIC NAME: ")
-                        print(topic["name"])
-                        print("TOPIC: ")
-                        print(topic)
-                        stop_all = True  
-                        break  
-                    if topic["name"] == user.course_info[course_idx]["course_settings"]["lesson"]:
-                        flag = True
-                        
-            print(user.course_info[course_idx]["course_settings"]["lesson"])
-            await User.filter(id=user.id).update(course_info=user.course_info)
-
-        if response.get("response"):
-            response_type = response.get('response_type')
-            conversation.append({"role": f"teacher {response_type}", "content": response["response"]})
-
-        session['conversation'] = conversation
-        return jsonify(response)
-
-    session['conversation'] = []  
-    progress = 0
-    return await render_template('lesson_chat.html', user=user, course_idx=course_idx, username=user.username, lesson_title = user.course_info[course_idx]["course_settings"]["lesson"])
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 8000))

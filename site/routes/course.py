@@ -158,7 +158,7 @@ async def course_select(user_id, course_idx):
         action = form.get('action')
         if action == 'lesson':
             if next_lesson_paid:
-                return redirect(url_for('lesson_call', user_id=user_id, course_idx=course_idx))
+                return redirect(url_for('lesson.lesson_call', user_id=user_id, course_idx=course_idx))
             elif user.credits > 0:
                 user.credits -= 1
                 await User.filter(id=user.id).update(credits=user.credits)
@@ -168,7 +168,7 @@ async def course_select(user_id, course_idx):
                             lesson["paid"] = True
                             break
                 await User.filter(id=user.id).update(course_info=user.course_info)
-                return redirect(url_for('lesson_call', user_id=user_id, course_idx=course_idx))
+                return redirect(url_for('lesson.lesson_call', user_id=user_id, course_idx=course_idx))
             else:
                 total_lessons = sum(len(t["3_lessons"]) for t in course["4_structure"])
                 completed_lessons = 0
