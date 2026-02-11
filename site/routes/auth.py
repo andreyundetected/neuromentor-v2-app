@@ -33,7 +33,7 @@ async def register():
 
         user = await User.create(username=username, password=password)
         session['user_id'] = user.id
-        return redirect(url_for('library'))
+        return redirect(url_for('dashboard.library'))
 
     return await render_template('register.html')
 

@@ -55,9 +55,7 @@ async def get_empty_course_info():
         "5_categories": []
     }
 
-async def ensure_db_connection():
-    if not connections._get_storage():
-        await init_db()
+
 
 @app.route('/api/check_interview_status')
 async def check_interview_status():

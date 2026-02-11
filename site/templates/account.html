@@ -341,7 +341,7 @@
     {% if message %}
       <div class="message">{{ message }}</div>
     {% endif %}
-    <form action="{{ url_for('account') }}" method="POST">
+    <form action="{{ url_for('account.account') }}" method="POST">
       <div class="input-group">
         {% if session.get('language', 'ru') == 'ru' %}
           <label for="username">Имя аккаунта:</label>
