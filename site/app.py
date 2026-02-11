@@ -43,43 +43,7 @@ async def shutdown():
 
 
 @app.route('/interview', methods=['GET', 'POST'])
-async def interview():
-    if 'user_id' not in session:
-        return redirect(url_for("auth.login"))
 
-    user = await User.get(id=session['user_id'])
-
-    if request.method == 'POST':
-        form = await request.form
-        conversation_text = form['conversation']
-        conversation = session.get('conversation', [])
-        conversation.append({"role": "user", "content": conversation_text})
-
-        payload = {
-            "0_content": {
-                "0_conversation": conversation,
-                "1_user_info": user.user_info
-            },
-            "1_type": "interview"
-        }
-        response = await send_request_to_api(payload)
-
-        if response.get("response"):
-            conversation.append({"role": "manager", "content": response["response"]})
-
-        session['conversation'] = conversation
-
-        if response.get("user_info"):
-            print("Обновление user_info в базе данных")
-            user.user_info = response["user_info"]
-            if "<END>" in response.get("status"):
-                user.has_completed_interview = True
-            await user.save()
-
-        return jsonify(response)
-
-    session['conversation'] = []  
-    return await render_template('interview.html', username=user.username)
 
 @app.route('/start_recommendation/<int:recommendation_idx>', methods=['GET', 'POST'])
 async def start_recommendation(recommendation_idx):
@@ -104,38 +68,7 @@ async def start_recommendation(recommendation_idx):
     return redirect(url_for('course.course_creation', user_id=user.id, course_idx=course_idx, start_message=start_message))
 
 @app.route('/account', methods=['GET', 'POST'])
-async def account():
-    user = await require_login()
-    if isinstance(user, Response):
-        return user
-    user = await User.get(id=session['user_id'])
 
-    message = ""
-    if request.method == 'POST':
-        form = await request.form
-        new_username = form.get('username')
-        new_password = form.get('password')
-        
-        if new_username and new_username != user.username:
-            existing = await User.filter(username=new_username).exclude(id=user.id).first()
-
-            if existing:
-                message = "Username already taken."
-            else:
-                user.username = new_username
-                message = "Username updated successfully."
-        if new_password:
-            user.password = new_password
-            message += " Password updated successfully."
-        
-    async def clean_key(key):
-        cleaned = re.sub(r'\d+', '', key).replace('_', ' ').strip()
-        return cleaned.capitalize()
-    interview_results = []
-    if isinstance(user.user_info, dict):
-        for key, value in user.user_info.items():
-            interview_results.append((clean_key(key), value))
-    return await render_template('account.html', user=user, message=message, interview_results=interview_results)
 
 @app.route("/set_language/<lang>", methods=["POST"])
 async def set_language(lang):
