@@ -190,8 +190,6 @@ async def course_select(user_id, course_idx):
                 )
         elif action == 'edit':
             return redirect(url_for('course.course_edit', user_id=user_id, course_idx=course_idx))
-        elif action == 'settings':
-            return redirect(url_for('course_settings', user_id=user_id, course_idx=course_idx))
 
     total = sum(len(topic["3_lessons"]) for topic in course["4_structure"])
     completed = 0

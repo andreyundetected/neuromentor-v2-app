@@ -616,9 +616,9 @@
     <div class="course-gradient-bar" data-categories="{{ course['5_categories'] | join(', ') }}"></div>
     <!-- Кнопка "Back" -->
     {% if session.get('language', 'ru') == 'ru' %}
-    <a href="{{ url_for('library') }}" class="button-back">← Назад</a>
+    <a href="{{ url_for('dashboard.library') }}" class="button-back">← Назад</a>
     {% elif session.get('language', 'ru') == 'en' %}
-    <a href="{{ url_for('library') }}" class="button-back">← Back</a>
+    <a href="{{ url_for('dashboard.library') }}" class="button-back">← Back</a>
     {% endif %}
     
     <!-- Название курса и тема -->
