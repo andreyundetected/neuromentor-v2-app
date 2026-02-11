@@ -58,12 +58,7 @@ async def get_empty_course_info():
 
 
 @app.route('/api/check_interview_status')
-async def check_interview_status():
-    user = await require_login()
-    if isinstance(user, Response):
-        return jsonify({"has_completed_interview": False})
-    
-    return jsonify({"has_completed_interview": user.has_completed_interview})
+
 
 @app.route('/interview', methods=['GET', 'POST'])
 async def interview():
