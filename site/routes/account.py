@@ -1,17 +1,11 @@
-import re
-from models.user import User
+from quart import Blueprint, render_template, request, session, Response
 from services.require_login import require_login
-from quart import Response
-from quart import session
-from quart import request
-from quart import render_template
-from quart import Blueprint
-
-
+from models.user import User
+import re
 
 account_bp = Blueprint('account', __name__)
 
-
+@account_bp.route('/account', methods=['GET', 'POST'])
 async def account():
     user = await require_login()
     if isinstance(user, Response):

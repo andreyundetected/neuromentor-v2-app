@@ -1,20 +1,11 @@
-from services.api_service import send_request_to_api
-from models.user import User
-from quart import session
-from quart import url_for
-from quart import redirect
-from quart import request
-from quart import render_template
+from quart import Blueprint, render_template, request, redirect, url_for, session, Response, jsonify
 from services.require_login import require_login
-from quart import jsonify
-from quart import Response
-from quart import Blueprint
-
-
+from models.user import User
+from services.api_service import send_request_to_api
 
 interview_bp = Blueprint('interview', __name__)
 
-
+@interview_bp.route('/api/check_interview_status')
 async def check_interview_status():
     user = await require_login()
     if isinstance(user, Response):
@@ -22,7 +13,7 @@ async def check_interview_status():
     
     return jsonify({"has_completed_interview": user.has_completed_interview})
 
-
+@interview_bp.route('/interview', methods=['GET', 'POST'])
 async def interview():
     if 'user_id' not in session:
         return redirect(url_for("auth.login"))

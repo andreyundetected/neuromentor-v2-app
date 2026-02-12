@@ -1,7 +1,6 @@
 from quart import Quart, render_template, request, jsonify, session, Response, redirect, url_for
-from tortoise import Tortoise, fields, connections
+from tortoise import Tortoise, fields
 from tortoise.models import Model
-import re
 from services.api_service import send_request_to_api
 import os
 from models import init_db
@@ -35,16 +34,6 @@ async def startup():
 async def shutdown():
     await Tortoise.close_connections()
 
-
-
-
-
-@app.route('/api/check_interview_status')
-
-
-@app.route('/interview', methods=['GET', 'POST'])
-
-
 @app.route('/start_recommendation/<int:recommendation_idx>', methods=['GET', 'POST'])
 async def start_recommendation(recommendation_idx):
     user = await require_login()
@@ -66,9 +55,6 @@ async def start_recommendation(recommendation_idx):
     await User.filter(id=user.id).update(course_info=user.course_info)
 
     return redirect(url_for('course.course_creation', user_id=user.id, course_idx=course_idx, start_message=start_message))
-
-@app.route('/account', methods=['GET', 'POST'])
-
 
 @app.route("/set_language/<lang>", methods=["POST"])
 async def set_language(lang):
