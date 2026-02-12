@@ -94,7 +94,7 @@
 <body>
     <div class="container">
         <header>
-            <a href="{{ url_for('library') }}" class="logo">NeuroMentor</a>
+            <a href="{{ url_for('dashboard.library') }}" class="logo">NeuroMentor</a>
         </header>
         <h1>Добро пожаловать на платформу!</h1>
         <div class="course-grid">
@@ -110,9 +110,9 @@
         </div>
         <div class="navigation">
             {% if user %}
-            <a href="{{ url_for('library') }}" class="button">Перейти в библиотеку</a>
+            <a href="{{ url_for('dashboard.library') }}" class="button">Перейти в библиотеку</a>
             {% else %}
-            <a href="{{ url_for('register') }}" class="button">Register</a>
+            <a href="{{ url_for('auth.register') }}" class="button">Register</a>
             {% endif %}
         </div>
     </div>
