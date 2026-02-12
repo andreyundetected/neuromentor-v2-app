@@ -761,7 +761,7 @@
       </div>
       <!-- Существующие курсы -->
       {% for course in courses_with_indices %}
-      <div class="course-card" onclick="window.location.href='{{ url_for('course.course_select', user_id=user.id, course_idx=course.index) }}'">
+      <div class="course-card" onclick="window.location.href=&quot;{{ url_for('course.course_select', user_id=user.id, course_idx=course.index) }}&quot;">
         <div class="course-avatar" data-categories="{{ course.course['course']['5_categories'] | join(', ') }}"></div>
         <h2>{{ course.course["course"]["3_name"] or "Untitled" }}</h2>
         {% if session.get('language', 'ru') == 'ru' %}
@@ -985,12 +985,12 @@
         {% if session.get('language', 'ru') == 'ru' %}
         <h2>Пройдите интервью</h2>
         <p>Чтобы начать создавать курс, вам необходимо пройти короткое интервью. Это займет всего несколько минут</p>
-        <a href="{{ url_for('interview') }}">
+        <a href="{{ url_for('interview.interview') }}">
             <button class="btn">Начать интервью</button>
         {% elif session.get('language', 'ru') == 'en' %}
         <h2>Complete the Interview</h2>
         <p>To start creating a course, you need to complete a short interview. It will take just a few minutes</p>
-        <a href="{{ url_for('interview') }}">
+        <a href="{{ url_for('interview.interview') }}">
             <button class="btn">Start Interview</button>
         {% endif %}
         </a>
