@@ -502,9 +502,9 @@
 
   <div class="container">
     {% if session.get('language', 'ru') == 'ru' %}
-      <a href="{{ url_for('library') }}" class="button-back">← Назад</a>
+      <a href="{{ url_for('dashboard.library') }}" class="button-back">← Назад</a>
     {% elif session.get('language', 'ru') == 'en' %}
-      <a href="{{ url_for('library') }}" class="button-back">← Back</a>
+      <a href="{{ url_for('dashboard.library') }}" class="button-back">← Back</a>
     {% endif %}
     <h1 class="course-title">{{ course_name }}</h1>
     <!-- Прогресс-бар -->
