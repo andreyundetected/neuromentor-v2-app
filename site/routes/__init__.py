@@ -5,4 +5,4 @@ from .lesson import lesson_bp
 from .account import account_bp
 from .interview import interview_bp
 
-blueprints = [auth_bp, dashboard_bp, course_bp, lesson_bp, account_bp, interview_bp]
+blueprints = [auth_bp, dashboard_bp, course_bp, lesson_bp, account_bp, interview_bp, utils_bp]

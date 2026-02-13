@@ -270,28 +270,7 @@ def course_creation(user_id, course_idx):
     return render_template('course_creation.html', user=user, course_idx=course_idx, username=user.username, course_name = course_name)
 
 @app.route('/public_course/<int:course_id>', methods=['GET', 'POST'])
-def public_course_view(course_id):
-    user = None
-    if 'user_id' in session:
-        user = User.query.get(session['user_id'])
 
-    public_course = PublicCourse.query.get(course_id)
-    if not public_course:
-        return "Курс не найден", 404
-
-    if request.method == 'POST':
-        action = request.form.get('action')
-        if action == 'add_to_library':
-            return redirect(url_for('add_to_library', course_id=course_id))
-        elif action == 'trial_lesson':
-            
-            return redirect(url_for('lesson', user_id=user.id, course_idx=0))
-
-    return render_template(
-        'public_course.html',
-        user=user,
-        course=public_course
-    )
 
 @app.route('/course_edit/<int:user_id>/<int:course_idx>', methods=['GET', 'POST'])
 
