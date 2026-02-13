@@ -18,7 +18,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///neuromentor.db'
 db = SQLAlchemy(app)
 
 NEURO_API_URL = "http://127.0.0.1:5000/neuro_api"
-NEURO_REALTIME_API_URL = "http://127.0.0.1:5000/neuro_realtime_api"
+
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -134,42 +134,7 @@ def logout():
     return redirect(url_for('index'))
 
 @app.route('/interview', methods=['GET', 'POST'])
-def interview():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
 
-    user = User.query.get(session['user_id'])
-
-    if request.method == 'POST':
-        conversation_text = request.form['conversation']
-        conversation = session.get('conversation', [])
-        conversation.append({"role": "user", "content": conversation_text})
-
-        payload = {
-            "0_content": {
-                "0_conversation": conversation,
-                "1_user_info": user.user_info
-            },
-            "1_type": "interview"
-        }
-        response = send_request_to_api(payload)
-
-        if response.get("response"):
-            conversation.append({"role": "manager", "content": response["response"]})
-
-        session['conversation'] = conversation
-
-        if response.get("user_info"):
-            print("Обновление user_info в базе данных")
-            user.user_info = response["user_info"]
-            if "<END>" in response.get("status"):
-                user.has_completed_interview = True
-            db.session.commit()
-
-        return jsonify(response)
-
-    session['conversation'] = []  
-    return render_template('interview.html', username=user.username)
 
 @app.route('/add_to_library/<int:course_id>', methods=['POST'])
 def add_to_library(course_id):
@@ -232,36 +197,7 @@ def update_course(course_id):
 
 
 @app.route('/account', methods=['GET', 'POST'])
-def account():
-    user = require_login()
-    if isinstance(user, Response):
-        return user
-    user = User.query.get(session['user_id'])
-    message = ""
-    if request.method == 'POST':
-        new_username = request.form.get('username')
-        new_password = request.form.get('password')
-        
-        if new_username and new_username != user.username:
-            existing = User.query.filter(User.username == new_username, User.id != user.id).first()
-            if existing:
-                message = "Username already taken."
-            else:
-                user.username = new_username
-                message = "Username updated successfully."
-        if new_password:
-            user.password = new_password
-            message += " Password updated successfully."
-        db.session.commit()
-    
-    def clean_key(key):
-        cleaned = re.sub(r'\d+', '', key).replace('_', ' ').strip()
-        return cleaned.capitalize()
-    interview_results = []
-    if isinstance(user.user_info, dict):
-        for key, value in user.user_info.items():
-            interview_results.append((clean_key(key), value))
-    return render_template('account.html', user=user, message=message, interview_results=interview_results)
+
 
 @app.route('/course_creation/<int:user_id>/<int:course_idx>', methods=['GET', 'POST'])
 def course_creation(user_id, course_idx):
