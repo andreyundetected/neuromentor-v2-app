@@ -36,8 +36,7 @@ class PublicCourse(db.Model):
     course_info = db.Column(db.JSON, nullable=False)
     rating = db.Column(db.Float, default=10.0)
 
-with app.app_context():
-    db.create_all()
+
 
 def send_request_to_api(payload):
     print("Отправка запроса к API с payload:", payload)
@@ -80,13 +79,7 @@ def get_empty_course_info():
         "5_categories": []
     }
 
-def require_login():
-    if 'user_id' not in session:
-        return redirect(url_for('register'))
-    user = User.query.get(session['user_id'])
-    if not user.user_info:
-        return redirect(url_for('interview'))
-    return user
+
 
 @app.route('/')
 def index():
@@ -97,19 +90,7 @@ def index():
     return redirect(url_for('login'))  
 
 @app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        user = User.query.filter_by(username=username, password=password).first()
 
-        if user:
-            session['user_id'] = user.id
-            return redirect(url_for('index'))
-        else:
-            return "Неверное имя пользователя или пароль"
-
-    return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
