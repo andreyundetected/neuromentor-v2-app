@@ -59,25 +59,7 @@ async def send_request_to_realtime_api(payload):
                 except Exception as e:
                     print("Error decoding piece:", e)
 
-def get_empty_course_info():
-    return {
-        "0_topic": "",
-        "1_initial_level": "",
-        "2_target_level": "",
-        "3_name": "",
-        "4_structure": [
-            {
-                "0_topic": "",
-                "1_description": "",
-                "2_instructions_for_generating_lessons": "",
-                "3_lessons": [
-                    {"name": "", "description": ""},
-                    {"name": "", "description": ""}
-                ]
-            }
-        ],
-        "5_categories": []
-    }
+
 
 
 
@@ -139,16 +121,7 @@ def add_to_library(course_id):
     return redirect(url_for('library'))
 
 @app.route('/delete_course/<int:course_idx>', methods=['POST'])
-def delete_course(course_idx):
-    user = require_login()
-    if isinstance(user, Response):
-        return user
-    user = User.query.get(session['user_id'])
-    if course_idx < 0 or course_idx >= len(user.course_info):
-        return "Course not found", 404
-    user.course_info.pop(course_idx)
-    db.session.commit()
-    return redirect(url_for('library'))
+
 
 @app.route('/update_course/<int:course_id>', methods=['POST'])
 def update_course(course_id):
