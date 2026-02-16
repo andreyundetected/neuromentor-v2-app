@@ -90,27 +90,7 @@ def register():
 
 
 @app.route('/add_to_library/<int:course_id>', methods=['POST'])
-def add_to_library(course_id):
-    user = require_login()
-    if isinstance(user, Response):
-        return user
 
-    public_course = PublicCourse.query.get(course_id)
-    if not public_course:
-        return "Курс не найден.", 404
-
-    if any(c.get('id') == course_id for c in user.course_info):
-        return redirect(url_for('library'))  
-
-    updated_course_info = user.course_info + [{
-        **public_course.course_info,
-        "id": course_id  
-    }]
-    
-    User.query.filter_by(id=user.id).update({"course_info": updated_course_info})
-    db.session.commit()
-
-    return redirect(url_for('library'))
 
 @app.route('/delete_course/<int:course_idx>', methods=['POST'])
 
@@ -211,42 +191,7 @@ def course_select(user_id, course_idx):
 
 
 @app.route('/update_course_info/<int:user_id>/<int:course_idx>', methods=['POST'])
-def update_course_info(user_id, course_idx):
-    user = User.query.get(user_id)
-    if not user:
-        return redirect(url_for('login'))
-    
-    course_name = request.form.get('course_name')
-    learning_format = request.form.get('learning_format')
-    
-    course_info = user.course_info[course_idx]["course"]
-    if course_name:
-        course_info['3_name'] = course_name
-    if learning_format:
-        course_info['learning_format'] = learning_format
-    
-    if 'course_settings' not in session:
-        session['course_settings'] = {}
-    
-    course_settings = session['course_settings'].get(course_idx, [])
-    updated_lessons = []
 
-    for topic in course_info['4_structure']:
-        for lesson in topic['3_lessons']:
-            
-            lesson_name = lesson['name']
-            lesson_status = next(
-                (ls['completed'] for ls in course_settings if ls['name'] == lesson_name), 
-                False
-            )
-            updated_lessons.append({'name': lesson_name, 'completed': lesson_status})
-    
-    session['course_settings'][course_idx] = updated_lessons
-    
-    db.session.commit()
-    session.modified = True
-    
-    return redirect(url_for('course_settings', user_id=user.id, course_idx=course_idx))
 
 @app.route('/course_settings/<int:user_id>/<int:course_idx>')
 def course_settings(user_id, course_idx):
