@@ -38,15 +38,7 @@ class PublicCourse(db.Model):
 
 
 
-def send_request_to_api(payload):
-    print("Отправка запроса к API с payload:", payload)
-    response = requests.post(NEURO_API_URL, json=payload)
-    if response.status_code == 200:
-        print("API response:", response.json())
-        return response.json()
-    else:
-        print("Ошибка API:", response.text)
-        return {"error": "API Error", "details": response.text}
+
 
 async def send_request_to_realtime_api(payload):
     async with aiohttp.ClientSession() as session:
@@ -152,76 +144,7 @@ def update_course(course_id):
 
 
 @app.route('/course_creation/<int:user_id>/<int:course_idx>', methods=['GET', 'POST'])
-def course_creation(user_id, course_idx):
-    user = require_login()
-    if isinstance(user, Response):
-        return user
-    user = User.query.get(user_id)
-    if not user or user.id != session['user_id']:
-        return "Доступ запрещен", 403
 
-    if request.method == 'POST':
-        print(f"Начинаем обработку генерации курса для user_id={user_id}, course_idx={course_idx}")
-        conversation_text = request.form['conversation']
-        conversation = session.get('conversation', [])
-        conversation.append({"role": "user", "content": conversation_text})
-
-        if not user.course_info:
-            user.course_info = []
-
-        while len(user.course_info) <= course_idx:
-            user.course_info.append({
-                "course": get_empty_course_info(),
-                "course_settings": {}
-            })
-
-        course_info = user.course_info[course_idx]["course"]
-
-        print("Текущее course_info:", course_info)
-
-        payload = {
-            "0_content": {
-                "0_conversation": conversation,
-                "1_user_info": user.user_info,
-                "2_course_info": course_info
-            },
-            "1_type": "course_creation"
-        }
-        response = send_request_to_api(payload)
-
-        if "<END>" in response.get("status"):
-            first_lesson = user.course_info[course_idx]["course"]["4_structure"][0]["3_lessons"][0]["name"]
-            user.course_info[course_idx]["course_settings"] = {"lesson": first_lesson}
-            User.query.filter_by(id=user.id).update({"course_info": user.course_info})
-            db.session.commit()
-
-        if response.get("response"):
-            conversation.append({"role": "manager", "content": response["response"]})
-
-        session['conversation'] = conversation
-
-        if "course_info" in response:
-            print(f"Обновление course_info для индекса {course_idx}")
-            user.course_info[course_idx]["course"] = response["course_info"]
-            print(f"Новое course_info: {user.course_info[course_idx]['course']}")
-
-        try:
-            
-            User.query.filter_by(id=user.id).update({"course_info": user.course_info})
-            db.session.commit()  
-            print("Изменения успешно сохранены в базе данных.")
-        except Exception as e:
-            print("Ошибка при сохранении в базе данных:", e)
-
-        return jsonify(response)
-
-    session['conversation'] = []  
-
-    try:
-        course_name = user.course_info[course_idx]["course"]["3_name"]
-    except:
-        course_name = ""
-    return render_template('course_creation.html', user=user, course_idx=course_idx, username=user.username, course_name = course_name)
 
 @app.route('/public_course/<int:course_id>', methods=['GET', 'POST'])
 
