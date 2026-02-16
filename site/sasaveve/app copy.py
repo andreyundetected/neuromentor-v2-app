@@ -15,9 +15,9 @@ app.secret_key = 'supersecretkey'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///neuromentor.db'
 
 
-db = SQLAlchemy(app)
 
-NEURO_API_URL = "http://127.0.0.1:5000/neuro_api"
+
+
 
 
 class User(db.Model):
