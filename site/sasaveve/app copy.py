@@ -272,93 +272,14 @@ def course_select(user_id, course_idx):
     return render_template('course_select.html', user=user, course=course, course_idx=course_idx, username=user.username, progress = progress, course_id = course_idx)
 
 @app.route('/course_select/<int:user_id>/<int:course_idx>/lesson_chat', methods=['GET', 'POST'])
-def lesson_chat(user_id, course_idx):
-    user = require_login()
-    if isinstance(user, Response):
-        return user
-    user = User.query.get(user_id)
-    if not user or user.id != session['user_id']:
-        return "Доступ запрещен", 403
 
-    if request.method == 'POST':
-        
-        conversation_text = request.form['conversation']
-        conversation = session.get('conversation', [])
-        progress = session.get('progress', 0)
-        conversation.append({"role": "user", "content": conversation_text})
-
-        if len(user.course_info) <= course_idx:
-            return "Курс с указанным индексом не найден.", 404
-        
-        user_course_info = user.course_info[course_idx]
-        if not user.course_info[course_idx]["course_settings"].get("lesson"):
-            print("0000000000000000000")
-            print(user.course_info[course_idx]["course_settings"].get("lesson"))
-            user.course_info[course_idx]["course_settings"]["lesson"] = user.course_info[course_idx]["course"]["4_structure"][0]["3_lessons"][0]["name"]
-            User.query.filter_by(id=user.id).update({"course_info": user.course_info})
-            db.session.commit()
-        lesson_topic = user.course_info[course_idx]["course_settings"].get("lesson")
-
-        payload = {
-            "0_content": {
-                "0_conversation": conversation,
-                "1_user_info": user.user_info,
-                "2_user_course_info": user_course_info,
-                "3_course_info": user.course_info[course_idx]["course"],
-                "4_lesson_topic": lesson_topic,
-                "5_progress": progress
-            },
-            "1_type": "lesson"
-        }
-        response = send_request_to_api(payload)
-        print("0=0=0=0=0=0=0==0=0=0=0=0=0")
-        if "<END>" in response.get("status"):
-            flag = False
-            stop_all = False  
-            for big_topic in user.course_info[course_idx]["course"]["4_structure"]:
-                if stop_all:  
-                    break
-                for topic in big_topic["3_lessons"]:
-                    print("LESSON: ")
-                    print(user.course_info[course_idx]["course_settings"]["lesson"])
-                    print("TOPIC NAME: ")
-                    print(topic["name"])
-                    if flag:
-                        user.course_info[course_idx]["course_settings"]["lesson"] = topic["name"]
-                        print("LESSON: ")
-                        print(user.course_info[course_idx]["course_settings"]["lesson"])
-                        print("TOPIC NAME: ")
-                        print(topic["name"])
-                        print("TOPIC: ")
-                        print(topic)
-                        stop_all = True  
-                        break  
-                    if topic["name"] == user.course_info[course_idx]["course_settings"]["lesson"]:
-                        flag = True
-                        
-            print(user.course_info[course_idx]["course_settings"]["lesson"])
-            User.query.filter_by(id=user.id).update({"course_info": user.course_info})
-            db.session.commit()
-
-        if response.get("response"):
-            status = response.get('status')
-            conversation.append({"role": f"teacher {status}", "content": response["response"]})
-
-        session['conversation'] = conversation
-        return jsonify(response)
-
-    session['conversation'] = []  
-    progress = 0
-    return render_template('lesson_chat.html', user=user, course_idx=course_idx, username=user.username, lesson_title = user.course_info[course_idx]["course_settings"]["lesson"])
 
 
 
 
 
 @app.route('/stream_audio/<int:user_id>/<int:course_idx>')
-def stream_audio(user_id, course_idx):
-    print("in stream_audio")
-    return Response(stream_with_context(event_stream(user_id, course_idx)), content_type="text/event-stream")
+
 
 @app.route('/course_select/<int:user_id>/<int:course_idx>/lesson_call', methods=['GET', 'POST'])
 
