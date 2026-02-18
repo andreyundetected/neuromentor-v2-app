@@ -56,12 +56,7 @@ async def send_request_to_realtime_api(payload):
 
 
 @app.route('/')
-def index():
-    if 'user_id' in session:
-        user = User.query.get(session['user_id'])
-        if user:
-            return redirect(url_for('library'))  
-    return redirect(url_for('login'))  
+  
 
 @app.route('/login', methods=['GET', 'POST'])
 
@@ -194,27 +189,6 @@ def course_select(user_id, course_idx):
 
 
 @app.route('/course_settings/<int:user_id>/<int:course_idx>')
-def course_settings(user_id, course_idx):
-    user = User.query.get(user_id)
-    if not user:
-        return redirect(url_for('login'))
-    
-    course_info = user.course_info[course_idx]["course"]
-    course_settings = session.get('course_settings', {}).get(course_idx, [])
-    
-    nearest_lesson = None
-    for setting in course_settings:
-        if not setting['completed']:
-            nearest_lesson = setting['name']
-            break
-    
-    return render_template(
-        'course_settings.html',
-        user=user,
-        course_idx=course_idx,
-        course_info=course_info,
-        course_settings=course_settings,
-        nearest_lesson=nearest_lesson
-    )
+
 
 
