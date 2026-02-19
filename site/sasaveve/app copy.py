@@ -22,28 +22,13 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///neuromentor.db'
 
 
 
-class PublicCourse(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    topic = db.Column(db.String(100), nullable=False)
-    creator = db.Column(db.String(80), nullable=False)
-    course_info = db.Column(db.JSON, nullable=False)
-    rating = db.Column(db.Float, default=10.0)
 
 
 
 
 
-async def send_request_to_realtime_api(payload):
-    async with aiohttp.ClientSession() as session:
-        async with session.post(NEURO_REALTIME_API_URL, json=payload) as response:
-            
-            async for line in response.content:
-                try:
-                    piece = json.loads(line.decode('utf-8').strip())
-                    yield piece
-                except Exception as e:
-                    print("Error decoding piece:", e)
+
+
 
 
 
