@@ -57,26 +57,7 @@ async def start_recommendation(recommendation_idx):
     return redirect(url_for('course.course_creation', user_id=user.id, course_idx=course_idx, start_message=start_message))
 
 @app.route("/set_language/<lang>", methods=["POST"])
-async def set_language(lang):
-
-    if lang not in ["ru", "en"]:
-        lang = "ru"
-
-    user_id = session.get("user_id")
-    if not user_id:
-        return "Unauthorized", 401
-
-    user = await User.get(id=user_id)
-
-    if not user:
-        return "User not found", 404
-
-    user.user_info["language"] = lang
-    await User.filter(id=user.id).update(user_info=user.user_info)
-
-    session["language"] = lang
-
-    return "", 204  
+  
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 8000))

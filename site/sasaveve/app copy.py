@@ -89,46 +89,7 @@ async def send_request_to_realtime_api(payload):
 
 
 @app.route('/course_select/<int:user_id>/<int:course_idx>', methods=['GET', 'POST'])
-def course_select(user_id, course_idx):
-    user = require_login()
-    if isinstance(user, Response):
-        return user
-    user = User.query.get(user_id)
-    if not user or user.id != session['user_id']:
-        return "Доступ запрещен", 403
 
-    if not user or course_idx >= len(user.course_info):
-        return "Курс не найден", 404
-
-    course = user.course_info[course_idx]["course"]  
-
-    if request.method == 'POST':
-        action = request.form.get('action')
-
-        if action == 'lesson':
-            return redirect(url_for('lesson_call', user_id=user_id, course_idx=course_idx))
-        elif action == 'edit':
-            return redirect(url_for('course_edit', user_id=user_id, course_idx=course_idx))
-        elif action == 'settings':
-            return redirect(url_for('course_settings', user_id=user_id, course_idx=course_idx))
-    
-    progress_count = 0
-    count = 0
-    flag = False
-    for big_topic in user.course_info[course_idx]["course"]["4_structure"]:
-        count += len(big_topic["3_lessons"])
-        for topic in big_topic["3_lessons"]:
-            print(user.course_info[course_idx]["course_settings"]["lesson"])
-            print(topic)
-            if topic["name"] == user.course_info[course_idx]["course_settings"]["lesson"]:
-                flag = True
-            if flag == False:
-                progress_count += 1
-    
-    progress = int(progress_count / count * 10000)/100
-    User.query.filter_by(id=user.id).update({"course_info": user.course_info})
-    
-    return render_template('course_select.html', user=user, course=course, course_idx=course_idx, username=user.username, progress = progress, course_id = course_idx)
 
 @app.route('/course_select/<int:user_id>/<int:course_idx>/lesson_chat', methods=['GET', 'POST'])
 
