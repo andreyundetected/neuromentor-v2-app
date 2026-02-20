@@ -34,28 +34,6 @@ async def startup():
 async def shutdown():
     await Tortoise.close_connections()
 
-@app.route('/start_recommendation/<int:recommendation_idx>', methods=['GET', 'POST'])
-async def start_recommendation(recommendation_idx):
-    user = await require_login()
-    if isinstance(user, Response):
-        return user
-
-    if recommendation_idx >= len(user.recommendations):
-        return "Recommendation not found", 404
-
-    recommendation = user.recommendations[recommendation_idx]
-    base_json = recommendation.get("base_json", {})
-    start_message = recommendation.get("start_message", "Welcome to your recommended course!")
-
-    if not user.course_info:
-        user.course_info = []
-    
-    course_idx = len(user.course_info)
-    user.course_info.append({"course": base_json, "course_settings": {}})
-    await User.filter(id=user.id).update(course_info=user.course_info)
-
-    return redirect(url_for('course.course_creation', user_id=user.id, course_idx=course_idx, start_message=start_message))
-
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 8000))
     app.run(host="0.0.0.0", port=port, debug=True)
