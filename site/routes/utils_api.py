@@ -1,12 +1,9 @@
+from quart import Blueprint, session
 from models.user import User
-from quart import session
-from quart import Blueprint
-
-
 
 utils_bp = Blueprint('utils', __name__)
 
-
+@utils_bp.route("/set_language/<lang>", methods=["POST"])
 async def set_language(lang):
 
     if lang not in ["ru", "en"]:
@@ -26,4 +23,4 @@ async def set_language(lang):
 
     session["language"] = lang
 
-    return "", 204
+    return "", 204  

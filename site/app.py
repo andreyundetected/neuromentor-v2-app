@@ -56,9 +56,6 @@ async def start_recommendation(recommendation_idx):
 
     return redirect(url_for('course.course_creation', user_id=user.id, course_idx=course_idx, start_message=start_message))
 
-@app.route("/set_language/<lang>", methods=["POST"])
-  
-
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 8000))
     app.run(host="0.0.0.0", port=port, debug=True)
