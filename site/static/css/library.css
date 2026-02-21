@@ -1,278 +1,278 @@
-/* Анимация появления (fadeInUp) */
-@keyframes fadeInUp {
-    from {
-    opacity: 0;
-    transform: translateY(20px);
+    /* Анимация появления (fadeInUp) */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
-    to {
-    opacity: 1;
-    transform: translateY(0);
+    
+    /* Глобальные стили скроллбара для всех элементов */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
     }
-}
+    ::-webkit-scrollbar-track {
+      background: #e0e0e0;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #d3d3d3;
+      border-radius: 10px;
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #e9ecef;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      animation: fadeInUp 0.5s ease-out;
+    }
+    
+    /* Header с белой шторкой, как на странице Интервью */
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+    }
+    /* Логотип прикреплён к левому верхнему углу (отступ: top 15px, left 15px) */
+    .logo {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      color: #007bff;
+      font-size: 24px;
+      font-weight: bold;
+      transition: transform 0.3s, color 0.3s;
+    }
+    .logo svg {
+      margin-right: 8px;
+      transition: transform 0.3s;
+    }
+    .logo:hover {
+      color: #0056b3;
+    }
+    .logo:hover svg {
+      transform: scale(1.1);
+    }
+    /* Аватарка прикреплена к правому верхнему углу (отступ: top 8px, right 15px) */
+    .account {
+      position: absolute;
+      top: 8px;
+      right: 15px;
+    }
+    .account a {
+      text-decoration: none;
+    }
+    .account .account-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      font-size: 18px;
+      font-weight: bold;
+      border: 2px solid #007bff;
+      transition: transform 0.3s;
+    }
+    .account .account-avatar:hover {
+      transform: scale(1.1);
+    }
+    
+    h1 {
+      margin: 80px 0 20px;
+      text-align: center;
+      color: #333;
+    }
+    
+    /* Панель поиска */
+    .search-bar {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .search-bar input {
+      padding: 10px 20px;
+      width: 50%;
+      max-width: 400px;
+      border: 1px solid #ccc;
+      border-radius: 25px;
+      background-color: #fafafa;
+      font-size: 14px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .search-bar input:focus {
+      border-color: #007bff;
+      box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+      outline: none;
+    }
+    
+    /* Панель категорий */
+    .category-bar {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 10px 0;
+      margin-bottom: 20px;
+    }
+    .category-bar::-webkit-scrollbar {
+      height: 8px;
+    }
+    .category-bar::-webkit-scrollbar-track {
+      background: #e0e0e0;
+      border-radius: 10px;
+    }
+    .category-bar::-webkit-scrollbar-thumb {
+      background: #d3d3d3;
+      border-radius: 10px;
+    }
+    .category-item {
+      padding: 10px 20px;
+      border-radius: 20px;
+      background: #f5f5f5;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .category-item:hover {
+      background: #007bff;
+      color: #fff;
+    }
+    .category-item.selected {
+      background: #0056b3;
+      color: #fff;
+    }
+    
+    /* Сетка рекомендаций */
+    .recommendation-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* 5-7 карточек */
+      gap: 36px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    /* Карточка рекомендаций */
+    .recommendation-card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      padding: 10px;
+      cursor: pointer;
+      width: 120px; /* Фиксированная ширина */
+      height: 120px; /* Уменьшенная высота */
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
 
-/* Глобальные стили скроллбара для всех элементов */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-::-webkit-scrollbar-track {
-    background: #e0e0e0;
+    .recommendation-card:hover {
+      transform: scale(1.08);
+      box-shadow: 0 3px 7px rgba(0, 0, 0, 0.2);
+    }
+
+    .recommendation-card img {
+      width: 100%;
+      border-radius: 8px;
+      margin-bottom: 5px;
+    }
+
+    .recommendation-card h2 {
+      font-size: 12px;
+      margin: 0;
+      color: #333;
+    }
+
+    .divider {
+      width: 100%;
+      height: 1px;
+      background-color: #ccc;
+      margin: 20px 0;
+    }
+    
+    /* Сетка курсов */
+    .course-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr); /* Жёстко 3 карточки */
+      gap: 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .course-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      padding: 20px;
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: pointer;
+    }
+    .course-card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+    .course-avatar {
+    width: 100%;
+    height: 186px; /* Высота блока */
     border-radius: 10px;
-}
-::-webkit-scrollbar-thumb {
-    background: #d3d3d3;
-    border-radius: 10px;
-}
-
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #e9ecef;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    min-height: 100vh;
-}
-
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-    animation: fadeInUp 0.5s ease-out;
-}
-
-/* Header с белой шторкой, как на странице Интервью */
-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 60px;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-}
-/* Логотип прикреплён к левому верхнему углу (отступ: top 15px, left 15px) */
-.logo {
-    position: absolute;
-    top: 15px;
-    left: 15px;
+    background: linear-gradient(135deg, #ddd, #bbb);
     display: flex;
     align-items: center;
-    text-decoration: none;
-    color: #007bff;
-    font-size: 24px;
-    font-weight: bold;
-    transition: transform 0.3s, color 0.3s;
-}
-.logo svg {
-    margin-right: 8px;
-    transition: transform 0.3s;
-}
-.logo:hover {
-    color: #0056b3;
-}
-.logo:hover svg {
-    transform: scale(1.1);
-}
-/* Аватарка прикреплена к правому верхнему углу (отступ: top 8px, right 15px) */
-.account {
-    position: absolute;
-    top: 8px;
-    right: 15px;
-}
-.account a {
-    text-decoration: none;
-}
-.account .account-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
     justify-content: center;
-    align-items: center;
-    color: #fff;
-    font-size: 18px;
-    font-weight: bold;
-    border: 2px solid #007bff;
-    transition: transform 0.3s;
-}
-.account .account-avatar:hover {
-    transform: scale(1.1);
-}
+    }
 
-h1 {
-    margin: 80px 0 20px;
-    text-align: center;
-    color: #333;
-}
-
-/* Панель поиска */
-.search-bar {
-    margin-bottom: 20px;
-    text-align: center;
-}
-.search-bar input {
-    padding: 10px 20px;
-    width: 50%;
-    max-width: 400px;
-    border: 1px solid #ccc;
-    border-radius: 25px;
-    background-color: #fafafa;
-    font-size: 14px;
-    transition: border-color 0.3s, box-shadow 0.3s;
-}
-.search-bar input:focus {
-    border-color: #007bff;
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
-    outline: none;
-}
-
-/* Панель категорий */
-.category-bar {
-    display: flex;
-    gap: 10px;
-    overflow-x: auto;
-    padding: 10px 0;
-    margin-bottom: 20px;
-}
-.category-bar::-webkit-scrollbar {
-    height: 8px;
-}
-.category-bar::-webkit-scrollbar-track {
-    background: #e0e0e0;
-    border-radius: 10px;
-}
-.category-bar::-webkit-scrollbar-thumb {
-    background: #d3d3d3;
-    border-radius: 10px;
-}
-.category-item {
-    padding: 10px 20px;
-    border-radius: 20px;
-    background: #f5f5f5;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.3s, color 0.3s;
-}
-.category-item:hover {
-    background: #007bff;
-    color: #fff;
-}
-.category-item.selected {
-    background: #0056b3;
-    color: #fff;
-}
-
-/* Сетка рекомендаций */
-.recommendation-bar {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* 5-7 карточек */
-    gap: 36px;
-    max-width: 900px;
-    margin: 0 auto;
-}
-/* Карточка рекомендаций */
-.recommendation-card {
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    padding: 10px;
-    cursor: pointer;
-    width: 120px; /* Фиксированная ширина */
-    height: 120px; /* Уменьшенная высота */
-    transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.recommendation-card:hover {
-    transform: scale(1.08);
-    box-shadow: 0 3px 7px rgba(0, 0, 0, 0.2);
-}
-
-.recommendation-card img {
-    width: 100%;
-    border-radius: 8px;
-    margin-bottom: 5px;
-}
-
-.recommendation-card h2 {
-    font-size: 12px;
-    margin: 0;
-    color: #333;
-}
-
-.divider {
-    width: 100%;
-    height: 1px;
-    background-color: #ccc;
-    margin: 20px 0;
-}
-
-/* Сетка курсов */
-.course-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr); /* Жёстко 3 карточки */
-    gap: 20px;
-    max-width: 1000px;
-    margin: 0 auto;
-}
-
-.course-card {
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    padding: 20px;
-    transition: transform 0.3s, box-shadow 0.3s;
-    cursor: pointer;
-}
-.course-card:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-.course-avatar {
-width: 100%;
-height: 186px; /* Высота блока */
-border-radius: 10px;
-background: linear-gradient(135deg, #ddd, #bbb);
-display: flex;
-align-items: center;
-justify-content: center;
-}
-
-.course-card h2 {
-    font-size: 18px;
-    margin: 10px 0;
-}
-.course-card p {
-    font-size: 14px;
-    color: #666;
-}
-.course-categories {
-    font-size: 12px;
-    color: #007bff;
-    margin-top: 5px;
-}
-.add-course-card {
-    background: #e0f7fa;
-    border: 2px dashed #007bff;
-    color: #007bff;
-    cursor: pointer;
-    transition: transform 0.3s, background-color 0.3s;
-}
-.add-course-card:hover {
-    background: #b2ebf2;
-    transform: scale(1.05);
-}
-.add-course-card img {
-    width: 100%;
-    border-radius: 10px;
-    margin-bottom: 10px;
-}
-.about-neuromentor {
+    .course-card h2 {
+      font-size: 18px;
+      margin: 10px 0;
+    }
+    .course-card p {
+      font-size: 14px;
+      color: #666;
+    }
+    .course-categories {
+      font-size: 12px;
+      color: #007bff;
+      margin-top: 5px;
+    }
+    .add-course-card {
+      background: #e0f7fa;
+      border: 2px dashed #007bff;
+      color: #007bff;
+      cursor: pointer;
+      transition: transform 0.3s, background-color 0.3s;
+    }
+    .add-course-card:hover {
+      background: #b2ebf2;
+      transform: scale(1.05);
+    }
+    .add-course-card img {
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    .about-neuromentor {
   background: linear-gradient(135deg, #3a6ad6, #6a9dfc);
   color: white;
   border-radius: 15px;

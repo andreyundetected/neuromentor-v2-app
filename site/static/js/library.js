@@ -1,124 +1,146 @@
-document.addEventListener("DOMContentLoaded", () => {
-    // 👇 Обработка кнопки языка
-    const langBtn = document.getElementById('lang-btn');
-    if (langBtn) {
-        langBtn.addEventListener('click', () => {
-            const dropdown = document.getElementById('lang-dropdown');
-            dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
-        });
+
+
+    function toggleLanguageDropdown() {
+        const dropdown = document.getElementById('lang-dropdown');
+        dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
     }
 
-    // 👇 Выбор языка
-    document.querySelectorAll('#lang-dropdown button').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const lang = btn.textContent.trim().toLowerCase();
-            fetch(`/set_language/${lang}`, { method: "POST" })
-                .then(res => res.ok ? location.reload() : console.error("Error:", res.statusText))
-                .catch(err => console.error("Fetch error:", err));
-        });
-    });
+    function selectLanguage(lang) {
+        console.log("Selected language:", lang);
+        
+        fetch(`/set_language/${lang}`, { method: "POST" })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();  // ✅ Перезагрузка страницы
+                } else {
+                    console.error("Error setting language:", response.statusText);
+                }
+            })
+            .catch(error => console.error("Fetch error:", error));
+    }
 
-    // 👇 Обработка модалки интервью
-    const showInterviewModal = document.querySelector('meta[name="show-interview"]')?.content === 'true';
-    window.checkInterview = (targetUrl) => {
+
+
+    function checkInterview(targetUrl) {
+        // Проверяем флаг, переданный с бэкенда
+        const showInterviewModal = {{ show_interview_modal | tojson }};
+        
         if (showInterviewModal) {
+            // Показываем модальное окно, если интервью не пройдено
             document.getElementById("interviewModal").style.display = "flex";
         } else {
+            // Если интервью пройдено, переходим по URL
             window.location.href = targetUrl;
         }
-    };
+    }
 
-    // 👇 Генерация цветов категорий
+
+  
     function stringToColor(str) {
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
             hash = str.charCodeAt(i) + ((hash << 5) - hash);
         }
-        const hue = Math.abs(hash) % 360;
-        return `hsl(${hue}, 80%, 70%)`;
+        const hue = Math.abs(hash) % 360; // Цветовой тон (0-360 градусов)
+        return `hsl(${hue}, 80%, 70%)`; // HSL цвет
     }
 
     function generateGradient(categories) {
-        if (!categories.length) return 'linear-gradient(135deg, #ddd, #bbb)';
-        let sorted = categories.map(c => c.trim()).sort();
-        let colors = sorted.map(stringToColor);
-        return `linear-gradient(135deg, ${colors.map((c, i) => `${c} ${(i / (colors.length - 1)) * 100}%`).join(', ')})`;
+        if (!categories.length) return 'linear-gradient(135deg, #ddd, #bbb)'; // Если нет категорий
+
+        let sortedCategories = categories.map(c => c.trim()).sort(); // Сортируем категории
+        let colors = sortedCategories.map(stringToColor); // Преобразуем в цвета
+
+        let gradientParts = colors.map((color, index) => {
+            let position = (index / (colors.length - 1)) * 100;
+            return `${color} ${position}%`;
+        });
+
+        return `linear-gradient(135deg, ${gradientParts.join(', ')})`;
     }
 
-    // 👇 Градиенты на курсы
-    document.querySelectorAll(".course-avatar").forEach(el => {
-        let categories = el.getAttribute("data-categories").split(",");
-        el.style.background = generateGradient(categories);
+    document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll(".course-avatar").forEach(el => {
+            let categories = el.getAttribute("data-categories").split(",");
+            el.style.background = generateGradient(categories);
+        });
     });
 
-    // 👇 Аватарка пользователя
-    const username = document.querySelector('meta[name="username"]')?.content || 'User';
-    const colors = ['#FF5733', '#33B5FF', '#FF33F6', '#33FF57', '#FFBD33'];
-    let hash = 0;
-    for (let i = 0; i < username.length; i++) {
-        hash = username.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const index = Math.abs(hash) % colors.length;
-    const accountAvatar = document.querySelector('.account-avatar');
-    if (accountAvatar) {
-        accountAvatar.style.backgroundColor = colors[index];
-        accountAvatar.textContent = username.charAt(0).toUpperCase();
-    }
-
-    // 👇 Фильтр по курсам
-    let selectedCategories = [];
-    function filterCourses() {
-        const value = document.getElementById('search-input')?.value.toLowerCase() || '';
-        const courses = document.querySelectorAll('.course-card:not(.add-course-card)');
-        courses.forEach(course => {
-            const name = course.querySelector('h2')?.textContent.toLowerCase() || '';
-            let cats = course.querySelector('.course-categories')?.textContent.replace(/^Categories:\s*/i, '').trim() || '';
-            let catList = cats.split(',').map(s => s.trim().toLowerCase());
-            const nameMatch = name.includes(value);
-            const categoryMatch = selectedCategories.every(c => catList.includes(c));
-            course.style.display = (nameMatch && categoryMatch) ? 'block' : 'none';
+    function startRecommendation(index) {
+        fetch(`/start_recommendation/${index}`, {
+            method: 'POST'
+        }).then(response => {
+            if (response.redirected) {
+                window.location.href = response.url;
+            }
         });
     }
+    let selectedCategories = [];
 
-    document.getElementById('search-input')?.addEventListener('input', filterCourses);
-
-    window.toggleCategory = (el, category) => {
-        const cat = category.toLowerCase();
-        if (selectedCategories.includes(cat)) {
-            selectedCategories = selectedCategories.filter(c => c !== cat);
-            el.classList.remove('selected');
+    // Функция для динамической фильтрации курсов
+    function filterCourses() {
+    const searchInput = document.getElementById('search-input').value.toLowerCase();
+    const courses = document.querySelectorAll('.course-card:not(.add-course-card)');
+    
+    courses.forEach(course => {
+        const courseName = course.querySelector('h2').textContent.toLowerCase();
+        let courseCatsText = course.querySelector('.course-categories').textContent.trim(); 
+        // Удаляем префикс "Categories:" с учетом возможных пробелов
+        courseCatsText = courseCatsText.replace(/^Categories:\s*/i, '');
+        const courseCategories = courseCatsText.split(',').map(s => s.trim().toLowerCase());
+        
+        // Флаг для совпадения по имени
+        const nameMatch = courseName.includes(searchInput);
+        
+        // Флаг для совпадения по выбранным категориям (каждая выбранная категория должна присутствовать)
+        let categoryMatch = selectedCategories.every(cat => courseCategories.includes(cat));
+        
+        if (nameMatch && categoryMatch) {
+        course.style.display = 'block';
         } else {
-            selectedCategories.push(cat);
-            el.classList.add('selected');
-        }
-        filterCourses();
-    };
-
-    window.resetCategory = () => {
-        selectedCategories = [];
-        document.querySelectorAll('.category-item').forEach(el => el.classList.remove('selected'));
-        filterCourses();
-    };
-
-    window.startRecommendation = (index) => {
-        fetch(`/start_recommendation/${index}`, { method: 'POST' })
-            .then(r => r.redirected ? window.location.href = r.url : null);
-    };
-});
-document.querySelectorAll('.category-item').forEach(el => {
-    el.addEventListener('click', () => {
-        if (el.textContent.trim().toLowerCase() === 'all') {
-            resetCategory();
-        } else {
-            toggleCategory(el, el.textContent);
+        course.style.display = 'none';
         }
     });
-});
-document.querySelector('.add-course-card')?.addEventListener('click', () => {
-    checkInterview('/create_course');
-});
-document.querySelectorAll('.course-card:not(.add-course-card)').forEach((card, index) => {
-    card.addEventListener('click', () => {
-        checkInterview(`/course/${index}`);
-    });
-});
+    }
+
+    // Функция переключения категории (множественный выбор)
+    function toggleCategory(categoryElement, category) {
+      const cat = category.toLowerCase();
+      if (selectedCategories.includes(cat)) {
+        selectedCategories = selectedCategories.filter(c => c !== cat);
+        categoryElement.classList.remove('selected');
+      } else {
+        selectedCategories.push(cat);
+        categoryElement.classList.add('selected');
+      }
+      filterCourses();
+    }
+
+    // Функция сброса выбранных категорий
+    function resetCategory() {
+      const categoryItems = document.querySelectorAll('.category-item');
+      categoryItems.forEach(item => item.classList.remove('selected'));
+      selectedCategories = [];
+      filterCourses();
+    }
+
+    // Извлекаем имя пользователя из мета-тега, переданного сервером
+    const username = document.querySelector('meta[name="username"]').getAttribute('content') || 'User';
+
+    // Функция генерации цвета для аватарки на основе имени
+    function getUserAvatarColor(name) {
+      const colors = ['#FF5733', '#33B5FF', '#FF33F6', '#33FF57', '#FFBD33'];
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      const index = Math.abs(hash) % colors.length;
+      return colors[index];
+    }
+    const userAvatarColor = getUserAvatarColor(username);
+
+    // Устанавливаем аватарку в header
+    const accountAvatar = document.querySelector('.account-avatar');
+    accountAvatar.style.backgroundColor = userAvatarColor;
+    accountAvatar.textContent = username.charAt(0).toUpperCase();
+  
