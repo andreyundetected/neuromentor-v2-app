@@ -15,16 +15,13 @@
     <a href="/" class="logo">NeuroMentor</a>
   
     <!-- Блок с выбором языка (слева от кредитов) -->
-    <div class="header-btn lang-btn" id="lang-btn" onclick="toggleLanguageDropdown()">
+    <div class="header-btn lang-btn" id="lang-btn">
         <span class="btn-text" id="lang-text">
             {% if session.get('language', 'ru') == 'ru' %} RU {% else %} EN {% endif %}
         </span>
     </div>
     <!-- Выпадающий список языков (скрыт по умолчанию) -->
-    <div class="lang-dropdown" id="lang-dropdown">
-        <button onclick="selectLanguage('en')">EN</button>
-        <button onclick="selectLanguage('ru')">RU</button>
-      </div>
+    <div class="lang-dropdown" id="lang-dropdown"></div>
     <!-- Блок с количеством кредитов -->
     <a href="https://t.me/NeuroMentor_payment_bot" class="credits" title="Buy Credits via Telegram" target="_blank">
       {% if session.get('language', 'ru') == 'ru' %}
@@ -58,15 +55,15 @@
     </div>
     <!-- Панель категорий -->
     <div class="category-bar">
-      <div class="category-item" onclick="resetCategory()">All</div>
+      <div class="category-item">All</div>
       {% for category, count in sorted_categories %}
-      <div class="category-item" onclick="toggleCategory(this, '{{ category }}')">{{ category }}</div>
+      <div class="category-item">{{ category }}</div>
       {% endfor %}
     </div>
     <!-- Рекомендационная панель -->
     <div class="recommendation-bar">
       {% for rec in user.recommendations %}
-      <div class="recommendation-card" onclick="checkInterview('/start_recommendation/{{ loop.index0 }}')">
+      <div class="recommendation-card">
         <img src="/static/images/course_placeholder.jpg" alt="Курс {{ rec.recommendation_name }}">
         <h2>{{ rec.recommendation_name }}</h2>
       </div>
@@ -78,7 +75,7 @@
     <!-- Сетка курсов -->
     <div class="course-grid">
       <!-- Карточка для создания нового курса -->
-      <div class="course-card add-course-card" onclick="checkInterview('{{ new_course_url }}')">
+      <div class="course-card add-course-card">
         <img src="/static/images/add_icon.jpg" alt="Create a course">
         {% if session.get('language', 'ru') == 'ru' %}
           <h2>Создать новый курс</h2>
@@ -90,7 +87,7 @@
       </div>
       <!-- Существующие курсы -->
       {% for course in courses_with_indices %}
-      <div class="course-card" onclick="window.location.href=&quot;{{ url_for('course.course_select', user_id=user.id, course_idx=course.index) }}&quot;">
+      <div class="course-card" >
         <div class="course-avatar" data-categories="{{ course.course['course']['5_categories'] | join(', ') }}"></div>
         <h2>{{ course.course["course"]["3_name"] or "Untitled" }}</h2>
         {% if session.get('language', 'ru') == 'ru' %}
