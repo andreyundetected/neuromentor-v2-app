@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <!-- Сервер должен подставить актуальное имя пользователя в content -->
   <meta name="username" content="{{ username }}">
+  <meta name="show-interview" content="{{ show_interview_modal | lower }}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Course library - NeuroMentor</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/library.css') }}">
@@ -324,6 +325,6 @@
         </a>
     </div>
 </div>
-<script src="{{ url_for('static', filename='js/library.js') }}"></script>
+<script src="{{ url_for('static', filename='js/library.js') }}" defer></script>
 </body>
 </html>

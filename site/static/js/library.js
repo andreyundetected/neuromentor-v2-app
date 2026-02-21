@@ -17,11 +17,10 @@ function selectLanguage(lang) {
         .catch(error => console.error("Fetch error:", error));
 }
 
-
+const showInterviewMeta = document.querySelector('meta[name="show-interview"]');
+const showInterviewModal = document.querySelector('meta[name="show-interview"]')?.content === 'true';
 
 function checkInterview(targetUrl) {
-    // Проверяем флаг, переданный с бэкенда
-    const showInterviewModal = {{ show_interview_modal | tojson }};
     
     if (showInterviewModal) {
         // Показываем модальное окно, если интервью не пройдено
@@ -122,8 +121,6 @@ function resetCategory() {
     filterCourses();
 }
 
-// Извлекаем имя пользователя из мета-тега, переданного сервером
-const username = document.querySelector('meta[name="username"]').getAttribute('content') || 'User';
 
 // Функция генерации цвета для аватарки на основе имени
 function getUserAvatarColor(name) {
@@ -135,9 +132,24 @@ function getUserAvatarColor(name) {
     const index = Math.abs(hash) % colors.length;
     return colors[index];
 }
-const userAvatarColor = getUserAvatarColor(username);
 
-// Устанавливаем аватарку в header
-const accountAvatar = document.querySelector('.account-avatar');
-accountAvatar.style.backgroundColor = userAvatarColor;
-accountAvatar.textContent = username.charAt(0).toUpperCase();
+document.addEventListener("DOMContentLoaded", function () {
+    // Преобразование имени в цвет
+    const username = document.querySelector('meta[name="username"]').getAttribute('content') || 'User';
+    const userAvatarColor = getUserAvatarColor(username);
+
+    // Установка аватарки
+    const accountAvatar = document.querySelector('.account-avatar');
+    if (accountAvatar) {
+        accountAvatar.style.backgroundColor = userAvatarColor;
+        accountAvatar.textContent = username.charAt(0).toUpperCase();
+    }
+
+    // Установка градиентов для курсов
+    document.querySelectorAll(".course-avatar").forEach(el => {
+        let categories = el.getAttribute("data-categories").split(",");
+        el.style.background = generateGradient(categories);
+    });
+});
+
+
