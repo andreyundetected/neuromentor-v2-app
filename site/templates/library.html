@@ -6,6 +6,14 @@
   <meta name="username" content="{{ username }}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Course library - NeuroMentor</title>
+  
+<script>
+  window.NM = {
+    showInterviewModal: {{ show_interview_modal | tojson }},
+    language: "{{ session.get('language','ru') }}",
+    username: "{{ username }}"
+  };
+</script>
 
 <link rel="stylesheet" href="{{ url_for('static', filename='css/library.css') }}">
 

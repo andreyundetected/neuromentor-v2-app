@@ -21,19 +21,15 @@
 
 
 
-    function checkInterview(targetUrl) {
-        // Проверяем флаг, переданный с бэкенда
-        const showInterviewModal = {{ show_interview_modal | tojson }};
-        
-        if (showInterviewModal) {
-            // Показываем модальное окно, если интервью не пройдено
-            document.getElementById("interviewModal").style.display = "flex";
-        } else {
-            // Если интервью пройдено, переходим по URL
-            window.location.href = targetUrl;
-        }
-    }
-
+const NM = window.NM;
+function checkInterview(targetUrl) {
+  if (NM.showInterviewModal) {      // 2
+      document.getElementById("interviewModal").style.display = "flex";
+  } else {
+      window.location.href = targetUrl;
+  }
+}
+const username = NM.username || 'User';
 
   
     function stringToColor(str) {
@@ -124,8 +120,6 @@
       filterCourses();
     }
 
-    // Извлекаем имя пользователя из мета-тега, переданного сервером
-    const username = document.querySelector('meta[name="username"]').getAttribute('content') || 'User';
 
     // Функция генерации цвета для аватарки на основе имени
     function getUserAvatarColor(name) {
