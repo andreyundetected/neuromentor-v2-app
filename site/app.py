@@ -18,13 +18,7 @@ DATABASE_URL = os.getenv("DATABASE_URL").replace("postgresql://", "postgres://")
 
 NEURO_API_URL = "https://" + os.getenv("NEURO_API-DOMAIN", "") + "/neuro_api"
 
-class PublicCourse(Model):
-    id = fields.BigIntField(pk=True)
-    name = fields.CharField(max_length=100)
-    topic = fields.CharField(max_length=100)
-    creator = fields.CharField(max_length=80)
-    course_info = fields.JSONField()
-    rating = fields.FloatField(default=10.0)
+
 
 @app.before_serving
 async def startup():
