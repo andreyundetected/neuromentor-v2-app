@@ -18,8 +18,6 @@ DATABASE_URL = os.getenv("DATABASE_URL").replace("postgresql://", "postgres://")
 
 NEURO_API_URL = "https://" + os.getenv("NEURO_API-DOMAIN", "") + "/neuro_api"
 
-
-
 @app.before_serving
 async def startup():
     await init_db(DATABASE_URL)
