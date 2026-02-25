@@ -464,20 +464,27 @@ input:checked + .slider:before {
 /* Новая зона презентации 
 */
 #presentationZone {
-    position: fixed;
-    top: 80px;
-    bottom: calc(100vh - (80px + 80vh));
-    left: 20px;
-    right: calc(50% - 400px + 20px);
-    border: 2px solid #007bff;
-    background-color: rgba(255, 255, 255, 1);
-    padding: 10px;
-    overflow-y: auto;
-    z-index: -1;
-    display: flex; /* Для центрирования */
-    justify-content: center; /* по горизонтали */
-    align-items: center; /* по вертикали */
+  position: fixed;
+  top: 80px;
+  left: 20px;
+  right: calc(50% - 400px + 20px);
+  bottom: calc(100vh - (80px + 80vh));
+
+  border: 2px solid #007bff;
+  border-radius: 12px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  overflow-y: auto;          /* ← только то, что нужно */
+  background: radial-gradient(circle at center,
+              transparent 0%, transparent 100%);
+  transition: background 0.8s ease;
+  z-index: 1;                /* чуть выше канваса */
+  padding: 10px;
 }
+
 
 #presentationImage {
     max-width: 100%;

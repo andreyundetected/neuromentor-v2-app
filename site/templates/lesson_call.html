@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Call Lesson - NeuroMentor</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=4">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=9">
   </head>
   <body>
     <canvas id="backgroundCanvas"></canvas>
@@ -173,7 +173,39 @@
           console.log("[MODE] Response mode switched to:", mode);
         }
       </script>
-      
+    <script>
+    function getDominantColor(img, downScale = 16) {
+      const canvas  = document.createElement('canvas');
+      const ctx     = canvas.getContext('2d');
+      canvas.width  = canvas.height = downScale;
+
+      ctx.drawImage(img, 0, 0, downScale, downScale);
+      const { data } = ctx.getImageData(0, 0, downScale, downScale);
+
+      let r = 0, g = 0, b = 0, count = 0;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const alpha = data[i + 3];
+
+        if (alpha < 10) continue;        // пропускаем ТОЛЬКО полностью
+                                         // прозрачные → 10 достаточно
+        r += data[i];
+        g += data[i + 1];
+        b += data[i + 2];
+        count++;
+      }
+
+      // ⛑ fallback, если вдруг все пиксели прозрачны
+      if (!count) return { r: 200, g: 200, b: 200 };
+
+      return {
+        r: Math.round(r / count),
+        g: Math.round(g / count),
+        b: Math.round(b / count)
+      };
+    }
+    </script>
+
     <script>
         function resizeImage(img, p_x, p_y) {
             let i_x = img.naturalWidth;
@@ -259,45 +291,55 @@
       <script>
         // 3) Функция для добавления одной строки в транскрипционный чат
         function addTranscriptLine(item) {
-          const transcriptMessagesDiv = document.getElementById("transcriptMessages");
-          if (!transcriptMessagesDiv) return;
-          const messageElem = document.createElement("div");
-          messageElem.classList.add("transcript-message", item.role);
-          const avatar = document.createElement("div");
-          avatar.classList.add("avatar");
-          // код A
-          if (item.role.toLowerCase().includes('user')) {
-          // цветной кружок, как в базовом чате
-          avatar.style.backgroundColor = getUserAvatarColor(username);
-          avatar.textContent = username.charAt(0).toUpperCase();
-          } else {
-          // картинка-учителя
-          avatar.innerHTML =
-              '<img src="https://img.icons8.com/color/48/000000/teacher.png" alt="Teacher"' +
-              ' style="width:100%;height:100%;border-radius:50%;">';
-          }
+        const transcriptMessagesDiv = document.getElementById("transcriptMessages");
+        if (!transcriptMessagesDiv) return;
 
-          const contentDiv = document.createElement("div");
-          contentDiv.classList.add("transcript-content");
-          const senderHeader = document.createElement("div");
-          senderHeader.classList.add("sender-name");
-          senderHeader.textContent = senderName;
-          const textDiv = document.createElement("div");
-          textDiv.classList.add("message-text");
-          textDiv.textContent = item.content;
-          contentDiv.appendChild(senderHeader);
-          contentDiv.appendChild(textDiv);
-          if (item.role.toLowerCase().includes('user')) {
-          messageElem.appendChild(contentDiv);
-          messageElem.appendChild(avatar);
-          } else {
-          messageElem.appendChild(avatar);
-          messageElem.appendChild(contentDiv);
-          }
+        const isUser = item.role.toLowerCase().includes("user_voice");
 
-          transcriptMessagesDiv.appendChild(messageElem);
-          transcriptMessagesDiv.scrollTop = transcriptMessagesDiv.scrollHeight;
+        // ─── контейнер сообщения ───────────────────────────────
+        const messageElem = document.createElement("div");
+        messageElem.classList.add("transcript-message", item.role);
+
+        // ─── аватар ────────────────────────────────────────────
+        const avatar = document.createElement("div");
+        avatar.classList.add("avatar");
+        if (isUser) {
+            avatar.style.backgroundColor = getUserAvatarColor(username);
+            avatar.textContent = username.charAt(0).toUpperCase();
+        } else {
+            avatar.innerHTML =
+            '<img src="https://img.icons8.com/color/48/000000/teacher.png" ' +
+            'alt="Teacher" style="width:100%;height:100%;border-radius:50%;">';
         }
+
+        // ─── тело сообщения ────────────────────────────────────
+        const contentDiv   = document.createElement("div");
+        contentDiv.classList.add("transcript-content");
+
+        const senderHeader = document.createElement("div");
+        senderHeader.classList.add("sender-name");
+        senderHeader.textContent = isUser ? username : "Teacher";
+
+        const textDiv = document.createElement("div");
+        textDiv.classList.add("message-text");
+        textDiv.textContent = item.content;
+
+        contentDiv.appendChild(senderHeader);
+        contentDiv.appendChild(textDiv);
+
+        // ─── порядок children (юзер справа) ────────────────────
+        if (isUser) {
+            messageElem.appendChild(contentDiv);
+            messageElem.appendChild(avatar);
+        } else {
+            messageElem.appendChild(avatar);
+            messageElem.appendChild(contentDiv);
+        }
+
+        transcriptMessagesDiv.appendChild(messageElem);
+        transcriptMessagesDiv.scrollTop = transcriptMessagesDiv.scrollHeight;
+        }
+
       </script>
       
       <script>
@@ -311,6 +353,28 @@
       
       <script>
         // 5) Логика отправки текстовой формы (всегда отправляем на lesson_call)
+
+
+        function applySlideFraming(img) {
+          const zone = document.getElementById('presentationZone');
+        
+          resizeImage(
+            img,
+            zone.offsetWidth,
+            zone.offsetHeight
+          );
+        
+          const { r, g, b } = getDominantColor(img);
+        
+          // «светлый центр» (40 % прозрачный), «тёмный край» (30 % яркости)
+          const center = `rgba(${r}, ${g}, ${b}, 0.4)`;
+          const edge   = `rgba(${r * 0.3}, ${g * 0.3}, ${b * 0.3}, 1)`;
+        
+          zone.style.background =
+            `radial-gradient(circle at center, ${center} 0%, ${edge} 100%)`;
+        }
+
+
         const form = document.getElementById('lesson-form');
         const textarea = document.getElementById('conversation');
         const overlay = document.getElementById('overlay');
@@ -362,13 +426,10 @@
             const presentationImage = document.getElementById('presentationImage');
             presentationImage.src = data.presentation_image;
         
-            presentationImage.onload = function() { // Вызываем resizeImage после загрузки изображения
-                const presentationZone = document.getElementById('presentationZone');
-                const p_x = presentationZone.offsetWidth;
-                const p_y = presentationZone.offsetHeight;
-        
-                resizeImage(presentationImage, p_x, p_y);
+            presentationImage.onload = function () {
+              applySlideFraming(presentationImage);
             };
+
         }
 
 
@@ -388,18 +449,16 @@
             unlockMicButton();
           }
         });
-      
         textarea.addEventListener('keydown', (e) => {
-          if (chatLocked) {              // 🚫 чат заблокирован — ничего не отправляем
-            e.preventDefault();
-            return;
-          }
-
+          // Если Enter без Shift — попытка отправить
           if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            form.requestSubmit();
+            e.preventDefault();                 // не вставляем \n
+            if (!chatLocked) {                  // отправляем ТОЛЬКО когда чат разблокирован
+              form.requestSubmit();
+            }
           }
         });
+
       </script>
       
       <script>
@@ -483,13 +542,10 @@
                 const presentationImage = document.getElementById('presentationImage');
                 presentationImage.src = data.presentation_image;
             
-                presentationImage.onload = function() { // Вызываем resizeImage после загрузки изображения
-                const presentationZone = document.getElementById('presentationZone');
-                const p_x = presentationZone.offsetWidth;
-                const p_y = presentationZone.offsetHeight;
-                console.log(p_x, p_y)
-                resizeImage(presentationImage, p_x, p_y);
-            };
+                presentationImage.onload = function () {
+                  applySlideFraming(presentationImage);
+                };
+
         }
 
 
@@ -528,52 +584,20 @@
       
         function renderTranscriptHistory(historyArray) {
           console.log("[TRANSCRIPT] renderTranscriptHistory called with:", historyArray);
+        
           const transcriptMessagesDiv = document.getElementById("transcriptMessages");
           if (!transcriptMessagesDiv) return;
           transcriptMessagesDiv.innerHTML = "";
+        
           historyArray.forEach(item => {
             console.log("[TRANSCRIPT] Rendering item:", item);
-            const messageElem = document.createElement("div");
-            messageElem.classList.add("transcript-message", item.role);
-            const avatar = document.createElement("div");
-            avatar.classList.add("avatar");
-            // код A
-            if (item.role.toLowerCase().includes('user')) {
-            // цветной кружок, как в базовом чате
-            avatar.style.backgroundColor = getUserAvatarColor(username);
-            avatar.textContent = username.charAt(0).toUpperCase();
-            } else {
-            // картинка-учителя
-            avatar.innerHTML =
-                '<img src="https://img.icons8.com/color/48/000000/teacher.png" alt="Teacher"' +
-                ' style="width:100%;height:100%;border-radius:50%;">';
-            }
-
-            const contentDiv = document.createElement("div");
-            contentDiv.classList.add("transcript-content");
-            const senderHeader = document.createElement("div");
-            senderHeader.classList.add("sender-name");
-            senderHeader.textContent = senderName;
-            const textDiv = document.createElement("div");
-            textDiv.classList.add("message-text");
-            textDiv.textContent = item.content;
-            contentDiv.appendChild(senderHeader);
-            contentDiv.appendChild(textDiv);
-            // код B
-            if (item.role.toLowerCase().includes('user')) {
-            messageElem.appendChild(contentDiv);
-            messageElem.appendChild(avatar);      // аватар справа
-            } else {
-            messageElem.appendChild(avatar);      // учитель слева
-            messageElem.appendChild(contentDiv);
-            }
-
-            transcriptMessagesDiv.appendChild(messageElem);
+            addTranscriptLine(item);                 // ← доверяем всю сборку строк этой функции
           });
+      
           transcriptMessagesDiv.scrollTop = transcriptMessagesDiv.scrollHeight;
           console.log("[TRANSCRIPT] Finished rendering history.");
         }
-      
+
         window.handleTranscriptResponse = function(result) {
           console.log("[TRANSCRIPT] handleTranscriptResponse called with:", result);
           if (!result) {
