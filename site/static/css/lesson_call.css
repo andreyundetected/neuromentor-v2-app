@@ -477,11 +477,15 @@ input:checked + .slider:before {
   justify-content: center;
   align-items: center;
 
-  overflow-y: auto;          /* ← только то, что нужно */
-  background: radial-gradient(circle at center,
-              transparent 0%, transparent 100%);
-  transition: background 0.8s ease;
-  z-index: 1;                /* чуть выше канваса */
+  overflow-y: auto;               /* как было */
+
+  /* ↓ JavaScript будет менять этот цвет */
+  background: transparent;        /* или просто background: none; */
+
+  /* плавно только цвет, без «фон»-градиента */
+  transition: background-color 0.4s ease;
+
+  z-index: 1;
   padding: 10px;
 }
 
