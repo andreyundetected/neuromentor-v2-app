@@ -396,22 +396,59 @@ input:checked + .slider:before {
 
 
 
-    .transcript-message {
+.transcript-message {
   display: flex;
-  margin-bottom: 8px;
   align-items: flex-start;
+  margin-bottom: 10px;
 }
 
+.transcript-message.teacher {
+  justify-content: flex-start;
+}
+
+.transcript-message.user_voice {
+  justify-content: flex-end;
+}
+
+
 .transcript-message .avatar {
-  width: 32px; height: 32px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  margin-right: 5px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  font-size: 14px;
 }
+
+.transcript-message.teacher .avatar {
+  margin-right: 10px;
+}
+
+.transcript-message.user_voice .avatar {
+  margin-left: 10px;
+  margin-right: 0;
+}
+
 .transcript-content {
+  max-width: 75%;
+  padding: 8px 12px;
+  border-radius: 10px;
   background: #eee;
-  border-radius: 8px;
-  padding: 5px 10px;
+  font-size: 14px;
+  position: relative;
 }
+
+.transcript-message.teacher .transcript-content {
+  background: #d1ecf1;
+}
+
+.transcript-message.user_voice .transcript-content {
+  background: #d1ecf1; /* тот же фон как в основном чате у юзера */ 
+}
+
 
 .transcript-message.teacher .transcript-content {
   background: #d1ecf1;
@@ -420,6 +457,10 @@ input:checked + .slider:before {
 .transcript-message.user_audio .transcript-content {
   background: #f9e79f;
 }
+.transcript-message.teacher .transcript-content {
+  max-width: 65%;
+}
+
 /* Новая зона презентации 
 */
 #presentationZone {
