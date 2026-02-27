@@ -1,0 +1,58 @@
+/* Стили блока выбора тарифа */
+.payment-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.payment-plan label {
+  cursor: pointer;
+}
+
+.payment-plan input[type="radio"] {
+  display: none;
+}
+
+.plan-box {
+  border: 2px solid #007bff;
+  border-radius: 8px;
+  padding: 15px 20px;
+  background: #f9fbff;
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.plan-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #01579b;
+}
+
+.plan-price {
+  margin-top: 8px;
+  font-size: 16px;
+  color: #333;
+}
+
+.payment-plan input[type="radio"]:checked + .plan-box {
+  background: #e3f2fd;
+  border-color: #0056b3;
+}
+
+/* Стили способа оплаты */
+.payment-method {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.payment-method label {
+  font-size: 16px;
+  color: #333;
+  cursor: pointer;
+}
+
+.payment-method input[type="radio"] {
+  margin-right: 8px;
+}

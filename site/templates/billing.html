@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="username" content="{{ user.username }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Billing - NeuroMentor</title>
+
+  <!-- Highlight.js можешь убрать, тут он не нужен -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/billing.css') }}">
+</head>
+<body>
+  <canvas id="backgroundCanvas"></canvas>
+
+  <!-- Header -->
+  <header>
+    <a href="/" class="logo">NeuroMentor</a>
+
+    <!-- Language button -->
+    <div class="header-btn lang-btn" id="lang-btn" onclick="toggleLanguageDropdown()">
+      <span class="btn-text" id="lang-text">
+        {% if session.get('language', 'ru') == 'ru' %} RU {% else %} EN {% endif %}
+      </span>
+    </div>
+
+    <!-- Language dropdown -->
+    <div class="lang-dropdown" id="lang-dropdown">
+      <button onclick="selectLanguage('en')">EN</button>
+      <button onclick="selectLanguage('ru')">RU</button>
+    </div>
+
+    <!-- Credits -->
+    <a href="https://t.me/NeuroMentor_payment_bot" class="credits" title="Buy Credits via Telegram" target="_blank">
+      {% if session.get('language', 'ru') == 'ru' %}
+        {{ user.credits }} Кредитов
+      {% else %}
+        {{ user.credits }} Credits
+      {% endif %}
+    </a>
+
+    <!-- Account avatar -->
+    <a href="/account" title="Profile" class="account">
+      <div class="account-avatar"></div>
+    </a>
+  </header>
+
+  <!-- Main container -->
+  <main class="container">
+    <h1>{% if session.get('language', 'ru') == 'ru' %} Оплата {% else %} Billing {% endif %}</h1>
+    <h2>{% if session.get('language', 'ru') == 'ru' %} Выберите подходящий тариф {% else %} Choose a plan {% endif %}</h2>
+
+    {% if message %}
+      <div class="message">{{ message }}</div>
+    {% endif %}
+
+    <form action="{{ url_for('billing.billing') }}" method="POST">
+      <div class="payment-plan">
+        <label>
+          <input type="radio" name="plan" value="basic" checked>
+          <div class="plan-box">
+            <div class="plan-title">{% if session.get('language', 'ru') == 'ru' %} Базовый — 10 уроков {% else %} Basic — 10 lessons {% endif %}</div>
+            <div class="plan-price">10 €</div>
+          </div>
+        </label>
+
+        <label>
+          <input type="radio" name="plan" value="standard">
+          <div class="plan-box">
+            <div class="plan-title">{% if session.get('language', 'ru') == 'ru' %} Стандарт — 25 уроков {% else %} Standard — 25 lessons {% endif %}</div>
+            <div class="plan-price">20 €</div>
+          </div>
+        </label>
+
+        <label>
+          <input type="radio" name="plan" value="premium">
+          <div class="plan-box">
+            <div class="plan-title">{% if session.get('language', 'ru') == 'ru' %} Премиум — 50 уроков {% else %} Premium — 50 lessons {% endif %}</div>
+            <div class="plan-price">35 €</div>
+          </div>
+        </label>
+      </div>
+
+      <h2>{% if session.get('language', 'ru') == 'ru' %} Способ оплаты {% else %} Payment method {% endif %}</h2>
+
+      <div class="payment-method">
+        <label>
+          <input type="radio" name="method" value="card" checked>
+          {% if session.get('language', 'ru') == 'ru' %} Банковская карта {% else %} Bank card {% endif %}
+        </label>
+        <label>
+          <input type="radio" name="method" value="paypal">
+          PayPal
+        </label>
+      </div>
+
+      <div class="button-container" style="justify-content: center;">
+        <button type="submit" class="button">{% if session.get('language', 'ru') == 'ru' %} Оплатить {% else %} Pay now {% endif %}</button>
+      </div>
+    </form>
+  </main>
+
+  <script>
+    function toggleLanguageDropdown() {
+      const dropdown = document.getElementById('lang-dropdown');
+      dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
+    }
+
+    function selectLanguage(lang) {
+      fetch(`/set_language/${lang}`, { method: "POST" })
+        .then(response => {
+          if (response.ok) {
+            location.reload();
+          } else {
+            console.error("Error setting language:", response.statusText);
+          }
+        })
+        .catch(error => console.error("Fetch error:", error));
+    }
+
+    // Аватарка
+    function getUserAvatarColor(name) {
+      const colors = ['#FF5733', '#33B5FF', '#FF33F6', '#33FF57', '#FFBD33'];
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return colors[Math.abs(hash) % colors.length];
+    }
+    const username = "{{ user.username }}";
+    const accountAvatar = document.querySelector('.account-avatar');
+    accountAvatar.style.backgroundColor = getUserAvatarColor(username);
+    accountAvatar.textContent = username.charAt(0).toUpperCase();
+
+    // Background
+    const canvas = document.getElementById("backgroundCanvas");
+    const ctx = canvas.getContext("2d");
+    window.addEventListener("resize", () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  </script>
+</body>
+</html>
