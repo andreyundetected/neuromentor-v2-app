@@ -1,307 +1,141 @@
-/* Анимация появления (fadeInUp) */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* ===== Общие эффекты ===== */
+@keyframes fadeInUp{
+  from{opacity:0;transform:translateY(30px);}
+  to{opacity:1;transform:translateY(0);}
+}
+::-webkit-scrollbar{width:8px;height:8px;}
+::-webkit-scrollbar-track{background:#e0e0e0;border-radius:10px;}
+::-webkit-scrollbar-thumb{background:#d3d3d3;border-radius:10px;}
+
+/* ===== База ===== */
+body{
+  font-family:Arial,Helvetica,sans-serif;
+  margin:0;padding:0;
+  background:#e9ecef;
+}
+.container{
+  max-width:640px;
+  margin:100px auto 40px;
+  padding:0 20px;
+  animation:fadeInUp .5s ease;
+}
+h1,h2{text-align:center;color:#333;margin:0 0 20px;}
+h2{color:#555;font-size:20px}
+
+/* ===== Header ===== */
+header{
+  position:fixed;top:0;left:0;right:0;height:60px;
+  background:rgba(255,255,255,.8);backdrop-filter:blur(10px);
+  box-shadow:0 2px 5px rgba(0,0,0,.1);z-index:1000;
+}
+.logo{
+  position:absolute;top:15px;left:15px;
+  font-size:24px;font-weight:bold;color:#007bff;text-decoration:none;
+  transition:.3s;
+}
+.logo:hover{color:#0056b3;transform:scale(1.05)}
+.account{position:absolute;top:8px;right:15px}
+.account-avatar{
+  width:40px;height:40px;border-radius:50%;display:flex;justify-content:center;align-items:center;
+  color:#fff;font-size:18px;font-weight:bold;border:2px solid #007bff;transition:.3s;
+}
+.account-avatar:hover{transform:scale(1.1)}
+
+/* Credits */
+.credits{
+  position:absolute;top:10px;right:62px;
+  font-size:16px;font-weight:bold;color:#fff;
+  background:linear-gradient(135deg,#1e90ff,#0073e6);
+  padding:8px 14px;border-radius:12px;text-decoration:none;
+  transition:.3s;white-space:nowrap
+}
+.credits:hover{background:linear-gradient(135deg,#0f7ae5,#005bb5);transform:scale(1.06)}
+
+/* Language */
+.lang-btn{
+  position:absolute;top:10px;right:214px;width:40px;height:40px;
+  background:#fff;border:1px solid #ccc;border-radius:4px;
+  display:flex;justify-content:center;align-items:center;cursor:pointer;transition:.3s
+}
+.lang-btn:hover{background:#f0f0f0;transform:scale(1.05)}
+.lang-dropdown{
+  position:absolute;top:50px;right:212px;display:none;flex-direction:column;
+  background:#fff;border:1px solid #ccc;border-radius:4px;box-shadow:0 4px 6px rgba(0,0,0,.1);
+}
+.lang-dropdown button{padding:8px 12px;border:none;background:none;text-align:left;cursor:pointer}
+.lang-dropdown button:hover{background:#f0f0f0}
+
+/* ===== Тарифы ===== */
+.payment-plan{
+  display:flex;flex-wrap:wrap;gap:16px;justify-content:center
+}
+.payment-plan input{display:none}
+.plan-box{
+  flex:1 1 180px;max-width:180px;cursor:pointer;
+  background:#fff;border:2px solid #007bff;border-radius:12px;
+  text-align:center;padding:18px 14px;
+  transition:.3s;position:relative
+}
+.plan-title{font-size:18px;font-weight:bold;color:#01579b}
+.plan-lessons{font-size:14px;color:#555;margin:4px 0 12px}
+.plan-price{font-size:22px;color:#333;font-weight:bold}
+.payment-plan input:checked+label{
+  border-color:#0056b3;transform:scale(1.05);
+  box-shadow:0 4px 12px rgba(0,123,255,.2)
 }
 
-/* Глобальные стили скроллбара */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* ===== Способ оплаты ===== */
+.billing-form{display:flex;flex-direction:column;gap:14px;margin-top:10px}
+.billing-form input[type=radio]{display:none}
+
+/* Базовый стиль кнопки-метода */
+.method-box{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 18px;border:2px solid #007bff;border-radius:12px;
+  background:#fff;cursor:pointer;transition:.3s;font-size:16px;font-weight:bold;color:#01579b
 }
-::-webkit-scrollbar-track {
-  background: #e0e0e0;
-  border-radius: 10px;
-}
-::-webkit-scrollbar-thumb {
-  background: #d3d3d3;
-  border-radius: 10px;
+.method-box .icon{font-size:24px}
+.paypal-logo{width:24px;height:24px}
+
+/* Различия цвета */
+.card-box{border-color:#007bff}
+.paypal-box{border-color:#003087}
+.paypal-box .paypal-logo path{fill:#003087}
+
+/* Активный метод */
+.billing-form input:checked+label{
+  background:#e3f2fd;transform:scale(1.03)
 }
 
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  background-color: #e9ecef;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 100vh;
+/* ===== Выезжающие формы ===== */
+.method-details{
+  max-height:0;overflow:hidden;transition:max-height .4s ease,opacity .4s ease;opacity:0;
+  background:#fafafa;border:1px solid #ddd;border-radius:12px;padding:0 18px
+}
+.billing-form input:checked+label+.method-details{
+  max-height:400px;padding:18px;opacity:1;margin-top:-2px
 }
 
-/* Основной контейнер */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-  animation: fadeInUp 0.5s ease-out;
+/* Поля ввода */
+.method-details label{display:block;font-size:14px;margin-bottom:12px;color:#333}
+.method-details input{
+  width:100%;padding:10px;border:1px solid #ccc;border-radius:6px;margin-top:4px;font-size:14px
 }
+.input-row{display:flex;gap:12px;flex-wrap:wrap}
 
-/* Header */
-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
+/* ===== Кнопка оплаты ===== */
+.button-pay{
+  margin:20px auto 0;padding:16px 40px;font-size:18px;font-weight:bold;
+  background:linear-gradient(135deg,#1e90ff,#0073e6);border:none;border-radius:50px;color:#fff;
+  cursor:pointer;transition:.3s
 }
+.button-pay:hover{background:linear-gradient(135deg,#0f7ae5,#005bb5);transform:scale(1.05)}
 
-/* Логотип */
-.logo {
-  position: absolute;
-  top: 15px;
-  left: 15px;
-  display: flex;
-  align-items: center;
-  text-decoration: none;
-  color: #007bff;
-  font-size: 24px;
-  font-weight: bold;
-  transition: transform 0.3s, color 0.3s;
-}
-.logo:hover {
-  color: #0056b3;
-}
-.logo svg {
-  margin-right: 8px;
-  transition: transform 0.3s;
-}
-.logo:hover svg {
-  transform: scale(1.1);
-}
-
-/* Аватарка */
-.account {
-  position: absolute;
-  top: 8px;
-  right: 15px;
-}
-.account .account-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #fff;
-  font-size: 18px;
-  font-weight: bold;
-  border: 2px solid #007bff;
-  transition: transform 0.3s;
-}
-.account .account-avatar:hover {
-  transform: scale(1.1);
-}
-
-/* Заголовок */
-h1 {
-  margin: 80px 0 20px;
-  text-align: center;
-  color: #333;
-}
-
-/* Подзаголовок */
-h2 {
-  margin: 20px 0 10px;
-  text-align: center;
-  color: #555;
-}
-
-/* Сообщение */
-.message {
-  color: rgb(0, 33, 221);
-  text-align: center;
-  margin-bottom: 20px;
-  font-size: 16px;
-  font-weight: bold;
-}
-
-/* Блок с планами */
-.payment-plan {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 20px;
-  max-width: 800px;
-  margin: 20px auto;
-}
-
-.payment-plan label {
-  cursor: pointer;
-}
-
-.payment-plan input[type="radio"] {
-  display: none;
-}
-
-.plan-box {
-  background: #fff;
-  border: 2px solid #007bff;
-  border-radius: 12px;
-  padding: 20px;
-  text-align: center;
-  transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
-}
-
-.plan-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #01579b;
-}
-
-.plan-price {
-  margin-top: 10px;
-  font-size: 20px;
-  color: #333;
-}
-
-.payment-plan input[type="radio"]:checked + .plan-box {
-  border-color: #0056b3;
-  transform: scale(1.05);
-  box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2);
-}
-
-/* Блок способа оплаты */
-.payment-method {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  margin: 20px auto 30px;
-}
-
-.payment-method label {
-  font-size: 16px;
-  color: #333;
-  cursor: pointer;
-}
-
-.payment-method input[type="radio"] {
-  margin-right: 8px;
-}
-
-/* Кнопка */
-.button-container {
-  display: flex;
-  justify-content: center;
-  margin: 30px 0;
-}
-
-.button {
-  padding: 16px 26px;
-  background-color: #007bff;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 18px;
-  transition: background-color 0.3s, transform 0.3s;
-}
-
-.button:hover {
-  background-color: #0056b3;
-  transform: scale(1.05);
-}
-
-/* Блок с количеством кредитов */
-.credits {
-  position: absolute;
-  top: 10px;
-  right: 62px;
-  font-size: 20px;
-  font-weight: bold;
-  color: #ffffff;
-  padding: 8px 14px;
-  background: linear-gradient(135deg, #1e90ff, #0073e6);
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  text-decoration: none;
-  transition: background 0.3s, transform 0.2s;
-  white-space: nowrap;
-  width: 120px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-}
-
-.credits:hover {
-  background: linear-gradient(135deg, #0f7ae5, #005bb5);
-  transform: scale(1.05);
-}
-
-/* Кнопка выбора языка */
-.lang-btn {
-  position: absolute;
-  top: 10px;
-  right: 214px;
-  width: 40px;
-  height: 40px;
-  background: #ffffff;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
-}
-
-.lang-btn .btn-text {
-  font-size: 18px;
-  color: #333;
-}
-
-.lang-btn:hover {
-  background-color: #f0f0f0;
-  transform: scale(1.05);
-}
-
-/* Выпадающий список языков */
-.lang-dropdown {
-  position: absolute;
-  top: 50px;
-  right: 212px;
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  display: none;
-  z-index: 1100;
-  flex-direction: column;
-  animation: dropdownFadeIn 0.3s ease-out;
-}
-
-@keyframes dropdownFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.lang-dropdown button {
-  width: 100%;
-  padding: 8px 12px;
-  background: none;
-  border: none;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.lang-dropdown button:hover {
-  background: #f0f0f0;
+/* ===== Адаптив ===== */
+@media(max-width:540px){
+  .plan-box{flex:1 1 100%;max-width:none}
+  .container{margin-top:90px}
+  .card-details .input-row,
+  .card-details label,
+  .paypal-details label{flex:1 1 100%}
 }
