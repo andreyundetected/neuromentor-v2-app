@@ -1,13 +1,10 @@
-from quart import Blueprint
-from models.user import User
+from quart import Blueprint, render_template, request, session, Response
 from services.require_login import require_login
-from quart import Response
-from quart import session
-from quart import request
-from quart import render_template
+from models.user import User
 
+billing_bp = Blueprint('billing', __name__)
 
-
+@billing_bp.route('/billing', methods=['GET', 'POST'])
 async def billing():
     user = await require_login()
     if isinstance(user, Response):
@@ -27,6 +24,3 @@ async def billing():
         user=user,
         message=message
     )
-
-
-billing_bp = Blueprint('billing', __name__)
