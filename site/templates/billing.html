@@ -8,139 +8,100 @@
 </head>
 
 <body>
-  <!-- ===== Canvas-фон ===== -->
+  <!-- Canvas-фон (опционально) -->
   <canvas id="backgroundCanvas"></canvas>
 
   <!-- ===== Header ===== -->
   <header>
     <a href="/" class="logo">NeuroMentor</a>
 
-    <div class="header-btn lang-btn" id="lang-btn" onclick="toggleLanguageDropdown()">
-      <span class="btn-text" id="lang-text">
-        {% if session.get('language','ru')=='ru' %}RU{% else %}EN{% endif %}
-      </span>
+    <!-- Language -->
+    <div class="lang-btn" id="lang-btn" onclick="toggleLanguageDropdown()">
+      <span id="lang-text">{% if session.get('language','ru')=='ru' %}RU{% else %}EN{% endif %}</span>
     </div>
     <div class="lang-dropdown" id="lang-dropdown">
       <button onclick="selectLanguage('en')">EN</button>
       <button onclick="selectLanguage('ru')">RU</button>
     </div>
 
-    <a href="https://t.me/NeuroMentor_payment_bot" class="credits" target="_blank">
+    <!-- Credits -->
+    <a href="https://t.me/NeuroMentor_payment_bot" target="_blank" class="credits">
       {{ user.credits }} {% if session.get('language','ru')=='ru' %}Кредитов{% else %}Credits{% endif %}
     </a>
 
+    <!-- Avatar -->
     <a href="/account" class="account"><div class="account-avatar"></div></a>
   </header>
 
-  <!-- ===== Центр-страницы ===== -->
-  <div class="page">
-    <main class="container">
-      <h1>{% if session.get('language','ru')=='ru' %}Оплата{% else %}Billing{% endif %}</h1>
+  <!-- ===== Content ===== -->
+  <main class="container">
+    <h1>{% if session.get('language','ru')=='ru' %}Оплата{% else %}Billing{% endif %}</h1>
 
-      <!-- Тарифы -->
-      <h2>{% if session.get('language','ru')=='ru' %}Выберите тариф{% else %}Choose a plan{% endif %}</h2>
-      <div class="payment-plan">
-        {% set lang = session.get('language','ru') %}
-        {% set plans = [('1',4.5,0),('3',12,11),('10',35,22),('50',150,33)] %}
-        {% for lessons, price, save in plans %}
-          {% set pid='plan-'+lessons %}
-          <input type="radio" id="{{ pid }}" name="plan" value="{{ lessons }}" {% if loop.first %}checked{% endif %}>
-          <label for="{{ pid }}" class="plan-box">
-            <div class="plan-title">
-              {% if lang=='ru' %}{{ lessons }} урок{% if lessons|int>1 %}а{% endif %}
-              {% else %}{{ lessons }} lesson{% if lessons|int>1 %}s{% endif %}{% endif %}
-            </div>
-            <div class="plan-price">{{ price }} $</div>
-            {% if save>0 %}
-              <div class="plan-save">
-                {% if lang=='ru' %}Экономия {{ save }} %{% else %}Save {{ save }} %{% endif %}
-              </div>
-            {% endif %}
-          </label>
-        {% endfor %}
+    <!-- Plans -->
+    <h2>{% if session.get('language','ru')=='ru' %}Выберите тариф{% else %}Choose a plan{% endif %}</h2>
+    <div class="payment-plan">
+      {% set lang=session.get('language','ru') %}
+      {% for lessons, price, save in [('1',4.5,0),('3',12,11),('10',35,22),('50',150,33)] %}
+        {% set pid='plan-'+lessons %}
+        <input type="radio" id="{{ pid }}" name="plan" value="{{ lessons }}" {% if loop.first %}checked{% endif %}>
+        <label for="{{ pid }}" class="plan-box">
+          <div class="plan-title">
+            {% if lang=='ru' %}{{ lessons }} урок{% if lessons|int>1 %}а{% endif %}{% else %}{{ lessons }} lesson{% if lessons|int>1 %}s{% endif %}{% endif %}
+          </div>
+          <div class="plan-price">{{ price }} $</div>
+          {% if save>0 %}
+            <div class="plan-save">{% if lang=='ru' %}Экономия{% else %}Save{% endif %} {{ save }} %</div>
+          {% endif %}
+        </label>
+      {% endfor %}
+    </div>
+
+    <!-- Payment method -->
+    <h2>{% if lang=='ru' %}Способ оплаты{% else %}Payment method{% endif %}</h2>
+    <form action="{{ url_for('billing.billing') }}" method="POST" class="billing-form" id="billing-form">
+      <!-- Card -->
+      <input type="radio" id="method-card" name="method" value="card" checked>
+      <label for="method-card" class="method-box card-box"><span class="icon">💳</span> {% if lang=='ru' %}Банковская карта{% else %}Bank card{% endif %}</label>
+      <div class="method-details card-details">
+        <div class="input-row">
+          <label>{% if lang=='ru' %}Номер карты{% else %}Card number{% endif %}<input name="card_number" maxlength="19" placeholder="0000 0000 0000 0000"></label>
+          <label>CVV <input name="card_cvv" maxlength="4" placeholder="123"></label>
+        </div>
+        <div class="input-row">
+          <label>MM/YY <input name="card_exp" maxlength="5" placeholder="03/29"></label>
+          <label>{% if lang=='ru' %}Имя владельца{% else %}Cardholder{% endif %}<input name="card_name" placeholder="CARDHOLDER"></label>
+        </div>
       </div>
 
-      <!-- Метод оплаты -->
-      <h2>{% if lang=='ru' %}Способ оплаты{% else %}Payment method{% endif %}</h2>
-      <form action="{{ url_for('billing.billing') }}" method="POST" class="billing-form" id="billing-form">
+      <!-- PayPal -->
+      <input type="radio" id="method-paypal" name="method" value="paypal">
+      <label for="method-paypal" class="method-box paypal-box">
+        <svg viewBox="0 0 24 24" class="paypal-logo"><path d="M5.7 22h3.1l.6-3.8h2.3c3.5 0 6.2-2.3 6.9-6 .6-3.1-.8-5-3.7-5H9.6l-.5 3.3h3.2c.6 0 .9.3.8.9-.3 1.9-1.6 2.8-3.3 2.8H7.5L5.7 22z" fill="#003087"/></svg> PayPal
+      </label>
+      <div class="method-details paypal-details">
+        <label>Email <input type="email" name="paypal_email" placeholder="you@example.com"></label>
+      </div>
 
-        <!-- Карта -->
-        <input type="radio" id="method-card" name="method" value="card" checked>
-        <label for="method-card" class="method-box card-box">
-          <span class="icon">💳</span>
-          {% if lang=='ru' %}Банковская карта{% else %}Bank card{% endif %}
-        </label>
-        <div class="method-details card-details">
-          <div class="input-row">
-            <label>
-              {% if lang=='ru' %}Номер карты{% else %}Card number{% endif %}
-              <input type="text" name="card_number" maxlength="19" placeholder="0000 0000 0000 0000">
-            </label>
-            <label>CVV
-              <input type="text" name="card_cvv" maxlength="4" placeholder="123">
-            </label>
-          </div>
-          <div class="input-row">
-            <label>MM / YY
-              <input type="text" name="card_exp" maxlength="5" placeholder="03/29">
-            </label>
-            <label>
-              {% if lang=='ru' %}Имя владельца{% else %}Cardholder{% endif %}
-              <input type="text" name="card_name" placeholder="CARDHOLDER">
-            </label>
-          </div>
-        </div>
-
-        <!-- PayPal -->
-        <input type="radio" id="method-paypal" name="method" value="paypal">
-        <label for="method-paypal" class="method-box paypal-box">
-          <svg viewBox="0 0 24 24" class="paypal-logo">
-            <path d="M5.7 22h3.1l.6-3.8h2.3c3.5 0 6.2-2.3 6.9-6 .6-3.1-.8-5-3.7-5H9.6l-.5 3.3h3.2c.6 0 .9.3.8.9-.3 1.9-1.6 2.8-3.3 2.8H7.5L5.7 22z" fill="#003087"/>
-          </svg>
-          PayPal
-        </label>
-        <div class="method-details paypal-details">
-          <label>Email
-            <input type="email" name="paypal_email" placeholder="you@example.com">
-          </label>
-        </div>
-
-        <button type="submit" class="button-pay">
-          {% if lang=='ru' %}Оплатить{% else %}Pay now{% endif %}
-        </button>
-      </form>
-    </main>
-  </div>
+      <button type="submit" class="button-pay">{% if lang=='ru' %}Оплатить{% else %}Pay now{% endif %}</button>
+    </form>
+  </main>
 
 <script>
-/* === язык === */
-function toggleLanguageDropdown(){
-  const d=document.getElementById('lang-dropdown');
-  d.style.display=d.style.display==='flex'?'none':'flex';
-}
-function selectLanguage(lang){
-  fetch(`/set_language/${lang}`,{method:'POST'}).then(()=>location.reload());
-}
+/* dropdown */
+function toggleLanguageDropdown(){const d=document.getElementById('lang-dropdown');d.style.display=d.style.display==='flex'?'none':'flex';}
+function selectLanguage(l){fetch(`/set_language/${l}`,{method:'POST'}).then(()=>location.reload());}
 
-/* === аватарка === */
-function hashColor(t){const c=['#FF5733','#33B5FF','#FF33F6','#33FF57','#FFBD33'];let h=0;for(let ch of t)h=ch.charCodeAt(0)+((h<<5)-h);return c[Math.abs(h)%c.length];}
-const av=document.querySelector('.account-avatar');const uname="{{ user.username }}";
-av.textContent=uname[0].toUpperCase();av.style.backgroundColor=hashColor(uname);
+/* avatar */
+function hashColor(t){const p=['#FF5733','#33B5FF','#FF33F6','#33FF57','#FFBD33'];let h=0;for(const c of t)h=c.charCodeAt(0)+((h<<5)-h);return p[Math.abs(h)%p.length];}
+const av=document.querySelector('.account-avatar');const un="{{ user.username }}";av.textContent=un[0].toUpperCase();av.style.backgroundColor=hashColor(un);
 
-/* === required on/off === */
-function tuneRequired(){
-  const card=document.querySelectorAll('.card-details input');
-  const pp=document.querySelector('.paypal-details input');
-  const isCard=document.getElementById('method-card').checked;
-  card.forEach(i=>i.required=isCard);
-  pp.required=!isCard;
-}
-document.querySelectorAll('input[name="method"]').forEach(r=>r.addEventListener('change',tuneRequired));
-tuneRequired();
+/* required toggle */
+const methods=document.querySelectorAll('input[name="method"]');
+function setReq(){const c=document.querySelectorAll('.card-details input');const p=document.querySelector('.paypal-details input');const isCard=methods[0].checked;c.forEach(i=>i.required=isCard);p.required=!isCard;}
+methods.forEach(r=>r.addEventListener('change',setReq));setReq();
 
-/* === canvas-фон (placeholder) === */
-const canvas=document.getElementById('backgroundCanvas'),ctx=canvas.getContext('2d');
-function resize(){canvas.width=innerWidth;canvas.height=innerHeight;}window.addEventListener('resize',resize);resize();
+/* canvas placeholder */
+const cvs=document.getElementById('backgroundCanvas'),ctx=cvs.getContext('2d');function res(){cvs.width=innerWidth;cvs.height=innerHeight;}window.addEventListener('resize',res);res();
 </script>
 </body>
 </html>
