@@ -1,141 +1,59 @@
-/* ===== Общие эффекты ===== */
-@keyframes fadeInUp{
-  from{opacity:0;transform:translateY(30px);}
-  to{opacity:1;transform:translateY(0);}
-}
-::-webkit-scrollbar{width:8px;height:8px;}
-::-webkit-scrollbar-track{background:#e0e0e0;border-radius:10px;}
-::-webkit-scrollbar-thumb{background:#d3d3d3;border-radius:10px;}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(30px);}to{opacity:1;transform:translateY(0);}}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:#e0e0e0;border-radius:10px}
+::-webkit-scrollbar-thumb{background:#d3d3d3;border-radius:10px}
 
-/* ===== База ===== */
-body{
-  font-family:Arial,Helvetica,sans-serif;
-  margin:0;padding:0;
-  background:#e9ecef;
-}
-.container{
-  max-width:640px;
-  margin:100px auto 40px;
-  padding:0 20px;
-  animation:fadeInUp .5s ease;
-}
-h1,h2{text-align:center;color:#333;margin:0 0 20px;}
+body{font-family:Arial,Helvetica,sans-serif;margin:0;padding:0;background:#e9ecef}
+.container{max-width:640px;margin:80px auto 40px;padding:0 20px;animation:fadeInUp .5s ease}
+@media(max-width:540px){.container{margin:70px 12px}}
+
+h1,h2{text-align:center;margin:0 0 20px}
+h1{color:#333;font-size:28px}
 h2{color:#555;font-size:20px}
 
-/* ===== Header ===== */
-header{
-  position:fixed;top:0;left:0;right:0;height:60px;
-  background:rgba(255,255,255,.8);backdrop-filter:blur(10px);
-  box-shadow:0 2px 5px rgba(0,0,0,.1);z-index:1000;
-}
-.logo{
-  position:absolute;top:15px;left:15px;
-  font-size:24px;font-weight:bold;color:#007bff;text-decoration:none;
-  transition:.3s;
-}
+header{position:fixed;top:0;left:0;right:0;height:60px;background:rgba(255,255,255,.8);backdrop-filter:blur(10px);box-shadow:0 2px 5px rgba(0,0,0,.1);z-index:1000}
+.logo{position:absolute;top:15px;left:15px;font-size:24px;font-weight:bold;color:#007bff;text-decoration:none;transition:.3s}
 .logo:hover{color:#0056b3;transform:scale(1.05)}
 .account{position:absolute;top:8px;right:15px}
-.account-avatar{
-  width:40px;height:40px;border-radius:50%;display:flex;justify-content:center;align-items:center;
-  color:#fff;font-size:18px;font-weight:bold;border:2px solid #007bff;transition:.3s;
-}
-.account-avatar:hover{transform:scale(1.1)}
+.account-avatar{width:40px;height:40px;border-radius:50%;display:flex;justify-content:center;align-items:center;font-size:18px;font-weight:bold;color:#fff;border:2px solid #007bff;transition:.3s}
+.account-avatar:hover{transform:scale(1.12)}
 
-/* Credits */
-.credits{
-  position:absolute;top:10px;right:62px;
-  font-size:16px;font-weight:bold;color:#fff;
-  background:linear-gradient(135deg,#1e90ff,#0073e6);
-  padding:8px 14px;border-radius:12px;text-decoration:none;
-  transition:.3s;white-space:nowrap
-}
+.credits{position:absolute;top:10px;right:62px;font-size:16px;font-weight:bold;color:#fff;background:linear-gradient(135deg,#1e90ff,#0073e6);padding:8px 14px;border-radius:12px;text-decoration:none;transition:.3s}
 .credits:hover{background:linear-gradient(135deg,#0f7ae5,#005bb5);transform:scale(1.06)}
 
-/* Language */
-.lang-btn{
-  position:absolute;top:10px;right:214px;width:40px;height:40px;
-  background:#fff;border:1px solid #ccc;border-radius:4px;
-  display:flex;justify-content:center;align-items:center;cursor:pointer;transition:.3s
-}
+.lang-btn{position:absolute;top:10px;right:214px;width:40px;height:40px;background:#fff;border:1px solid #ccc;border-radius:4px;display:flex;justify-content:center;align-items:center;cursor:pointer;transition:.3s}
 .lang-btn:hover{background:#f0f0f0;transform:scale(1.05)}
-.lang-dropdown{
-  position:absolute;top:50px;right:212px;display:none;flex-direction:column;
-  background:#fff;border:1px solid #ccc;border-radius:4px;box-shadow:0 4px 6px rgba(0,0,0,.1);
-}
+.lang-dropdown{position:absolute;top:50px;right:212px;display:none;flex-direction:column;background:#fff;border:1px solid #ccc;border-radius:4px;box-shadow:0 4px 6px rgba(0,0,0,.1)}
 .lang-dropdown button{padding:8px 12px;border:none;background:none;text-align:left;cursor:pointer}
 .lang-dropdown button:hover{background:#f0f0f0}
 
-/* ===== Тарифы ===== */
-.payment-plan{
-  display:flex;flex-wrap:wrap;gap:16px;justify-content:center
-}
+/* тарифы */
+.payment-plan{display:flex;flex-wrap:wrap;gap:16px;justify-content:center}
 .payment-plan input{display:none}
-.plan-box{
-  flex:1 1 180px;max-width:180px;cursor:pointer;
-  background:#fff;border:2px solid #007bff;border-radius:12px;
-  text-align:center;padding:18px 14px;
-  transition:.3s;position:relative
-}
-.plan-title{font-size:18px;font-weight:bold;color:#01579b}
-.plan-lessons{font-size:14px;color:#555;margin:4px 0 12px}
-.plan-price{font-size:22px;color:#333;font-weight:bold}
-.payment-plan input:checked+label{
-  border-color:#0056b3;transform:scale(1.05);
-  box-shadow:0 4px 12px rgba(0,123,255,.2)
-}
+.plan-box{flex:1 1 140px;max-width:140px;cursor:pointer;background:#fff;border:2px solid #007bff;border-radius:12px;padding:16px;position:relative;text-align:center;transition:.3s}
+.plan-title{font-size:16px;font-weight:bold;color:#01579b;margin-bottom:4px}
+.plan-price{font-size:20px;font-weight:bold;color:#333}
+.plan-save{margin-top:8px;font-size:12px;font-weight:bold;color:#fff;background:#ff7a00;border-radius:8px;padding:4px 8px}
+.payment-plan input:checked+label{border-color:#0056b3;transform:scale(1.04);box-shadow:0 4px 10px rgba(0,123,255,.25)}
 
-/* ===== Способ оплаты ===== */
 .billing-form{display:flex;flex-direction:column;gap:14px;margin-top:10px}
 .billing-form input[type=radio]{display:none}
-
-/* Базовый стиль кнопки-метода */
-.method-box{
-  display:flex;align-items:center;gap:10px;
-  padding:14px 18px;border:2px solid #007bff;border-radius:12px;
-  background:#fff;cursor:pointer;transition:.3s;font-size:16px;font-weight:bold;color:#01579b
-}
-.method-box .icon{font-size:24px}
+.method-box{display:flex;align-items:center;gap:10px;padding:14px 18px;border:2px solid #007bff;border-radius:12px;background:#fff;cursor:pointer;font-size:16px;font-weight:bold;color:#01579b;transition:.3s}
+.paypal-box{border-color:#003087;color:#003087}
 .paypal-logo{width:24px;height:24px}
+.icon{font-size:22px}
+.billing-form input:checked+label{background:#e3f2fd;transform:scale(1.02)}
 
-/* Различия цвета */
-.card-box{border-color:#007bff}
-.paypal-box{border-color:#003087}
-.paypal-box .paypal-logo path{fill:#003087}
-
-/* Активный метод */
-.billing-form input:checked+label{
-  background:#e3f2fd;transform:scale(1.03)
-}
-
-/* ===== Выезжающие формы ===== */
-.method-details{
-  max-height:0;overflow:hidden;transition:max-height .4s ease,opacity .4s ease;opacity:0;
-  background:#fafafa;border:1px solid #ddd;border-radius:12px;padding:0 18px
-}
-.billing-form input:checked+label+.method-details{
-  max-height:400px;padding:18px;opacity:1;margin-top:-2px
-}
-
-/* Поля ввода */
+.method-details{max-height:0;overflow:hidden;transition:max-height .4s ease,opacity .4s ease;opacity:0;background:#fafafa;border:1px solid #ddd;border-radius:12px;padding:0 18px}
+.billing-form input:checked+label+.method-details{max-height:500px;padding:18px;opacity:1;margin-top:-2px}
 .method-details label{display:block;font-size:14px;margin-bottom:12px;color:#333}
-.method-details input{
-  width:100%;padding:10px;border:1px solid #ccc;border-radius:6px;margin-top:4px;font-size:14px
-}
+.method-details input{width:100%;padding:10px;border:1px solid #ccc;border-radius:6px;margin-top:4px;font-size:14px}
 .input-row{display:flex;gap:12px;flex-wrap:wrap}
 
-/* ===== Кнопка оплаты ===== */
-.button-pay{
-  margin:20px auto 0;padding:16px 40px;font-size:18px;font-weight:bold;
-  background:linear-gradient(135deg,#1e90ff,#0073e6);border:none;border-radius:50px;color:#fff;
-  cursor:pointer;transition:.3s
-}
+.button-pay{margin:22px auto 0;padding:16px 40px;font-size:18px;font-weight:bold;color:#fff;background:linear-gradient(135deg,#1e90ff,#0073e6);border:none;border-radius:50px;cursor:pointer;transition:.3s}
 .button-pay:hover{background:linear-gradient(135deg,#0f7ae5,#005bb5);transform:scale(1.05)}
 
-/* ===== Адаптив ===== */
 @media(max-width:540px){
   .plan-box{flex:1 1 100%;max-width:none}
-  .container{margin-top:90px}
-  .card-details .input-row,
-  .card-details label,
-  .paypal-details label{flex:1 1 100%}
+  .input-row label{flex:1 1 100%}
 }
