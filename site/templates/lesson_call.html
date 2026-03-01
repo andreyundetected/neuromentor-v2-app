@@ -95,15 +95,10 @@
       </div>
   
       <!-- ВАЖНО: отправляем на lesson_call, а не lesson_chat -->
-      <form id="lesson-form" action="/course_select/{{ user.id }}/{{ course_idx }}/lesson_call" method="POST">
-        {% if session.get('language', 'ru') == 'ru' %}
-          <textarea name="conversation" id="conversation" placeholder="Напишите ваше сообщение здесь"></textarea>
-          <button type="submit" class="button">Отправить</button>
-        {% elif session.get('language', 'ru') == 'en' %}
-          <textarea name="conversation" id="conversation" placeholder="Write your message here"></textarea>
-          <button type="submit" class="button">Send</button>
-        {% endif %}
-      </form>
+      <div id="whiteboard" class="whiteboard-block">
+      <!-- Здесь будет отображаться содержимое урока -->
+      </div>
+
     </div>
   
     <!-- Кнопка и окно транскрипционного чата -->
