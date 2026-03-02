@@ -48,23 +48,6 @@
         <img id="presentationImage" src="" alt="Start the lesson using the microphone button or by writing in the chat and the presentation will appear here">
         {% endif %}
       </div>
-      <div class="mode-toggle">
-        {% if session.get('language', 'ru') == 'ru' %}
-          <span class="toggle-label">Режим ответа:</span>
-          <div class="switch">
-            <input type="checkbox" id="modeSwitch" checked>
-            <label for="modeSwitch" class="slider"></label>
-          </div>
-          <span class="toggle-text" id="toggleText">Аудио</span>
-        {% elif session.get('language', 'ru') == 'en' %}
-          <span class="toggle-label">Response Mode:</span>
-          <div class="switch">
-            <input type="checkbox" id="modeSwitch" checked>
-            <label for="modeSwitch" class="slider"></label>
-          </div>
-          <span class="toggle-text" id="toggleText">Audio</span>
-        {% endif %}
-      </div>
          
     <div class="container">
       <h1 class="lesson-title">{{ lesson_title }}</h1>
