@@ -74,25 +74,6 @@
         <span class="progress-text">{{ progress or 0 }}%</span>
       </div>
   
-      <div class="messages" id="messages">
-        <!-- Пример приветствия от Teacher -->
-        <div class="message teacher">
-          <div class="avatar">
-            <img src="https://img.icons8.com/color/48/000000/teacher.png"
-                 alt="Teacher"
-                 style="width:100%;height:100%;border-radius:50%;">
-          </div>
-          <div class="content">
-            {% if session.get('language', 'ru') == 'ru' %}
-              <div class="sender-name">Учитель</div>
-              <div class="message-text">Привет! Я твой учитель. Готов начать урок?</div>
-            {% elif session.get('language', 'ru') == 'en' %}
-              <div class="sender-name">Teacher</div>
-              <div class="message-text">Hi! I'm a teacher. Ready to start class?</div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
   
       <!-- ВАЖНО: отправляем на lesson_call, а не lesson_chat -->
       <div id="whiteboard" class="whiteboard-block">
