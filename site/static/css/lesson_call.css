@@ -76,20 +76,15 @@
 
     /* Основной контейнер (копия lesson_chat) */
     .container {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.1);
-      width: 90%;
-      max-width: 500px;
-      height: 80vh;
-      margin: 80px 20px 20px auto;
-      overflow: hidden;
-      padding: 20px;
-      animation: fadeInUp 0.5s ease-out;
-      z-index: 1;
+    position: static;
+    background: transparent;
+    box-shadow: none;
+    width: auto;
+    max-width: none;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    z-index: 0;
     }
     @keyframes fadeInUp {
       from { opacity: 0; transform: translateY(20px); }
@@ -108,14 +103,16 @@
     }
 
     /* Прогресс-бар */
-    .progress-bar-container {
-      margin-bottom: 25px;
-      background: #eee;
-      border-radius: 5px;
-      overflow: hidden;
-      position: relative;
-      height: 20px;
-    }
+.progress-bar-container {
+  position: fixed;
+  top: 130px; /* сразу под заголовком (можешь подправить число) */
+  left: calc(100vw - (50% - 400px + 20px));
+  right: 0;
+  z-index: 3;
+  margin: 0;
+  background: #fff;
+  padding: 0 30px 10px 30px;
+}
     .progress-bar {
       height: 100%;
       background: #007bff;
@@ -193,17 +190,17 @@
     @keyframes scaleIn { to { transform: scale(1); } }
     .completion-box h2 { color: #007bff; margin-bottom: 15px; }
     .completion-box p { margin-bottom: 20px; text-align: left; }
-    .lesson-title {
-      position: relative;
-      z-index: 1;
-      font-size: 32px;
-      font-weight: bold;
-      color: #3a6ad6;
-      text-align: center;
-      margin-bottom: 20px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #3a6ad6;
-    }
+.lesson-title {
+  position: fixed;
+  top: 80px; /* ТОЧНО как верхняя граница презентации */
+  left: calc(100vw - (50% - 400px + 20px)); /* ЛЕВАЯ = ПРАВОЙ ГРАНИЦЕ презентации */
+  right: 0;   /* ПРАВАЯ = край экрана */
+  z-index: 3;
+  background: #fff;
+  margin: 0;
+  padding: 10px 30px 6px 30px;
+  border-bottom: 0;
+}
 
     /* Зона звонка – увеличена и перемещена в левый нижний угол */
     .call-zone {
@@ -474,22 +471,24 @@
 
 .whiteboard-block {
   position: fixed;
-  top: calc(80px + 10px); /* нижняя граница презентации (+ паддинг) */
-  bottom: 0;
-  left: 20px;              /* как у presentationZone */
-  right: 0;
-  background: white;
-  overflow-y: auto;
-  padding: 30px;
-  z-index: 1;
+  top: 80px; /* ТОЧНО как у презентации */
+  bottom: 0; /* НИЗ = низ экрана */
+  left: calc(100vw - (50% - 400px + 20px)); /* ЛЕВАЯ = ПРАВАЯ ГРАНИЦА презентации */
+  right: 0;  /* ПРАВАЯ = край экрана */
 
-  /* без теней и границ */
-  box-shadow: none;
+  background: #fff;
+  overflow-y: auto;
+
+  /* Чтобы текст не уезжал под фиксированные title + progress */
+  padding: 30px;
+  padding-top: 180px; /* резерв под .lesson-title + .progress-bar-container (подстрой при необходимости) */
+
+  /* Без рамок и теней — просто белый лист */
   border: none;
   border-radius: 0;
+  box-shadow: none;
 
+  z-index: 1;
   font-size: 16px;
   line-height: 1.6;
 }
-
-
