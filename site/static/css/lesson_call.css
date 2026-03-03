@@ -104,7 +104,6 @@
 
     /* Прогресс-бар */
 .progress-bar-container {
-  position: fixed;
   top: 130px; /* ↓ при необходимости подстрой (влияет на высоту «шапки») */
   left: calc(100vw - (50% - 400px + 20px));
   right: 0;
@@ -195,23 +194,6 @@
     @keyframes scaleIn { to { transform: scale(1); } }
     .completion-box h2 { color: #007bff; margin-bottom: 15px; }
     .completion-box p { margin-bottom: 20px; text-align: left; }
-.lesson-title {
-  position: fixed;
-  top: 80px; /* совпадает с верхом презентации */
-  left: calc(100vw - (50% - 400px + 20px)); /* левая кромка = правая граница презентации */
-  right: 0;   /* правая = край экрана */
-  z-index: 3;
-
-  background: #fff;
-  color: #3a6ad6;
-  font-size: 32px;
-  font-weight: bold;
-  text-align: center;
-
-  margin: 0;
-  padding: 10px 30px 6px 30px;
-  border-bottom: 0; /* линию убираем из заголовка — она будет отдельным элементом ниже */
-}
 
     /* Зона звонка – увеличена и перемещена в левый нижний угол */
     .call-zone {
@@ -480,21 +462,59 @@
   background: #f0f0f0;
 }
 
-.whiteboard-block {
+
+:root{
+  --wb-top: 80px;                          /* верх = как у презентации */
+  --wb-left: calc(100vw - (50% - 400px + 20px)); /* левая = правая грань презентации */
+  --wb-header-height: 180px;               /* высота шапки справа (заголовок+прогресс+полоса) */
+}
+
+/* Фиксируем только контейнер шапки справа */
+.wb-header{
   position: fixed;
-  top: 80px; /* ТОЧНО как у презентации */
-  bottom: 0; /* НИЗ = низ экрана */
-  left: calc(100vw - (50% - 400px + 20px)); /* ЛЕВАЯ = ПРАВАЯ ГРАНИЦА презентации */
-  right: 0;  /* ПРАВАЯ = край экрана */
+  top: var(--wb-top);
+  left: var(--wb-left);
+  right: 0;
+  z-index: 3;
+  background: #fff;
+  padding: 10px 30px 10px 30px;
+}
+
+/* Заголовок снова «как раньше» (без position: fixed) */
+.lesson-title{
+  position: static;
+  z-index: 1;
+  font-size: 32px;
+  font-weight: bold;
+  color: #3a6ad6;
+  text-align: center;
+  margin: 0 0 10px 0;
+  padding: 0;               /* без нижней линии — она отдельным блоком ниже */
+  border: 0;
+}
+
+
+/* Голубая разделительная линия под прогрессом */
+.wb-separator{
+  height: 2px;
+  background: #3a6ad6;
+}
+
+/* Белый лист справа: размеры ты уже сделал верно — оставляем,
+   только обеспечим отступ сверху под высоту шапки */
+.whiteboard-block{
+  position: fixed;
+  top: var(--wb-top);
+  bottom: 0;
+  left: var(--wb-left);
+  right: 0;
 
   background: #fff;
   overflow-y: auto;
 
-  /* Чтобы текст не уезжал под фиксированные title + progress */
   padding: 30px;
-  padding-top: 180px; /* резерв под .lesson-title + .progress-bar-container (подстрой при необходимости) */
+  padding-top: calc(var(--wb-header-height) + 10px); /* чтобы контент не наезжал на шапку */
 
-  /* Без рамок и теней — просто белый лист */
   border: none;
   border-radius: 0;
   box-shadow: none;
