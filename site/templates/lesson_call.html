@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Call Lesson - NeuroMentor</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=15">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=16">
   </head>
   <body>
     <canvas id="backgroundCanvas"></canvas>
@@ -51,20 +51,51 @@
          
     <div class="container">
       <div class="wb-header">
-        <h1 class="lesson-title">{{ lesson_title }}</h1>
-
-        <div class="progress-bar-container">
+          <h1 class="lesson-title">{{ lesson_title }}</h1>
+          <div class="progress-bar-container">
           <div class="progress-bar" style="width: {{ progress or 0 }}%;"></div>
           <span class="progress-text">{{ progress or 0 }}%</span>
-        </div>
-
-        <div class="wb-separator" aria-hidden="true"></div>
+          </div>
+          <div class="wb-separator" aria-hidden="true"></div>
       </div>
+    </div>
 
   
   
       <!-- ВАЖНО: отправляем на lesson_call, а не lesson_chat -->
       <div id="whiteboard" class="whiteboard-block">
+        <h2>Проверка whiteboard</h2>
+        <p>Это тестовый абзац. Проверяем переносы строк, межстрочный интервал и базовую типографику.</p>
+        <ul>
+          <li>Пункт списка №1</li>
+          <li>Пункт списка №2</li>
+          <li><strong>Жирный</strong> и <em>курсив</em> внутри пункта</li>
+        </ul>
+        <p>Ещё абзац, чтобы увидеть отступы между блоками и как ведёт себя скролл при переполнении.</p>
+        <h2>Проверка whiteboard</h2>
+        <p>Это тестовый абзац. Проверяем переносы строк, межстрочный интервал и базовую типографику.</p>
+        <ul>
+          <li>Пункт списка №1</li>
+          <li>Пункт списка №2</li>
+          <li><strong>Жирный</strong> и <em>курсив</em> внутри пункта</li>
+        </ul>
+        <p>Ещё абзац, чтобы увидеть отступы между блоками и как ведёт себя скролл при переполнении.</p>
+        <h2>Проверка whiteboard</h2>
+        <p>Это тестовый абзац. Проверяем переносы строк, межстрочный интервал и базовую типографику.</p>
+        <ul>
+          <li>Пункт списка №1</li>
+          <li>Пункт списка №2</li>
+          <li><strong>Жирный</strong> и <em>курсив</em> внутри пункта</li>
+        </ul>
+        <p>Ещё абзац, чтобы увидеть отступы между блоками и как ведёт себя скролл при переполнении.</p>
+        <h2>Проверка whiteboard</h2>
+        <p>Это тестовый абзац. Проверяем переносы строк, межстрочный интервал и базовую типографику.</p>
+        <ul>
+          <li>Пункт списка №1</li>
+          <li>Пункт списка №2</li>
+          <li><strong>Жирный</strong> и <em>курсив</em> внутри пункта</li>
+        </ul>
+        <p>Ещё абзац, чтобы увидеть отступы между блоками и как ведёт себя скролл при переполнении.</p>
         <h2>Проверка whiteboard</h2>
         <p>Это тестовый абзац. Проверяем переносы строк, межстрочный интервал и базовую типографику.</p>
         <ul>

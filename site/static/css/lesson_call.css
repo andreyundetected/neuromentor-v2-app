@@ -102,37 +102,7 @@
       pointer-events: none;
     }
 
-    /* Прогресс-бар */
-.progress-bar-container {
-  top: 130px; /* ↓ при необходимости подстрой (влияет на высоту «шапки») */
-  left: calc(100vw - (50% - 400px + 20px));
-  right: 0;
-  z-index: 3;
 
-  margin: 0;
-  background: #fff;
-  padding: 0 30px 10px 30px;
-
-  height: 20px; /* как раньше */
-  border-radius: 5px;
-  overflow: hidden;
-}
-.progress-bar {
-  height: 100%;
-  background: #007bff;
-  width: 0%;
-  transition: width 0.3s ease;
-}
-.progress-text {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 12px;
-  line-height: 20px;
-  color: #fff;
-  font-weight: bold;
-}
 
 
     /* Поле ввода */
@@ -493,6 +463,49 @@
   border: 0;
 }
 
+
+
+/* Прогресс-бар: СЕРАЯ ОКРУГЛАЯ ПОЛОСА на всю ширину борда */
+.progress-bar-container{
+  position: relative;         /* нужно для абсолютного позиционирования текста и заливки */
+  width: 100%;                /* растягиваем на всю ширину шапки (а она = ширине белого борда) */
+  height: 20px;
+  background: #e6eaf2;        /* мягкий серый фон */
+  border-radius: 9999px;      /* полностью круглая */
+  overflow: hidden;           /* чтобы синяя заливка не вылезала за скругление */
+  margin: 0 0 12px 0;         /* отступ вниз до голубой линии */
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.06); /* лёгкий рельеф */
+}
+
+/* СИНЕЕ ЗАПОЛНЕНИЕ */
+.progress-bar{
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  /* ширина задаётся инлайном из сервера: style="width: {{ progress or 0 }}%;" */
+  background: #3a6ad6;
+  border-radius: inherit;
+  transition: width 0.3s ease;
+}
+
+/* БЕЛЫЕ ПРОЦЕНТЫ ПО ЦЕНТРУ */
+.progress-text{
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;                /* белый текст */
+  text-shadow: 0 1px 1px rgba(0,0,0,0.15); /* чуть лучше читаемость на синем фоне */
+  pointer-events: none;       /* клики проходят сквозь */
+}
 
 /* Голубая разделительная линия под прогрессом */
 .wb-separator{
