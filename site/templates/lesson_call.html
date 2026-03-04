@@ -3,10 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="username" content="{{ username }}">
+<script>
+  (function () {
+    const m = document.querySelector('meta[name="username"]');
+    window.username = (m && m.getAttribute('content')) || 'User';
+  })();
+
+  window.getUserAvatarColor = function(name) {
+    const colors = ['#FF5733', '#33B5FF', '#FF33F6', '#33FF57', '#FFBD33'];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
+</script>
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Call Lesson - NeuroMentor</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=16">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=18">
   </head>
   <body>
     <canvas id="backgroundCanvas"></canvas>
@@ -88,6 +104,35 @@
           <li><strong>Жирный</strong> и <em>курсив</em> внутри пункта</li>
         </ul>
         <p>Ещё абзац, чтобы увидеть отступы между блоками и как ведёт себя скролл при переполнении.</p>
+# Проверка квизов
+
+[[quiz multiple="false" after="Молодец! Правильный ответ: B"]]
+Какая буква правильная?
+- ( ) A
+- (x) B
+- ( ) C
+[[/quiz]]
+
+[[quiz multiple="true" after="Верная комбинация — A и C"]]
+Выберите верные варианты:
+- (x) A
+- ( ) B
+- (x) C
+[[/quiz]]
+
+[[open answer="Париж" ignore_case="true" normalize="true" after="Да, столица Франции — Париж."]]
+Столица Франции?
+[[/open]]
+
+[[open numeric="true" answer="3.14159" tol="0.01" after="Ок, достаточно близко к π."]]
+Приближённое значение π (±0.01)?
+[[/open]]
+
+[[open regex="^https?://[^\s]+$" after="Корректный URL."]]
+Введите URL (http/https):
+[[/open]]
+
+
         <h2>Проверка whiteboard</h2>
         <p>Это тестовый абзац. Проверяем переносы строк, межстрочный интервал и базовую типографику.</p>
         <ul>
@@ -106,7 +151,6 @@
         <p>Ещё абзац, чтобы увидеть отступы между блоками и как ведёт себя скролл при переполнении.</p>
       </div>
 
-    </div>
   
     <!-- Кнопка и окно транскрипционного чата -->
     {% if session.get('language', 'ru') == 'ru' %}
@@ -131,6 +175,14 @@
         <button class="button" onclick="window.location.href='/library'">Continue</button>
       </div>
     </div>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const wb = document.getElementById('whiteboard');
+    const raw = wb.textContent;     // забираем сырой текст с тегами [[...]]
+    wb.innerHTML = '';            // очищаем контейнер
+    addMessage('teacher', raw);   // прогоняем через парсер
+  });
+</script>
 
     <script>
         function toggleLanguageDropdown() {
@@ -152,42 +204,10 @@
                 .catch(error => console.error("Fetch error:", error));
         }
     </script>
-    <script>
-        let responseMode = "audio"; // По умолчанию "audio"
-        const modeSwitch = document.getElementById('modeSwitch');
-        modeSwitch.addEventListener('change', function() {
-        if (modeSwitch.checked) {
-            responseMode = 'audio';
-            console.log('[MODE] switched to AUDIO');
-        } else {
-            responseMode = 'text';
-            console.log('[MODE] switched to TEXT');
-        }
-        });
+<script>
+  let responseMode = "audio";
+</script>
 
-        function switchResponseMode(mode) {
-          responseMode = mode;
-      
-          // Обновляем стиль кнопок
-          document.getElementById("modeAudio").classList.toggle("active", mode === "audio");
-          document.getElementById("modeText").classList.toggle("active", mode === "text");
-      
-          console.log("[MODE] Response mode switched to:", mode);
-        }
-      </script>
-    <script>
-
-
-      // ⛑ fallback, если вдруг все пиксели прозрачны
-      if (!count) return { r: 200, g: 200, b: 200 };
-
-      return {
-        r: Math.round(r / count),
-        g: Math.round(g / count),
-        b: Math.round(b / count)
-      };
-    }
-    </script>
 
     <script>
         function resizeImage(img, p_x, p_y) {
@@ -232,44 +252,210 @@
       
       
       
-      <script>
-        // 2) Добавить текстовое сообщение в общий чат
-        function addMessage(sender, messageText) {
-          const messages = document.getElementById('messages');
-          const messageElem = document.createElement('div');
-          messageElem.classList.add('message', sender);
-          let avatar, senderLabel = '';
-          if (sender === 'user') {
-            avatar = createUserAvatar();
-            senderLabel = username;
-          } else {
-            avatar = createTeacherAvatar();
-            senderLabel = 'Teacher';
-          }
-          const content = document.createElement('div');
-          content.classList.add('content');
-          const senderHeader = document.createElement('div');
-          senderHeader.classList.add('sender-name');
-          senderHeader.textContent = senderLabel;
-          const separator = document.createElement('div');
-          separator.classList.add('separator');
-          const messageBody = document.createElement('div');
-          messageBody.classList.add('message-text');
-          messageBody.textContent = messageText;
-          content.appendChild(senderHeader);
-          content.appendChild(separator);
-          content.appendChild(messageBody);
-          if (sender === 'user') {
-            messageElem.appendChild(content);
-            messageElem.appendChild(avatar);
-          } else {
-            messageElem.appendChild(avatar);
-            messageElem.appendChild(content);
-          }
-          messages.appendChild(messageElem);
-          messages.scrollTop = messages.scrollHeight;
-        }
-      </script>
+<script>
+  // ---------- helpers ----------
+  function _parseAttrs(raw) {
+    const out = {};
+    raw.replace(/\s+([a-zA-Z_][\w-]*)\s*=\s*"([^"]*)"/g, (_, k, v) => (out[k.toLowerCase()] = v));
+    return out;
+  }
+  function _normalize(s) { return s.trim().replace(/\s+/g, ' '); }
+  function _uid(prefix='wb') { return prefix + '_' + Math.random().toString(36).slice(2, 8); }
+
+  // Проверка ответов для OPEN
+  function _checkOpen(user, cfg) {
+    const after = cfg.after || '';
+    // numeric
+    if (cfg.numeric === 'true') {
+      const tol = parseFloat(cfg.tol || '0');
+      const target = parseFloat(String(cfg.answer || '').replace(',', '.'));
+      const value = parseFloat(String(user).replace(',', '.'));
+      const ok = Number.isFinite(value) && Number.isFinite(target) && Math.abs(value - target) <= tol;
+      return { ok, after };
+    }
+    // regex
+    if (cfg.regex) {
+      const flags = (cfg.ignore_case === 'true') ? 'i' : '';
+      try {
+        const r = new RegExp(cfg.regex, flags);
+        return { ok: r.test(user), after };
+      } catch { return { ok:false, after }; }
+    }
+    // string answers (pipe-separated)
+    let u = user;
+    if (cfg.normalize === 'true') u = _normalize(u);
+    if (cfg.ignore_case === 'true') u = u.toLowerCase();
+    const variants = (cfg.answer || '').split('|').map(s => {
+      let v = s;
+      if (cfg.normalize === 'true') v = _normalize(v);
+      if (cfg.ignore_case === 'true') v = v.toLowerCase();
+      return v;
+    });
+    const ok = variants.some(v => v === u);
+    return { ok, after };
+  }
+
+  // Рендер QUiz
+  function _renderQuiz(content, attrs) {
+    const multiple = (attrs.multiple === 'true');
+    const card = document.createElement('div');
+    card.className = 'wb-card wb-quiz';
+
+    // Разделим на строки, выделим варианты
+    const lines = content.trim().split(/\r?\n/);
+    const optionRE = /^\s*-\s*\((x|\s)\)\s*(.+)$/i;
+
+    const questionLines = [];
+    const options = [];
+    for (const ln of lines) {
+      const m = ln.match(optionRE);
+      if (m) {
+        options.push({ correct: m[1].toLowerCase() === 'x', text: m[2] });
+      } else {
+        if (ln.trim()) questionLines.push(ln);
+      }
+    }
+    const q = document.createElement('h4');
+    q.textContent = questionLines.join(' ');
+    card.appendChild(q);
+
+    const name = _uid('q');
+    const box = document.createElement('div');
+    box.className = 'wb-quiz-options';
+    options.forEach((opt, idx) => {
+      const row = document.createElement('label');
+      row.className = 'wb-quiz-option';
+      const input = document.createElement('input');
+      input.type = multiple ? 'checkbox' : 'radio';
+      input.name = name;
+      input.value = String(idx);
+      input.dataset.correct = opt.correct ? '1' : '0';
+      const span = document.createElement('span');
+      span.textContent = opt.text;
+      row.appendChild(input);
+      row.appendChild(span);
+      box.appendChild(row);
+    });
+    card.appendChild(box);
+
+    const btn = document.createElement('button');
+    btn.className = 'wb-btn';
+    btn.textContent = 'Проверить';
+    card.appendChild(btn);
+
+    const fb = document.createElement('div');
+    fb.className = 'wb-feedback';
+    card.appendChild(fb);
+
+    btn.addEventListener('click', () => {
+      const inputs = box.querySelectorAll('input');
+      let any = false, allOk = true;
+      inputs.forEach(inp => {
+        const checked = inp.checked;
+        if (checked) any = true;
+        const should = inp.dataset.correct === '1';
+        // для single: максимум один отмечен; для multiple: надо совпадение множеств
+        if (checked !== should) allOk = false;
+      });
+      if (!any) { fb.className = 'wb-feedback fail'; fb.textContent = 'Выберите вариант.'; return; }
+      if (allOk) {
+        fb.className = 'wb-feedback ok';
+        fb.textContent = attrs.after || 'Молодец!';
+      } else {
+        fb.className = 'wb-feedback fail';
+        fb.textContent = attrs.after || 'Проверь ещё раз.';
+      }
+    });
+
+    return card;
+  }
+
+  // Рендер OPEN
+  function _renderOpen(content, attrs) {
+    const card = document.createElement('div');
+    card.className = 'wb-card wb-open';
+    const prompt = document.createElement('h4');
+    prompt.textContent = _normalize(content.trim());
+    card.appendChild(prompt);
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'wb-open-input';
+    input.placeholder = 'Ваш ответ...';
+    card.appendChild(input);
+
+    const btn = document.createElement('button');
+    btn.className = 'wb-btn';
+    btn.textContent = 'Проверить';
+    card.appendChild(btn);
+
+    const fb = document.createElement('div');
+    fb.className = 'wb-feedback';
+    card.appendChild(fb);
+
+    btn.addEventListener('click', () => {
+      const user = input.value || '';
+      const res = _checkOpen(user, attrs);
+      fb.className = 'wb-feedback ' + (res.ok ? 'ok' : 'fail');
+      fb.textContent = res.after || (res.ok ? 'Верно!' : 'Неверно.');
+    });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.isComposing) {
+      e.preventDefault();
+      btn.click();
+    }
+  });
+
+    return card;
+  }
+
+  // Главный рендер в whiteboard: ПАРСИМ ТОЛЬКО [[quiz]] и [[open]]
+  function addMessage(sender, messageText) {
+    const wb = document.getElementById('whiteboard');
+    if (!wb || !messageText) return;
+
+    const container = document.createElement('div');
+    container.className = sender === 'user' ? 'wb-user' : 'wb-teacher';
+
+    const re = /\[\[(quiz|open)([^\]]*)\]\]([\s\S]*?)\[\[\/\1\]\]/g;
+    let last = 0, m;
+
+    function appendParagraphs(text) {
+      const chunks = text.split(/\n{2,}/);
+      chunks.forEach(chunk => {
+        const s = _normalize(chunk);
+        if (!s) return;
+        const p = document.createElement('p');
+        p.textContent = s;
+        container.appendChild(p);
+      });
+    }
+
+    while ((m = re.exec(messageText)) !== null) {
+      const before = messageText.slice(last, m.index);
+      if (before) appendParagraphs(before);
+
+      const tag = m[1].toLowerCase();
+      const attrs = _parseAttrs(m[2] || '');
+      const inner = m[3] || '';
+
+      if (tag === 'quiz') {
+        container.appendChild(_renderQuiz(inner, attrs));
+      } else if (tag === 'open') {
+        container.appendChild(_renderOpen(inner, attrs));
+      }
+      last = re.lastIndex;
+    }
+    const tail = messageText.slice(last);
+    if (tail) appendParagraphs(tail);
+
+    wb.appendChild(container);
+    wb.scrollTop = wb.scrollHeight;
+  }
+</script>
+
+
       
       <script>
         // 3) Функция для добавления одной строки в транскрипционный чат
@@ -366,114 +552,33 @@ function getEdgeAverageColor(img, downScale = 32) {
 }
 </script>
 
-      <script>
-        // 5) Логика отправки текстовой формы (всегда отправляем на lesson_call)
-
-
-    function applySlideFraming(img) {
+<script>
+  // 5) Helper: подгоняем фон вокруг слайда
+  function applySlideFraming(img) {
     const zone = document.getElementById('presentationZone');
-
     resizeImage(img, zone.offsetWidth, zone.offsetHeight);
+    const { r, g, b } = getEdgeAverageColor(img);
+    zone.style.background = `rgb(${r}, ${g}, ${b})`;
+  }
+</script>
 
-    const { r, g, b } = getEdgeAverageColor(img);        // ⬅️  берём цвет края
-    zone.style.background = `rgb(${r}, ${g}, ${b})`;     // 1-тонная заливка
-    }
-
-
-        const form = document.getElementById('lesson-form');
-        const textarea = document.getElementById('conversation');
-        const overlay = document.getElementById('overlay');
-      
-        form.addEventListener('submit', async (e) => {
-          if (micLocked || chatLocked) return;
-          e.preventDefault();
-          const userMessage = textarea.value.trim();
-          if (!userMessage) return;
-          addMessage('user', userMessage);
-          // БЛОКИРУЕМ всё до ответа учителя
-          chatLocked  = true;
-          micLocked   = true;
-          form.querySelector('.button').disabled = true;
-          micButton.disabled = true;
-          micButton.style.backgroundColor = "#999";
-          micButton.style.cursor         = "not-allowed";
-
-          const formData = new FormData(form);
-          formData.set("conversation", userMessage); 
-          textarea.value = '';
-          formData.append("response_mode", responseMode);
-          try {
-            const response_chat = await fetch(form.action, { method: 'POST', body: formData });
-            const data = await response_chat.json();
-            console.log("[TEXT] lesson_call response_chat:", data);
-            if (data.response_chat) {
-              addMessage('teacher', data.response_chat);
-            }
-            if (data.response_call) {
-                if (responseMode === 'audio') {
-                    playTeacherAudio(data.response_call);
-                } else {
-                    if (data.response_call_transcription) {
-                        addMessage('teacher',  '[voice] ' + data.response_call_transcription);
-                    }
-                }
-            }
-
-            // Добавляем транскрипции: каждое из новых полей отдельно
-            if (data.audio_input_transcription) {
-              addTranscriptLine({ role: 'user_voice', content: data.audio_input_transcription });
-            }
-            if (data.response_call_transcription) {
-              addTranscriptLine({ role: 'teacher_voice', content: data.response_call_transcription });
-            }
-            if (data.presentation_image) {
-            console.log("[img base64]", data.presentation_image);
-            const presentationImage = document.getElementById('presentationImage');
-            presentationImage.src = data.presentation_image;
-        
-            presentationImage.onload = function () {
-              applySlideFraming(presentationImage);
-            };
-
-        }
-
-
-            if (data.progress !== undefined) {
-              const progressValue = parseFloat(data.progress);
-              document.querySelector('.progress-bar').style.width = progressValue + '%';
-              document.querySelector('.progress-text').textContent = progressValue.toFixed(0) + '%';
-            }
-            if (data.status === '<END>') {
-              textarea.disabled = true;
-              form.querySelector('.button').disabled = true;
-              overlay.style.display = 'flex';
-            }
-            unlockMicButton();  
-          } catch (err) {
-            console.error("[TEXT] error:", err);
-            unlockMicButton();
-          }
-        });
-        textarea.addEventListener('keydown', (e) => {
-          // Если Enter без Shift — попытка отправить
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();                 // не вставляем \n
-            if (!chatLocked) {                  // отправляем ТОЛЬКО когда чат разблокирован
-              form.requestSubmit();
-            }
-          }
-        });
-
-      </script>
       
       <script>
         // 6) Микрофон: запись и отправка аудио на lesson_call
         let mediaRecorder;
         let audioChunks = [];
+        const userId   = "{{ user.id }}";
+        const courseIdx = "{{ course_idx }}";
+        let micLocked = false;
+        let chatLocked = false;
+        let micUnlockTimeout = null;
+
         const micButton = document.getElementById("micButton");
         micButton.addEventListener("mousedown", async function() {
           micButton.style.backgroundColor = "";   // ⬅ сбрасываем красный inline
           micButton.classList.add("active");       // фон снова управляет класс .active
+          console.log("[MIC] mousedown: start recording…");
+
 
           try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -502,12 +607,12 @@ function getEdgeAverageColor(img, downScale = 32) {
           // БББ — блокируем всё до ответа учителя или 30 с
           micLocked = true;
           chatLocked = true;                      // 🚫 запрет на отправку
-          form.querySelector('.button').disabled = true;
           micButton.disabled = true;
           micButton.style.backgroundColor = "#999";
           micButton.style.cursor = "not-allowed";
           micUnlockTimeout = setTimeout(unlockMicButton, 30000);
 
+          console.log("[MIC] mouseup: stop & send…");
           mediaRecorder.stop();
           mediaRecorder.addEventListener('stop', async () => {
             console.log("[MIC] Recorder stopped, sending audio...");
@@ -560,8 +665,6 @@ function getEdgeAverageColor(img, downScale = 32) {
                 document.querySelector('.progress-text').textContent = progressValue.toFixed(0) + '%';
               }
               if (data.status === '<END>') {
-                document.getElementById('conversation').disabled = true;
-                form.querySelector('.button').disabled = true;
                 document.getElementById('overlay').style.display = 'flex';
               }
             } catch (err) {
@@ -575,7 +678,6 @@ function getEdgeAverageColor(img, downScale = 32) {
       function unlockMicButton() {
         micLocked = false;
         chatLocked = false;                     // ✅ снова можно
-        form.querySelector('.button').disabled = false;
         micButton.disabled = false;
         micButton.style.backgroundColor = "";   // вернём стиль к CSS-по-умолчанию
         micButton.style.cursor = "pointer";
@@ -644,14 +746,6 @@ function getEdgeAverageColor(img, downScale = 32) {
       <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
       <script>
         // Фоновая анимация фигур (оставляем без изменений)
-        const userId = "{{ user.id }}";
-        const courseIdx = "{{ course_idx }}";
-        // --- глобальные флаги ---
-        let micLocked = false;      // блок микрофона
-        let chatLocked = false;     // блок отправки чата
-        let micUnlockTimeout = null;
-
-        console.log("Global userId:", userId, "courseIdx:", courseIdx);
       
         const canvas = document.getElementById("backgroundCanvas");
         const ctx = canvas.getContext("2d");
@@ -713,15 +807,8 @@ function getEdgeAverageColor(img, downScale = 32) {
         resizeCanvas();
         animate();
       
-        function getUserAvatarColor(name) {
-          const colors = ['#FF5733', '#33B5FF', '#FF33F6', '#33FF57', '#FFBD33'];
-          let hash = 0;
-          for (let i = 0; i < name.length; i++) {
-            hash = name.charCodeAt(i) + ((hash << 5) - hash);
-          }
-          return colors[Math.abs(hash) % colors.length];
-        }
-        const username = document.querySelector('meta[name="username"]').getAttribute('content') || 'User';
+        
+        const username = window.username;
         const accountAvatar = document.querySelector('.account-avatar');
         accountAvatar.style.backgroundColor = getUserAvatarColor(username);
         accountAvatar.textContent = username.charAt(0).toUpperCase();
@@ -752,131 +839,5 @@ function getEdgeAverageColor(img, downScale = 32) {
       </script>
       
 
-  <!-- 6) Генерация фигур на заднем фоне -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
-  <script>
-    const userId = "{{ user.id }}";
-    const courseIdx = "{{ course_idx }}";
-    console.log("Global userId:", userId, "courseIdx:", courseIdx);
-
-    const canvas = document.getElementById("backgroundCanvas");
-    const ctx = canvas.getContext("2d");
-    let shapes = [];
-    const shapeCount = 120;
-
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      createShapes();
-    }
-    function createShapes() {
-      shapes = [];
-      for (let i = 0; i < shapeCount; i++) {
-        const size = Math.random() * 30 + 20;
-        shapes.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
-          size: size,
-          type: ["triangle0", "triangle1", "triangle2", "triangle3", "square", "circle"][Math.floor(Math.random() * 6)],
-          speedX: (Math.random() - 0.5) * 1,
-          speedY: (Math.random() - 0.5) * 1
-        });
-      }
-    }
-    function drawShapes() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.strokeStyle = "rgba(180,180,180,0.5)";
-      ctx.lineWidth = 1.5;
-
-      for (let shape of shapes) {
-        ctx.beginPath();
-        if (shape.type.startsWith("triangle")) {
-          // Варианты расположения треугольников
-          if (shape.type === "triangle0") {
-            ctx.moveTo(shape.x, shape.y);
-            ctx.lineTo(shape.x + shape.size, shape.y);
-            ctx.lineTo(shape.x, shape.y + shape.size);
-          } else if (shape.type === "triangle1") {
-            ctx.moveTo(shape.x + shape.size, shape.y);
-            ctx.lineTo(shape.x, shape.y);
-            ctx.lineTo(shape.x + shape.size, shape.y + shape.size);
-          } else if (shape.type === "triangle2") {
-            ctx.moveTo(shape.x, shape.y + shape.size);
-            ctx.lineTo(shape.x, shape.y);
-            ctx.lineTo(shape.x + shape.size, shape.y + shape.size);
-          } else if (shape.type === "triangle3") {
-            ctx.moveTo(shape.x + shape.size, shape.y + shape.size);
-            ctx.lineTo(shape.x + shape.size, shape.y);
-            ctx.lineTo(shape.x, shape.y + shape.size);
-          }
-        } else if (shape.type === "square") {
-          ctx.rect(shape.x, shape.y, shape.size, shape.size);
-        } else if (shape.type === "circle") {
-          ctx.arc(shape.x, shape.y, shape.size / 2, 0, Math.PI * 2);
-        }
-        ctx.closePath();
-        ctx.stroke();
-      }
-    }
-    function updateShapes() {
-      for (let shape of shapes) {
-        shape.x += shape.speedX;
-        shape.y += shape.speedY;
-        if (shape.x < 0 || shape.x > canvas.width) shape.speedX *= -1;
-        if (shape.y < 0 || shape.y > canvas.height) shape.speedY *= -1;
-      }
-    }
-    function animate() {
-      updateShapes();
-      drawShapes();
-      requestAnimationFrame(animate);
-    }
-
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
-    animate();
-
-    // Аватарки в header
-    function getUserAvatarColor(name) {
-      const colors = ['#FF5733', '#33B5FF', '#FF33F6', '#33FF57', '#FFBD33'];
-      let hash = 0;
-      for (let i = 0; i < name.length; i++) {
-        hash = name.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      return colors[Math.abs(hash) % colors.length];
-    }
-    const username = document.querySelector('meta[name="username"]').getAttribute('content') || 'User';
-
-    // Аккаунт (header)
-    const accountAvatar = document.querySelector('.account-avatar');
-    accountAvatar.style.backgroundColor = getUserAvatarColor(username);
-    accountAvatar.textContent = username.charAt(0).toUpperCase();
-
-    // Аватар "в зоне звонка"
-    const callAvatar = document.getElementById("callAvatar");
-    if (callAvatar) {
-      callAvatar.style.backgroundColor = getUserAvatarColor(username);
-      callAvatar.textContent = username.charAt(0).toUpperCase();
-    }
-
-    // Создание аватарок для сообщений
-    window.createUserAvatar = function() {
-      const link = document.createElement('a');
-      link.href = '/account';
-      link.title = 'Profile';
-      const avatar = document.createElement('div');
-      avatar.classList.add('avatar');
-      avatar.style.backgroundColor = getUserAvatarColor(username);
-      avatar.textContent = username.charAt(0).toUpperCase();
-      link.appendChild(avatar);
-      return link;
-    };
-    window.createTeacherAvatar = function() {
-      const avatar = document.createElement('div');
-      avatar.classList.add('avatar');
-      avatar.innerHTML = '<img src="https://img.icons8.com/color/48/000000/teacher.png" alt="Teacher" style="width:100%;height:100%;border-radius:50%;">';
-      return avatar;
-    };
-  </script>
 </body>
 </html>
