@@ -561,11 +561,27 @@
 }
 .wb-btn:disabled { background: #9bbaf0; cursor: not-allowed; }
 .wb-feedback { margin-top: 10px; padding: 8px 10px; border-radius: 8px; display:none; }
-.wb-feedback.ok   { display:block; background: #e8f7ee; color: #1f7a43; border: 1px solid #c7edd5; }
-.wb-feedback.fail { display:block; background: #fff1f1; color: #a12a2a; border: 1px solid #ffd6d6; }
 
 /* OPEN */
 .wb-open-input {
   width: 100%; padding: 10px 12px; border: 1px solid #e9eef7; border-radius: 10px;
   font-size: 14px; margin-top: 8px;
+}
+.wb-card .wb-btn-locked {
+  opacity: 0.85;
+  cursor: default;
+}
+
+.wb-feedback.ok {
+  /* пример */
+  color: #2e7d32;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.wb-feedback.fail {
+  /* пример */
+  color: #c62828;
+  font-weight: 600;
+  margin-top: 8px;
 }

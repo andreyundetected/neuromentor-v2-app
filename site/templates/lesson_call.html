@@ -22,7 +22,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Call Lesson - NeuroMentor</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=18">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=19">
   </head>
   <body>
     <canvas id="backgroundCanvas"></canvas>
@@ -254,6 +254,32 @@
       
 <script>
   // ---------- helpers ----------
+  // ===== i18n =====
+function _getLang() {
+  const el = document.getElementById('lang-text');
+  const t = (el ? el.textContent : '').trim().toUpperCase();
+  return t === 'RU' ? 'ru' : 'en';
+}
+
+const UI = {
+  ru: {
+    check: 'Проверить',
+    choose: 'Выберите вариант.',
+    correct: 'Молодец!',
+    wrong: 'Проверь ещё раз.',
+    done: 'Готово',
+    placeholder: 'Ваш ответ...'
+  },
+  en: {
+    check: 'Check',
+    choose: 'Choose an option.',
+    correct: 'Well done!',
+    wrong: 'Try again.',
+    done: 'Done',
+    placeholder: 'Your answer...'
+  }
+};
+
   function _parseAttrs(raw) {
     const out = {};
     raw.replace(/\s+([a-zA-Z_][\w-]*)\s*=\s*"([^"]*)"/g, (_, k, v) => (out[k.toLowerCase()] = v));
@@ -297,118 +323,161 @@
 
   // Рендер QUiz
   function _renderQuiz(content, attrs) {
-    const multiple = (attrs.multiple === 'true');
-    const card = document.createElement('div');
-    card.className = 'wb-card wb-quiz';
+  const lang = _getLang();
+  const L = UI[lang];
+  const multiple = (attrs.multiple === 'true');
+  const card = document.createElement('div');
+  card.className = 'wb-card wb-quiz';
 
-    // Разделим на строки, выделим варианты
-    const lines = content.trim().split(/\r?\n/);
-    const optionRE = /^\s*-\s*\((x|\s)\)\s*(.+)$/i;
+  const lines = content.trim().split(/\r?\n/);
+  const optionRE = /^\s*-\s*\((x|\s)\)\s*(.+)$/i;
 
-    const questionLines = [];
-    const options = [];
-    for (const ln of lines) {
-      const m = ln.match(optionRE);
-      if (m) {
-        options.push({ correct: m[1].toLowerCase() === 'x', text: m[2] });
-      } else {
-        if (ln.trim()) questionLines.push(ln);
-      }
+  const questionLines = [];
+  const options = [];
+  for (const ln of lines) {
+    const m = ln.match(optionRE);
+    if (m) {
+      options.push({ correct: m[1].toLowerCase() === 'x', text: m[2] });
+    } else if (ln.trim()) {
+      questionLines.push(ln);
     }
-    const q = document.createElement('h4');
-    q.textContent = questionLines.join(' ');
-    card.appendChild(q);
-
-    const name = _uid('q');
-    const box = document.createElement('div');
-    box.className = 'wb-quiz-options';
-    options.forEach((opt, idx) => {
-      const row = document.createElement('label');
-      row.className = 'wb-quiz-option';
-      const input = document.createElement('input');
-      input.type = multiple ? 'checkbox' : 'radio';
-      input.name = name;
-      input.value = String(idx);
-      input.dataset.correct = opt.correct ? '1' : '0';
-      const span = document.createElement('span');
-      span.textContent = opt.text;
-      row.appendChild(input);
-      row.appendChild(span);
-      box.appendChild(row);
-    });
-    card.appendChild(box);
-
-    const btn = document.createElement('button');
-    btn.className = 'wb-btn';
-    btn.textContent = 'Проверить';
-    card.appendChild(btn);
-
-    const fb = document.createElement('div');
-    fb.className = 'wb-feedback';
-    card.appendChild(fb);
-
-    btn.addEventListener('click', () => {
-      const inputs = box.querySelectorAll('input');
-      let any = false, allOk = true;
-      inputs.forEach(inp => {
-        const checked = inp.checked;
-        if (checked) any = true;
-        const should = inp.dataset.correct === '1';
-        // для single: максимум один отмечен; для multiple: надо совпадение множеств
-        if (checked !== should) allOk = false;
-      });
-      if (!any) { fb.className = 'wb-feedback fail'; fb.textContent = 'Выберите вариант.'; return; }
-      if (allOk) {
-        fb.className = 'wb-feedback ok';
-        fb.textContent = attrs.after || 'Молодец!';
-      } else {
-        fb.className = 'wb-feedback fail';
-        fb.textContent = attrs.after || 'Проверь ещё раз.';
-      }
-    });
-
-    return card;
   }
 
-  // Рендер OPEN
-  function _renderOpen(content, attrs) {
-    const card = document.createElement('div');
-    card.className = 'wb-card wb-open';
-    const prompt = document.createElement('h4');
-    prompt.textContent = _normalize(content.trim());
-    card.appendChild(prompt);
+  const q = document.createElement('h4');
+  q.textContent = questionLines.join(' ');
+  card.appendChild(q);
 
+  const name = _uid('q');
+  const box = document.createElement('div');
+  box.className = 'wb-quiz-options';
+  options.forEach((opt, idx) => {
+    const row = document.createElement('label');
+    row.className = 'wb-quiz-option';
     const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'wb-open-input';
-    input.placeholder = 'Ваш ответ...';
-    card.appendChild(input);
+    input.type = multiple ? 'checkbox' : 'radio';
+    input.name = name;
+    input.value = String(idx);
+    input.dataset.correct = opt.correct ? '1' : '0';
+    const span = document.createElement('span');
+    span.textContent = opt.text;
+    row.appendChild(input);
+    row.appendChild(span);
+    box.appendChild(row);
+  });
+  card.appendChild(box);
 
-    const btn = document.createElement('button');
-    btn.className = 'wb-btn';
-    btn.textContent = 'Проверить';
-    card.appendChild(btn);
+  const btn = document.createElement('button');
+  btn.className = 'wb-btn';
+  btn.textContent = L.check;
+  card.appendChild(btn);
 
-    const fb = document.createElement('div');
-    fb.className = 'wb-feedback';
-    card.appendChild(fb);
+  const fb = document.createElement('div');
+  fb.className = 'wb-feedback';
+  card.appendChild(fb);
 
-    btn.addEventListener('click', () => {
-      const user = input.value || '';
-      const res = _checkOpen(user, attrs);
-      fb.className = 'wb-feedback ' + (res.ok ? 'ok' : 'fail');
-      fb.textContent = res.after || (res.ok ? 'Верно!' : 'Неверно.');
+  function lockCard() {
+    q.style.opacity = '0.6';
+    box.style.opacity = '0.6';
+    const inputs = box.querySelectorAll('input');
+    inputs.forEach(inp => inp.disabled = true);
+    btn.disabled = true;
+    btn.textContent = L.done;
+    btn.classList.add('wb-btn-locked');
+  }
+
+  btn.addEventListener('click', () => {
+    if (btn.disabled) return; // повторно нельзя
+    const inputs = box.querySelectorAll('input');
+    let any = false, allOk = true;
+    inputs.forEach(inp => {
+      const checked = inp.checked;
+      if (checked) any = true;
+      const should = inp.dataset.correct === '1';
+      if (checked !== should) allOk = false;
     });
 
+    if (!any) {
+      fb.className = 'wb-feedback fail';
+      fb.textContent = attrs.after_fail || attrs.after || L.choose;
+      return; // не лочим пока не выбран вариант
+    }
+
+    const okMsg   = attrs.after_ok   || attrs.after || L.correct;
+    const failMsg = attrs.after_fail || attrs.after || L.wrong;
+
+    const ok = allOk;
+    fb.className = 'wb-feedback ' + (ok ? 'ok' : 'fail');
+    fb.textContent = ok ? okMsg : failMsg;
+
+    // заблокировать навсегда
+    lockCard();
+  });
+
+  return card;
+}
+
+
+  // Рендер OPEN
+function _renderOpen(content, attrs) {
+  const lang = _getLang();
+  const L = UI[lang];
+
+  const card = document.createElement('div');
+  card.className = 'wb-card wb-open';
+  const prompt = document.createElement('h4');
+  prompt.textContent = _normalize(content.trim());
+  card.appendChild(prompt);
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'wb-open-input';
+  input.placeholder = L.placeholder;
+  card.appendChild(input);
+
+  const btn = document.createElement('button');
+  btn.className = 'wb-btn';
+  btn.textContent = L.check;
+  card.appendChild(btn);
+
+  const fb = document.createElement('div');
+  fb.className = 'wb-feedback';
+  card.appendChild(fb);
+
+  function lockCard() {
+    prompt.style.opacity = '0.6';
+    input.disabled = true;
+    input.style.opacity = '0.6';
+    btn.disabled = true;
+    btn.textContent = L.done;
+    btn.classList.add('wb-btn-locked');
+  }
+
+  function check() {
+    if (btn.disabled) return;
+    const user = input.value || '';
+    const res = _checkOpen(user, attrs);
+
+    const okMsg   = attrs.after_ok   || attrs.after || UI[_getLang()].correct;
+    const failMsg = attrs.after_fail || attrs.after || UI[_getLang()].wrong;
+
+    fb.className = 'wb-feedback ' + (res.ok ? 'ok' : 'fail');
+    fb.textContent = res.ok ? okMsg : failMsg;
+
+    // заблокировать навсегда
+    lockCard();
+  }
+
+  btn.addEventListener('click', check);
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.isComposing) {
       e.preventDefault();
-      btn.click();
+      check();
     }
   });
 
-    return card;
-  }
+  return card;
+}
+
 
   // Главный рендер в whiteboard: ПАРСИМ ТОЛЬКО [[quiz]] и [[open]]
   function addMessage(sender, messageText) {
@@ -418,7 +487,7 @@
     const container = document.createElement('div');
     container.className = sender === 'user' ? 'wb-user' : 'wb-teacher';
 
-    const re = /\[\[(quiz|open)([^\]]*)\]\]([\s\S]*?)\[\[\/\1\]\]/g;
+    const re = /\[\[(quiz|open)((?:(?!\]\])[\s\S])*)\]\]([\s\S]*?)\[\[\/\1\]\]/g;
     let last = 0, m;
 
     function appendParagraphs(text) {
