@@ -560,7 +560,32 @@
   background: #007bff; color: #fff; cursor: pointer; font-weight: 600;
 }
 .wb-btn:disabled { background: #9bbaf0; cursor: not-allowed; }
-.wb-feedback { margin-top: 10px; padding: 8px 10px; border-radius: 8px; display:none; }
+.wb-feedback {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  display: none;                 /* скрыто по умолчанию */
+  border: 1px solid transparent; /* станет видимой в ok/fail */
+  background: #f7f9ff;           /* базовый мягкий фон */
+  box-shadow: 0 1px 3px rgba(0,0,0,.05);
+  line-height: 1.35;
+  position: relative;
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+/* Показываем как "контейнер" со строкой и иконкой слева */
+.wb-feedback.ok,
+.wb-feedback.fail {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  opacity: 1;
+  transform: none;
+}
+
+
 
 /* OPEN */
 .wb-open-input {
@@ -571,17 +596,34 @@
   opacity: 0.85;
   cursor: default;
 }
-
+/* УСПЕХ */
 .wb-feedback.ok {
-  /* пример */
-  color: #2e7d32;
+  background: #eaf7ef;      /* нежный зелёный фон */
+  border-color: #cdebd6;
+  border-left: 6px solid #34a853; /* акцентная полоса слева */
+  color: #1b5e20;
   font-weight: 600;
-  margin-top: 8px;
+}
+.wb-feedback.ok::before {
+  content: "✓";
+  font-weight: 700;
+  flex: 0 0 auto;
+  line-height: 1;
+  margin-top: 2px;
 }
 
+/* ОШИБКА */
 .wb-feedback.fail {
-  /* пример */
-  color: #c62828;
+  background: #fdecea;      /* нежный красный фон */
+  border-color: #f5c1bc;
+  border-left: 6px solid #d93025; /* акцентная полоса слева */
+  color: #7f1d1d;
   font-weight: 600;
-  margin-top: 8px;
+}
+.wb-feedback.fail::before {
+  content: "✕";
+  font-weight: 700;
+  flex: 0 0 auto;
+  line-height: 1;
+  margin-top: 2px;
 }

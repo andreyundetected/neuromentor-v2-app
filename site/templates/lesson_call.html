@@ -22,7 +22,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Call Lesson - NeuroMentor</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=19">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=22">
   </head>
   <body>
     <canvas id="backgroundCanvas"></canvas>
@@ -106,31 +106,32 @@
         <p>Ещё абзац, чтобы увидеть отступы между блоками и как ведёт себя скролл при переполнении.</p>
 # Проверка квизов
 
-[[quiz multiple="false" after="Молодец! Правильный ответ: B"]]
+[[quiz multiple="false" after_ok="Молодец! Правильный ответ: B" after_fail="Не то. Подумай про алфавит 😉"]]
 Какая буква правильная?
 - ( ) A
 - (x) B
 - ( ) C
 [[/quiz]]
 
-[[quiz multiple="true" after="Верная комбинация — A и C"]]
+[[quiz multiple="true" after_ok="Верная комбинация — A и C" after_fail="Лишний или отсутствует вариант."]]
 Выберите верные варианты:
 - (x) A
 - ( ) B
 - (x) C
 [[/quiz]]
 
-[[open answer="Париж" ignore_case="true" normalize="true" after="Да, столица Франции — Париж."]]
+[[open answer="Париж|Paris" ignore_case="true" normalize="true" after_ok="Да, столица Франции — Париж." after_fail="Чуть мимо. Подумай о городе любви."]]
 Столица Франции?
 [[/open]]
 
-[[open numeric="true" answer="3.14159" tol="0.01" after="Ок, достаточно близко к π."]]
+[[open numeric="true" answer="3.14159" tol="0.01" after_ok="Ок, достаточно близко к π." after_fail="Проверь точность и формат (разрешено ±0.01)."]]
 Приближённое значение π (±0.01)?
 [[/open]]
 
-[[open regex="^https?://[^\s]+$" after="Корректный URL."]]
+[[open regex="^https?://[^\\s]+$" after_ok="Корректный URL." after_fail="Нужен URL c http:// или https://, без пробелов."]]
 Введите URL (http/https):
 [[/open]]
+
 
 
         <h2>Проверка whiteboard</h2>
@@ -256,10 +257,15 @@
   // ---------- helpers ----------
   // ===== i18n =====
 function _getLang() {
-  const el = document.getElementById('lang-text');
-  const t = (el ? el.textContent : '').trim().toUpperCase();
-  return t === 'RU' ? 'ru' : 'en';
+  try {
+    const el = document.getElementById('lang-text');
+    const t = (el ? el.textContent : '').trim().toUpperCase();
+    if (t === 'RU') return 'ru';
+    if (t === 'EN') return 'en';
+  } catch {}
+  return 'en'; // безопасный дефолт
 }
+
 
 const UI = {
   ru: {
@@ -280,11 +286,22 @@ const UI = {
   }
 };
 
-  function _parseAttrs(raw) {
-    const out = {};
-    raw.replace(/\s+([a-zA-Z_][\w-]*)\s*=\s*"([^"]*)"/g, (_, k, v) => (out[k.toLowerCase()] = v));
-    return out;
+function _parseAttrs(raw) {
+  const out = {};
+  if (!raw) return out;
+
+  // двойные и одинарные кавычки, без обязательного ведущего пробела
+  const re = /([a-zA-Z_][\w-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
+  let m;
+  while ((m = re.exec(raw)) !== null) {
+    const key = m[1].toLowerCase();
+    const val = (m[2] !== undefined ? m[2] : m[3]) ?? '';
+    out[key] = val;
   }
+  return out;
+}
+
+  
   function _normalize(s) { return s.trim().replace(/\s+/g, ' '); }
   function _uid(prefix='wb') { return prefix + '_' + Math.random().toString(36).slice(2, 8); }
 
@@ -374,6 +391,10 @@ const UI = {
   const fb = document.createElement('div');
   fb.className = 'wb-feedback';
   card.appendChild(fb);
+  fb.style.minHeight = '1em';
+  fb.style.marginTop = '8px';
+  fb.setAttribute('aria-live', 'polite');
+
 
   function lockCard() {
     q.style.opacity = '0.6';
@@ -408,7 +429,9 @@ const UI = {
     const ok = allOk;
     fb.className = 'wb-feedback ' + (ok ? 'ok' : 'fail');
     fb.textContent = ok ? okMsg : failMsg;
-
+    fb.className = 'wb-feedback ' + (ok ? 'ok' : 'fail');
+    fb.textContent = ok ? okMsg : failMsg;
+    fb.style.display = 'block';
     // заблокировать навсегда
     lockCard();
   });
@@ -442,6 +465,11 @@ function _renderOpen(content, attrs) {
   const fb = document.createElement('div');
   fb.className = 'wb-feedback';
   card.appendChild(fb);
+  fb.style.minHeight = '1em';
+  fb.style.marginTop = '8px';
+  fb.setAttribute('aria-live', 'polite');
+
+  
 
   function lockCard() {
     prompt.style.opacity = '0.6';
@@ -462,7 +490,9 @@ function _renderOpen(content, attrs) {
 
     fb.className = 'wb-feedback ' + (res.ok ? 'ok' : 'fail');
     fb.textContent = res.ok ? okMsg : failMsg;
-
+    fb.className = 'wb-feedback ' + (res.ok ? 'ok' : 'fail');
+    fb.textContent = res.ok ? okMsg : failMsg;
+    fb.style.display = 'block';
     // заблокировать навсегда
     lockCard();
   }
@@ -480,14 +510,15 @@ function _renderOpen(content, attrs) {
 
 
   // Главный рендер в whiteboard: ПАРСИМ ТОЛЬКО [[quiz]] и [[open]]
-  function addMessage(sender, messageText) {
-    const wb = document.getElementById('whiteboard');
-    if (!wb || !messageText) return;
+function addMessage(sender, messageText) {
+  const wb = document.getElementById('whiteboard');
+  if (!wb || !messageText) return;
 
-    const container = document.createElement('div');
-    container.className = sender === 'user' ? 'wb-user' : 'wb-teacher';
+  const container = document.createElement('div');
+  container.className = sender === 'user' ? 'wb-user' : 'wb-teacher';
 
-    const re = /\[\[(quiz|open)((?:(?!\]\])[\s\S])*)\]\]([\s\S]*?)\[\[\/\1\]\]/g;
+  try {
+    const re = /\[\[(quiz|open)((?:(?!\]\]).)*?)\]\]([\s\S]*?)\[\[\/\1\]\]/g;
     let last = 0, m;
 
     function appendParagraphs(text) {
@@ -506,7 +537,12 @@ function _renderOpen(content, attrs) {
       if (before) appendParagraphs(before);
 
       const tag = m[1].toLowerCase();
-      const attrs = _parseAttrs(m[2] || '');
+      const rawAttrs = m[2] || '';
+      console.log('[WB RAW ATTRS]', tag, rawAttrs);
+      const attrs = _parseAttrs(rawAttrs);
+      console.log('[WB PARSED ATTRS]', tag, attrs);
+
+
       const inner = m[3] || '';
 
       if (tag === 'quiz') {
@@ -519,9 +555,18 @@ function _renderOpen(content, attrs) {
     const tail = messageText.slice(last);
     if (tail) appendParagraphs(tail);
 
-    wb.appendChild(container);
-    wb.scrollTop = wb.scrollHeight;
+  } catch (e) {
+    console.error('[WB render error]', e);
+    // безопасный фолбэк — показать сырой текст, чтобы “не пропало всё”
+    const pre = document.createElement('pre');
+    pre.textContent = messageText;
+    container.appendChild(pre);
   }
+
+  wb.appendChild(container);
+  wb.scrollTop = wb.scrollHeight;
+}
+
 </script>
 
 
