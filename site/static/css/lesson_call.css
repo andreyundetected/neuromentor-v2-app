@@ -627,3 +627,14 @@
   line-height: 1;
   margin-top: 2px;
 }
+
+
+/* PLOT */
+.wb-card.wb-plot {
+  background: #fff;
+}
+.wb-plot-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}

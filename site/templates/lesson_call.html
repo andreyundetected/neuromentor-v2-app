@@ -22,7 +22,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Call Lesson - NeuroMentor</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=22">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=23">
   </head>
   <body>
     <canvas id="backgroundCanvas"></canvas>
@@ -113,12 +113,24 @@
 - ( ) C
 [[/quiz]]
 
+[[plot type="line" title="Рост" x="[0,1,2,3]" y="[0,1,4,9]"]][[/plot]]
+
 [[quiz multiple="true" after_ok="Верная комбинация — A и C" after_fail="Лишний или отсутствует вариант."]]
 Выберите верные варианты:
 - (x) A
 - ( ) B
 - (x) C
 [[/quiz]]
+
+[[plot type="bar" title="Сравнение"]]
+{
+  "series": [
+    {"name":"A","x":[1,2,3],"y":[3,4,5]},
+    {"name":"B","x":[1,2,3],"y":[2,2,7]}
+  ]
+}
+[[/plot]]
+
 
 [[open answer="Париж|Paris" ignore_case="true" normalize="true" after_ok="Да, столица Франции — Париж." after_fail="Чуть мимо. Подумай о городе любви."]]
 Столица Франции?
@@ -128,9 +140,20 @@
 Приближённое значение π (±0.01)?
 [[/open]]
 
+[[plot type="scatter" title="Категории"]]
+{
+  "series": [
+    {"name":"S1","x":["Mon","Tue","Wed"],"y":[2,5,3]},
+    {"name":"S2","x":["Mon","Tue","Wed"],"y":[1,4,6]}
+  ]
+}
+[[/plot]]
+
+
 [[open regex="^https?://[^\\s]+$" after_ok="Корректный URL." after_fail="Нужен URL c http:// или https://, без пробелов."]]
 Введите URL (http/https):
 [[/open]]
+
 
 
 
@@ -304,6 +327,29 @@ function _parseAttrs(raw) {
   
   function _normalize(s) { return s.trim().replace(/\s+/g, ' '); }
   function _uid(prefix='wb') { return prefix + '_' + Math.random().toString(36).slice(2, 8); }
+
+  function _parseArrayMaybeJSON(s) {
+  if (!s) return [];
+  try {
+    // ожидаем JSON-массив вида "[1,2,3]" или ["a","b"]
+    const arr = JSON.parse(s);
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    // бэкап: числа через запятую "1,2,3"
+    return String(s)
+      .replace(/^\s*\[?/, '')
+      .replace(/\]?\s*$/, '')
+      .split(',')
+      .map(v => v.trim())
+      .filter(v => v.length)
+      .map(v => (isNaN(Number(v)) ? v : Number(v)));
+  }
+}
+
+function _toNumberOrCat(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : String(v);
+}
 
   // Проверка ответов для OPEN
   function _checkOpen(user, cfg) {
@@ -507,6 +553,274 @@ function _renderOpen(content, attrs) {
 
   return card;
 }
+function _renderPlot(content, attrs) {
+  // --- входные атрибуты ---
+  const type   = (attrs.type || 'line').toLowerCase(); // line|bar|scatter
+  const title  = attrs.title || '';
+
+  // --- собрать серии ---
+  let series = [];
+  if (content && content.trim().startsWith('{')) {
+    // мультисерии через JSON
+    try {
+      const cfg = JSON.parse(content);
+      if (cfg && Array.isArray(cfg.series)) {
+        series = cfg.series.map(s => ({
+          name: s.name || '',
+          x: (s.x || []).map(_toNumberOrCat),
+          y: (s.y || []).map(v => Number(v)),
+        }));
+      }
+    } catch(e) {
+      // если JSON битый — покажем текст ошибки
+      const card = document.createElement('div');
+      card.className = 'wb-card wb-plot';
+      card.textContent = 'Plot JSON parse error: ' + e.message;
+      return card;
+    }
+  } else {
+    // одиночная серия через атрибуты x/y
+    const x = _parseArrayMaybeJSON(attrs.x).map(_toNumberOrCat);
+    const y = _parseArrayMaybeJSON(attrs.y).map(v => Number(v));
+    series = [{ name: '', x, y }];
+  }
+
+  // валидация длин
+  series = series.map(s => {
+    const n = Math.min(s.x.length, s.y.length);
+    return { ...s, x: s.x.slice(0, n), y: s.y.slice(0, n) };
+  }).filter(s => s.x.length > 0);
+
+  // контейнер карточки
+  const card = document.createElement('div');
+  card.className = 'wb-card wb-plot';
+
+  if (title) {
+    const h = document.createElement('h4');
+    h.textContent = title;
+    card.appendChild(h);
+  }
+
+  // размеры и отступы
+  const width  = card.clientWidth || 600; // до вставки может быть 0; fallback
+  const height = 260;
+  const m = { top: 20, right: 12, bottom: 28, left: 42 };
+  const W = width  - m.left - m.right;
+  const H = height - m.top  - m.bottom;
+
+  // собрать все точки для расчёта границ
+  const allX = [];
+  const allY = [];
+  series.forEach(s => {
+    s.x.forEach(v => allX.push(v));
+    s.y.forEach(v => allY.push(Number(v)));
+  });
+
+  // поддержка категорий по X (для bar/line/scatter если X нечисловые)
+  const xIsNumeric = allX.every(v => typeof v === 'number' && Number.isFinite(v));
+  const xCats = xIsNumeric ? [] : Array.from(new Set(allX.map(String)));
+
+  // границы по X
+  let xMin, xMax;
+  if (xIsNumeric) {
+    xMin = Math.min(...allX);
+    xMax = Math.max(...allX);
+    if (xMin === xMax) { xMin -= 1; xMax += 1; }
+  } else {
+    xMin = 0;
+    xMax = xCats.length - 1;
+  }
+
+  // границы по Y
+  let yMin = Math.min(...allY);
+  let yMax = Math.max(...allY);
+  if (yMin === yMax) { yMin -= 1; yMax += 1; }
+  // небольшой паддинг
+  const yPad = (yMax - yMin) * 0.08;
+  yMin -= yPad; yMax += yPad;
+
+  // скейлеры
+  const xScale = v => {
+    if (xIsNumeric) {
+      return m.left + ( (v - xMin) / (xMax - xMin) ) * W;
+    } else {
+      const idx = xCats.indexOf(String(v));
+      return m.left + (idx + 0.5) * (W / Math.max(1, xCats.length));
+    }
+  };
+  const yScale = v => m.top + H - ( (v - yMin) / (yMax - yMin) ) * H;
+
+  // svg
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', String(height));
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.classList.add('wb-plot-svg');
+
+  // оси
+  const axis = (x1,y1,x2,y2) => {
+    const el = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    el.setAttribute('x1', x1); el.setAttribute('y1', y1);
+    el.setAttribute('x2', x2); el.setAttribute('y2', y2);
+    el.setAttribute('stroke', '#c9d4ee');
+    el.setAttribute('stroke-width', '1');
+    return el;
+  };
+  svg.appendChild(axis(m.left, m.top, m.left, m.top + H));           // Y
+  svg.appendChild(axis(m.left, m.top + H, m.left + W, m.top + H));   // X
+
+  // тики по Y (5 шт)
+  for (let i = 0; i <= 5; i++) {
+    const yy = m.top + H - (i / 5) * H;
+    const val = yMin + (i / 5) * (yMax - yMin);
+    // линия
+    const gl = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    gl.setAttribute('x1', m.left);
+    gl.setAttribute('y1', yy);
+    gl.setAttribute('x2', m.left + W);
+    gl.setAttribute('y2', yy);
+    gl.setAttribute('stroke', '#eef2fb');
+    gl.setAttribute('stroke-width', '1');
+    svg.appendChild(gl);
+    // подпись
+    const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    t.setAttribute('x', m.left - 8);
+    t.setAttribute('y', yy + 4);
+    t.setAttribute('text-anchor', 'end');
+    t.setAttribute('font-size', '11');
+    t.setAttribute('fill', '#6b7aa8');
+    t.textContent = (Math.abs(val) >= 1000 ? val.toFixed(0) : val.toFixed(2).replace(/\.00$/, ''));
+    svg.appendChild(t);
+  }
+
+  // подписи X (категории)
+  if (!xIsNumeric) {
+    const step = W / Math.max(1, xCats.length);
+    xCats.forEach((cat, i) => {
+      const xx = m.left + (i + 0.5) * step;
+      const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      t.setAttribute('x', xx);
+      t.setAttribute('y', m.top + H + 18);
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('font-size', '11');
+      t.setAttribute('fill', '#6b7aa8');
+      t.textContent = cat;
+      svg.appendChild(t);
+    });
+  }
+
+  // палитра
+  const colors = ['#3366CC', '#DC3912', '#FF9900', '#109618', '#990099', '#0099C6'];
+
+  // рисование серий
+  if (type === 'bar') {
+    const cats = xIsNumeric ? Array.from(new Set(allX)) : xCats;
+    const catStep = W / Math.max(1, cats.length);
+    const groupW  = catStep * 0.7;
+    const barW    = groupW / Math.max(1, series.length);
+
+    cats.forEach((cat, ci) => {
+      const cx = m.left + ci * catStep + (catStep - groupW) / 2;
+      series.forEach((s, si) => {
+        const i = s.x.findIndex(v => String(v) === String(cat));
+        if (i < 0) return;
+        const yv = s.y[i];
+        const x0 = cx + si * barW;
+        const y0 = yScale(0);
+        const y1 = yScale(yv);
+        const h  = Math.abs(y1 - y0);
+
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', x0);
+        rect.setAttribute('y', Math.min(y0, y1));
+        rect.setAttribute('width', barW - 1);
+        rect.setAttribute('height', h);
+        rect.setAttribute('fill', colors[si % colors.length]);
+        rect.setAttribute('opacity', '0.9');
+        svg.appendChild(rect);
+      });
+    });
+
+  } else if (type === 'scatter') {
+    series.forEach((s, si) => {
+      s.x.forEach((xv, i) => {
+        const cx = xScale(xv);
+        const cy = yScale(s.y[i]);
+        const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        c.setAttribute('cx', cx);
+        c.setAttribute('cy', cy);
+        c.setAttribute('r', '3.5');
+        c.setAttribute('fill', colors[si % colors.length]);
+        c.setAttribute('opacity', '0.9');
+        svg.appendChild(c);
+      });
+    });
+
+  } else { // line (по умолчанию)
+    series.forEach((s, si) => {
+      // полилиния
+      const pts = s.x.map((xv, i) => `${xScale(xv)},${yScale(s.y[i])}`).join(' ');
+      const pl = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+      pl.setAttribute('points', pts);
+      pl.setAttribute('fill', 'none');
+      pl.setAttribute('stroke', colors[si % colors.length]);
+      pl.setAttribute('stroke-width', '2');
+      pl.setAttribute('opacity', '0.95');
+      svg.appendChild(pl);
+      // маркеры
+      s.x.forEach((xv, i) => {
+        const cx = xScale(xv);
+        const cy = yScale(s.y[i]);
+        const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        c.setAttribute('cx', cx);
+        c.setAttribute('cy', cy);
+        c.setAttribute('r', '3');
+        c.setAttribute('fill', colors[si % colors.length]);
+        svg.appendChild(c);
+      });
+    });
+  }
+
+  // легенда (если есть имена)
+  const names = series.map(s => s.name || '').filter(Boolean);
+  if (names.length) {
+    const legend = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    let lx = m.left, ly = m.top; // верх-слева
+    names.forEach((nm, i) => {
+      const sw = 12;
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', lx);
+      rect.setAttribute('y', ly - 10);
+      rect.setAttribute('width', sw);
+      rect.setAttribute('height', sw);
+      rect.setAttribute('fill', colors[i % colors.length]);
+      legend.appendChild(rect);
+
+      const tx = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      tx.setAttribute('x', lx + sw + 6);
+      tx.setAttribute('y', ly);
+      tx.setAttribute('dominant-baseline', 'middle');
+      tx.setAttribute('font-size', '12');
+      tx.setAttribute('fill', '#334e8a');
+      tx.textContent = nm;
+      legend.appendChild(tx);
+
+      lx += sw + 6 + (nm.length * 7 + 18);
+      if (lx > (m.left + W - 100)) { lx = m.left; ly += 18; }
+    });
+    svg.appendChild(legend);
+  }
+
+  card.appendChild(svg);
+
+  // если ширина карточки уже известна после вставки — перерисуем viewBox
+  requestAnimationFrame(() => {
+    const w2 = card.clientWidth || width;
+    svg.setAttribute('viewBox', `0 0 ${w2} ${height}`);
+  });
+
+  return card;
+}
 
 
   // Главный рендер в whiteboard: ПАРСИМ ТОЛЬКО [[quiz]] и [[open]]
@@ -518,7 +832,8 @@ function addMessage(sender, messageText) {
   container.className = sender === 'user' ? 'wb-user' : 'wb-teacher';
 
   try {
-    const re = /\[\[(quiz|open)((?:(?!\]\]).)*?)\]\]([\s\S]*?)\[\[\/\1\]\]/g;
+    const re = /\[\[(quiz|open|plot)([\s\S]*?)\]\]([\s\S]*?)\[\[\/\1\]\]/g;
+
     let last = 0, m;
 
     function appendParagraphs(text) {
@@ -550,6 +865,10 @@ function addMessage(sender, messageText) {
       } else if (tag === 'open') {
         container.appendChild(_renderOpen(inner, attrs));
       }
+      else if (tag === 'plot') {
+        container.appendChild(_renderPlot(inner.trim(), attrs));
+      }
+
       last = re.lastIndex;
     }
     const tail = messageText.slice(last);
