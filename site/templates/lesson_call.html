@@ -22,7 +22,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Call Lesson - NeuroMentor</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=23">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=24">
   </head>
   <body>
     <canvas id="backgroundCanvas"></canvas>
@@ -154,6 +154,12 @@
 Введите URL (http/https):
 [[/open]]
 
+[[table caption="Результаты"]]
+| Имя   | Баллы |
+|------:|------:|
+| Анна  |   95  |
+| Иван  |   88  |
+[[/table]]
 
 
 
@@ -175,6 +181,7 @@
         <p>Ещё абзац, чтобы увидеть отступы между блоками и как ведёт себя скролл при переполнении.</p>
       </div>
 
+    
   
     <!-- Кнопка и окно транскрипционного чата -->
     {% if session.get('language', 'ru') == 'ru' %}
@@ -349,6 +356,31 @@ function _parseAttrs(raw) {
 function _toNumberOrCat(v) {
   const n = Number(v);
   return Number.isFinite(n) ? n : String(v);
+}
+function _splitTableRow(line) {
+  // Разбиваем по |, убираем крайние | и пробелы
+  if (!line) return [];
+  let s = String(line).trim();
+  if (s.startsWith('|')) s = s.slice(1);
+  if (s.endsWith('|')) s = s.slice(0, -1);
+  return s.split('|').map(c => c.trim());
+}
+
+function _isAlignRow(cells) {
+  // Ячейки вида :---, ---:, :---:, --- (3+ дефиса)
+  if (!cells || !cells.length) return false;
+  return cells.every(cell => {
+    const x = cell.replace(/\s/g, '');
+    return /^:?-{3,}:?$/.test(x);
+  });
+}
+
+function _parseAlign(cell) {
+  const x = String(cell).replace(/\s/g, '');
+  if (/^:-{3,}:$/.test(x)) return 'center';
+  if (/^-{3,}:$/.test(x))  return 'right';
+  // и :---, и просто --- трактуем как left
+  return 'left';
 }
 
   // Проверка ответов для OPEN
@@ -823,6 +855,84 @@ function _renderPlot(content, attrs) {
 }
 
 
+function _renderTable(content, attrs) {
+  const card = document.createElement('div');
+  card.className = 'wb-card wb-table';
+
+  const lines = (content || '')
+    .split(/\r?\n/)
+    .map(l => l.trim())
+    .filter(l => l.length > 0);
+
+  if (!lines.length) {
+    card.textContent = 'Empty table.';
+    return card;
+  }
+
+  // Парсим первую непустую как заголовок,
+  // следующую как строку выравниваний (если подходит),
+  // остальные — тело
+  const headCells = _splitTableRow(lines[0]);
+  let alignRow = [];
+  let bodyStart = 1;
+
+  if (lines[1]) {
+    const maybeAlign = _splitTableRow(lines[1]);
+    if (_isAlignRow(maybeAlign)) {
+      alignRow = maybeAlign.map(_parseAlign);
+      bodyStart = 2;
+    }
+  }
+
+  // Если нет строки выравниваний — выравниваем шапку влево по умолчанию
+  if (!alignRow.length) alignRow = headCells.map(() => 'left');
+
+  // Заголовок карточки (caption)
+  const caption = attrs.caption || attrs.title || '';
+  if (caption) {
+    const cap = document.createElement('div');
+    cap.className = 'wb-table-caption';
+    cap.textContent = caption;
+    card.appendChild(cap);
+  }
+
+  // Таблица
+  const tbl = document.createElement('table');
+  tbl.className = 'wb-table-el';
+
+  // THEAD
+  const thead = document.createElement('thead');
+  const trh = document.createElement('tr');
+  headCells.forEach((h, i) => {
+    const th = document.createElement('th');
+    th.textContent = h;
+    th.classList.add('align-' + (alignRow[i] || 'left'));
+    trh.appendChild(th);
+  });
+  thead.appendChild(trh);
+  tbl.appendChild(thead);
+
+  // TBODY
+  const tbody = document.createElement('tbody');
+  for (let i = bodyStart; i < lines.length; i++) {
+    const row = _splitTableRow(lines[i]);
+    if (!row.length) continue;
+    const tr = document.createElement('tr');
+    for (let c = 0; c < headCells.length; c++) {
+      const td = document.createElement('td');
+      td.textContent = (row[c] ?? '');
+      td.classList.add('align-' + (alignRow[c] || 'left'));
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+  tbl.appendChild(tbody);
+
+  card.appendChild(tbl);
+  return card;
+}
+
+
   // Главный рендер в whiteboard: ПАРСИМ ТОЛЬКО [[quiz]] и [[open]]
 function addMessage(sender, messageText) {
   const wb = document.getElementById('whiteboard');
@@ -832,7 +942,7 @@ function addMessage(sender, messageText) {
   container.className = sender === 'user' ? 'wb-user' : 'wb-teacher';
 
   try {
-    const re = /\[\[(quiz|open|plot)([\s\S]*?)\]\]([\s\S]*?)\[\[\/\1\]\]/g;
+    const re = /\[\[(quiz|open|plot|table)([\s\S]*?)\]\]([\s\S]*?)\[\[\/\1\]\]/g;
 
     let last = 0, m;
 
@@ -868,7 +978,9 @@ function addMessage(sender, messageText) {
       else if (tag === 'plot') {
         container.appendChild(_renderPlot(inner.trim(), attrs));
       }
-
+      else if (tag === 'table') {
+        container.appendChild(_renderTable(inner, attrs));
+      }
       last = re.lastIndex;
     }
     const tail = messageText.slice(last);
