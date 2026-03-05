@@ -734,3 +734,11 @@
   display: block;
   /* highlight.js уже даёт подсветку, не задаём лишних цветов */
 }
+/* LaTeX */
+.wb-card.wb-math { padding: 12px 14px; }
+.wb-math-title {
+  font-weight: 600; color: #2b4ea2; margin-bottom: 8px; font-size: 14px;
+}
+.wb-math-body {
+  font-size: 16px; line-height: 1.6; color: #111;
+}
