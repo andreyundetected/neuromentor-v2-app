@@ -22,7 +22,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Call Lesson - NeuroMentor</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=25">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=26">
   </head>
   <body>
     <canvas id="backgroundCanvas"></canvas>
@@ -130,6 +130,12 @@
   ]
 }
 [[/plot]]
+
+[[code language="javascript" filename="app.js"]]
+export function sum(a, b) {
+  return a + b;
+}
+[[/code]]
 
 
 [[open answer="Париж|Paris" ignore_case="true" normalize="true" after_ok="Да, столица Франции — Париж." after_fail="Чуть мимо. Подумай о городе любви."]]
@@ -304,7 +310,10 @@ const UI = {
     correct: 'Молодец!',
     wrong: 'Проверь ещё раз.',
     done: 'Готово',
-    placeholder: 'Ваш ответ...'
+    placeholder: 'Ваш ответ...',
+    copy: 'Копировать',
+    copied: 'Скопировано!'
+
   },
   en: {
     check: 'Check',
@@ -312,7 +321,10 @@ const UI = {
     correct: 'Well done!',
     wrong: 'Try again.',
     done: 'Done',
-    placeholder: 'Your answer...'
+    placeholder: 'Your answer...',
+    copy: 'Copy',
+    copied: 'Copied!'
+
   }
 };
 
@@ -585,6 +597,84 @@ function _renderOpen(content, attrs) {
 
   return card;
 }
+// Рендер CODE
+function _renderCode(content, attrs) {
+  const lang = _getLang();
+  const L = UI[lang];
+
+  const card = document.createElement('div');
+  card.className = 'wb-card wb-code';
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'wb-code-header';
+
+  const title = document.createElement('div');
+  title.className = 'wb-code-title';
+  const headerText = attrs.title || attrs.filename || attrs.lang || attrs.language || 'Code';
+  title.textContent = headerText;
+
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'wb-code-copy';
+  copyBtn.textContent = L.copy;
+  copyBtn.setAttribute('type', 'button');
+
+  header.appendChild(title);
+  header.appendChild(copyBtn);
+  card.appendChild(header);
+
+  // Body
+  const pre = document.createElement('pre');
+  pre.className = 'wb-code-pre';
+  const code = document.createElement('code');
+
+  // Класс языка для highlight.js: language-<lang>
+  const hlLang = (attrs.lang || attrs.language || '').toLowerCase().trim();
+  if (hlLang) code.classList.add('language-' + hlLang);
+
+  // Сохраняем исходный текст как есть (без HTML-интерпретации)
+  const raw = content.replace(/^\n/, '').replace(/\n\s*$/, '');
+  code.textContent = raw;
+
+  pre.appendChild(code);
+  card.appendChild(pre);
+
+  // Подсветка синтаксиса
+  try { if (window.hljs) hljs.highlightElement(code); } catch {}
+
+  // Копирование в буфер
+  copyBtn.addEventListener('click', async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(code.textContent);
+      } else {
+        // Фолбэк для старых браузеров
+        const ta = document.createElement('textarea');
+        ta.value = code.textContent;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      const prev = copyBtn.textContent;
+      copyBtn.textContent = L.copied;
+      copyBtn.disabled = true;
+      setTimeout(() => {
+        copyBtn.textContent = prev;
+        copyBtn.disabled = false;
+      }, 1400);
+    } catch (e) {
+      console.warn('[copy failed]', e);
+    }
+  });
+
+  return card;
+}
+
+
 function _renderPlot(content, attrs) {
   // --- входные атрибуты ---
   const type   = (attrs.type || 'line').toLowerCase(); // line|bar|scatter
@@ -952,7 +1042,8 @@ function addMessage(sender, messageText) {
   container.className = sender === 'user' ? 'wb-user' : 'wb-teacher';
 
   try {
-    const re = /\[\[(quiz|open|plot|table)([\s\S]*?)\]\]([\s\S]*?)\[\[\/\1\]\]/g;
+    const re = /\[\[(quiz|open|plot|table|code)([\s\S]*?)\]\]([\s\S]*?)\[\[\/\1\]\]/g;
+
 
     let last = 0, m;
 
@@ -990,6 +1081,8 @@ function addMessage(sender, messageText) {
       }
       else if (tag === 'table') {
         container.appendChild(_renderTable(inner, attrs));
+      } else if (tag === 'code') {
+        container.appendChild(_renderCode(inner, attrs));
       }
       last = re.lastIndex;
     }

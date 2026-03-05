@@ -684,3 +684,53 @@
 .wb-table-el th.align-left,  .wb-table-el td.align-left  { text-align: left;  }
 .wb-table-el th.align-center,.wb-table-el td.align-center{ text-align: center;}
 .wb-table-el th.align-right, .wb-table-el td.align-right { text-align: right; }
+
+
+/* CODE BLOCK */
+.wb-card.wb-code { padding: 0; overflow: hidden; }
+
+.wb-code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #f7faff;
+  border-bottom: 1px solid #e6eefc;
+}
+
+.wb-code-title {
+  font-weight: 600;
+  color: #2b4ea2;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wb-code-copy {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 8px;
+  background: #007bff;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.wb-code-copy:disabled { background: #9bbaf0; cursor: default; }
+
+.wb-code-pre {
+  margin: 0;
+  padding: 12px;
+  background: #fff;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre;           /* горизонтальный скролл, без переносов */
+}
+.wb-code-pre code {
+  display: block;
+  /* highlight.js уже даёт подсветку, не задаём лишних цветов */
+}
