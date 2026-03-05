@@ -22,7 +22,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Call Lesson - NeuroMentor</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=24">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=25">
   </head>
   <body>
     <canvas id="backgroundCanvas"></canvas>
@@ -898,6 +898,16 @@ function _renderTable(content, attrs) {
 
   // Таблица
   const tbl = document.createElement('table');
+  // Равные ширины колонок (1/N каждая)
+const colgroup = document.createElement('colgroup');
+const ncols = headCells.length;
+for (let i = 0; i < ncols; i++) {
+  const col = document.createElement('col');
+  col.style.width = (100 / ncols).toFixed(4) + '%';
+  colgroup.appendChild(col);
+}
+tbl.appendChild(colgroup);
+
   tbl.className = 'wb-table-el';
 
   // THEAD

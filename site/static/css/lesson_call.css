@@ -653,19 +653,26 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+  table-layout: fixed;           /* ← фиксированная раскладка: равные колонки + не "прыгает" */
+}
+
+.wb-table-el thead th,
+.wb-table-el tbody td {
+  padding: 10px 12px;            /* симметричные отступы */
+  text-align: center;            /* ← по умолчанию центрируем */
+  vertical-align: middle;        /* ← по вертикали в середине */
+  word-wrap: break-word;         /* перенос длинных слов */
+  overflow-wrap: anywhere;       /* современные браузеры */
 }
 
 .wb-table-el thead th {
   background: #f1f6ff;
   color: #334e8a;
-  text-align: left;
-  padding: 10px 12px;
   border-bottom: 1px solid #e6eefc;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .wb-table-el tbody td {
-  padding: 10px 12px;
   border-bottom: 1px solid #eef2fb;
 }
 
@@ -673,7 +680,7 @@
   background: #fbfdff;
 }
 
-/* выравнивание по колонкам */
+/* выравнивание по колонкам, если задано в маркдауне */
 .wb-table-el th.align-left,  .wb-table-el td.align-left  { text-align: left;  }
 .wb-table-el th.align-center,.wb-table-el td.align-center{ text-align: center;}
 .wb-table-el th.align-right, .wb-table-el td.align-right { text-align: right; }
