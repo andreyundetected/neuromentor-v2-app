@@ -37,7 +37,7 @@
 <script id="MathJax-script" async
         src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=27">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=28">
   </head>
   <body>
     <canvas id="backgroundCanvas"></canvas>
@@ -95,135 +95,191 @@
   
       <!-- ВАЖНО: отправляем на lesson_call, а не lesson_chat -->
       <div id="whiteboard" class="whiteboard-block">
-        <h2>Проверка whiteboard</h2>
-        <p>Это тестовый абзац. Проверяем переносы строк, межстрочный интервал и базовую типографику.</p>
-        <ul>
-          <li>Пункт списка №1</li>
-          <li>Пункт списка №2</li>
-          <li><strong>Жирный</strong> и <em>курсив</em> внутри пункта</li>
-        </ul>
-        <p>Ещё абзац, чтобы увидеть отступы между блоками и как ведёт себя скролл при переполнении.</p>
-        <h2>Проверка whiteboard</h2>
-        <p>Это тестовый абзац. Проверяем переносы строк, межстрочный интервал и базовую типографику.</p>
-        <ul>
-          <li>Пункт списка №1</li>
-          <li>Пункт списка №2</li>
-          <li><strong>Жирный</strong> и <em>курсив</em> внутри пункта</li>
-        </ul>
-        <p>Ещё абзац, чтобы увидеть отступы между блоками и как ведёт себя скролл при переполнении.</p>
-        <h2>Проверка whiteboard</h2>
-        <p>Это тестовый абзац. Проверяем переносы строк, межстрочный интервал и базовую типографику.</p>
-        <ul>
-          <li>Пункт списка №1</li>
-          <li>Пункт списка №2</li>
-          <li><strong>Жирный</strong> и <em>курсив</em> внутри пункта</li>
-        </ul>
-        <p>Ещё абзац, чтобы увидеть отступы между блоками и как ведёт себя скролл при переполнении.</p>
-# Проверка квизов
+# Введение в экспоненциальный рост и визуализацию данных
 
-[[quiz multiple="false" after_ok="Молодец! Правильный ответ: B" after_fail="Не то. Подумай про алфавит 😉"]]
-Какая буква правильная?
-- ( ) A
-- (x) B
-- ( ) C
-[[/quiz]]
+В этом мини‑уроке вы поймёте, как описывается экспоненциальный рост, как читать и строить простые графики, а также немного потренируетесь с формулами и кодом.
 
-[[plot type="line" title="Рост" x="[0,1,2,3]" y="[0,1,4,9]"]][[/plot]]
+---
 
-[[quiz multiple="true" after_ok="Верная комбинация — A и C" after_fail="Лишний или отсутствует вариант."]]
-Выберите верные варианты:
-- (x) A
-- ( ) B
-- (x) C
-[[/quiz]]
+## 1) Что такое экспоненциальный рост
 
-[[plot type="bar" title="Сравнение"]]
+Экспоненциальный рост описывается моделью $N(t)=N_0 e^{rt}$, где $N_0$ — начальное значение, $r$ — темп роста (в единицах времени), $t$ — время.
+Типичный индикатор — **время удвоения**: $T_d=\dfrac{\ln 2}{r}$.
+
+### Квиз: формула времени удвоения
+
+\[\[quiz multiple="false" after\_ok="Верно! Время удвоения равно ln(2)/r." after\_fail="Не совсем. Время удвоения — это ln(2)/r."]]
+Как выражается время удвоения $T_d$ через темп роста $r$?
+
+* ( ) $T_d = r \cdot \ln 2$
+* (x) $T_d = \dfrac{\ln 2}{r}$
+* ( ) $T_d = e^{r}$
+  \[\[/quiz]]
+
+---
+
+## 2) Линейный график: рост популяции
+
+Ниже — синтетические данные: при каждом шаге значение удваивается.
+
+\[\[plot type="line" title="Экспоненциальный рост (удвоение) x→время, y→размер"] x="\[0,1,2,3,4,5]" y="\[1,2,4,8,16,32]"]\[\[/plot]]
+
+**Вопрос на понимание (свободный ответ):**
+\[\[open answer="удвоение|двукратное увеличение|doubling" ignore\_case="true" normalize="true" after\_ok="Да! На каждом шаге происходит удвоение." after\_fail="Подсказка: значение увеличивается в два раза на каждом шаге."]]
+Как одним словом назвать характер изменения на графике?
+\[\[/open]]
+
+---
+
+## 3) Столбиковая диаграмма: сравнение групп
+
+Представьте, мы сравнили средний прирост в трёх группах A/B/C (например, разные условия роста). Бар‑чарт подходит, когда нужно сравнить **категории**.
+
+\[\[plot type="bar" title="Сравнение средних приростов (ед/час)"]]
 {
-  "series": [
-    {"name":"A","x":[1,2,3],"y":[3,4,5]},
-    {"name":"B","x":[1,2,3],"y":[2,2,7]}
-  ]
+"series": \[
+{"name":"Средний прирост","x":\["A","B","C"],"y":\[1.2,1.8,1.4]}
+]
 }
-[[/plot]]
+\[\[/plot]]
 
+### Квиз: где какой график уместен?
 
-Площадь круга $S=\pi r^2$, а формула Эйнштейна \(E=mc^2\).
+\[\[quiz multiple="true" after\_ok="Отлично! Линия — для тренда во времени, столбцы — для категорий." after\_fail="Проверьте: линия — про тренд, столбцы — про категории, скаттер — про связь двух чисел."]]
+Выберите верные утверждения:
 
+* (x) Линейный график лучше показывает тренд во времени.
+* (x) Столбиковая диаграмма подходит для сравнения категорий.
+* ( ) Scatter‑plot плохо подходит для отображения связи двух числовых переменных.
+  \[\[/quiz]]
 
-[[latex]]
-$$\int_0^{\infty} x^{n} e^{-x}\,dx = n!$$
-[[/latex]]
+---
 
+## 4) Точечная диаграмма (scatter): связь температуры и скорости роста
 
-[[latex display="true" title="Ряд Тейлора"]]
-\sum_{n=0}^{\infty} \frac{x^n}{n!}
-[[/latex]]
+Синтетические данные: две серии измерений при разных температурах (°C) и наблюдаемой скорости роста (ед/ч).
 
+\[\[plot type="scatter" title="Температура vs Скорость роста"]]
+{
+"series": \[
+{"name":"Серия 1","x":\[20,22,24,26,28,30],"y":\[0.8,1.0,1.3,1.6,1.5,1.2]},
+{"name":"Серия 2","x":\[20,22,24,26,28,30],"y":\[0.7,0.9,1.2,1.5,1.6,1.3]}
+]
+}
+\[\[/plot]]
 
-[[latex block="true" title="Матрица"]]
+**Свободный ответ (числовой):**
+\[\[open numeric="true" answer="0.69" tol="0.03" after\_ok="Да, приблизительно 0.69 — это ln(2)." after\_fail="Подсказка: ln(2) ≈ 0.693. Попробуйте ещё раз."]]
+Чему примерно равно $\ln(2)$? Укажите до сотых.
+\[\[/open]]
+
+---
+
+## 5) Формулы и LaTeX
+
+Иногда полезно разложить экспоненту в ряд:
+Площадь круга $S=\pi r^2$. Экспонента раскладывается так: $e^{x}=\sum_{n=0}^{\infty} \dfrac{x^n}{n!}$.
+
+\[\[latex]]
+
+$$
+N(t)=N_0 e^{rt}, \qquad T_d=\frac{\ln 2}{r}
+$$
+
+\[\[/latex]]
+
+\[\[latex display="true" title="Ряд Тейлора для $e^x$"]]
+
+$$
+e^x=\sum_{n=0}^{\infty}\frac{x^n}{n!}
+$$
+
+\[\[/latex]]
+
+\[\[latex block="true" title="Пример матрицы ковариаций"]]
+
+$$
+\Sigma=
 \begin{bmatrix}
-1 & 2 \\
-3 & 4
+\sigma_1^2 & \rho\sigma_1\sigma_2 \\
+\rho\sigma_1\sigma_2 & \sigma_2^2
 \end{bmatrix}
-[[/latex]]
+$$
 
+\[\[/latex]]
 
+---
 
+## 6) Мини‑таблица результатов эксперимента
 
-[[code language="javascript" filename="app.js"]]
-export function sum(a, b) {
-  return a + b;
-}
-[[/code]]
+\[\[table caption="Результаты: число клеток (тыс.) по дням"]]
 
+|     День     | Группа A | Группа B |
+| :----------: | :------: | :------: |
+|       1      |    10    |    10    |
+|       2      |    15    |    18    |
+|       3      |    22    |    26    |
+|       4      |    33    |    36    |
+| \[\[/table]] |          |          |
 
-[[open answer="Париж|Paris" ignore_case="true" normalize="true" after_ok="Да, столица Франции — Париж." after_fail="Чуть мимо. Подумай о городе любви."]]
-Столица Франции?
-[[/open]]
+---
 
-[[open numeric="true" answer="3.14159" tol="0.01" after_ok="Ок, достаточно близко к π." after_fail="Проверь точность и формат (разрешено ±0.01)."]]
-Приближённое значение π (±0.01)?
-[[/open]]
+## 7) Практика: небольшой код
 
-[[plot type="scatter" title="Категории"]]
+Ниже — функция на JS, которая генерирует траекторию $N(t)=N_0e^{rt}$ на равномерной сетке времени.
+
+\[\[code language="javascript" filename="growth.js"]]
+/\*\*
+
+* Генерирует значения N(t) = N0 \* exp(r \* t) для t=0..T, шаг dt
+  \*/
+  export function expGrowth({ N0 = 1, r = 0.3, T = 10, dt = 1 } = {}) {
+  const xs = \[];
+  const ys = \[];
+  for (let t = 0; t <= T + 1e-9; t += dt) {
+  xs.push(Number(t.toFixed(6)));
+  ys.push(Number((N0 \* Math.exp(r \* t)).toFixed(6)));
+  }
+  return { x: xs, y: ys };
+  }
+
+// пример:
+const demo = expGrowth({ N0: 2, r: 0.25, T: 5, dt: 0.5 });
+console.log(demo);
+\[\[/code]]
+
+---
+
+## 8) Контрольные вопросы (OPEN)
+
+\[\[open answer="экспоненциальный рост|exponential growth" ignore\_case="true" normalize="true" after\_ok="Верно! Это экспоненциальный рост." after\_fail="Подумайте о росте вида N(t)=N0·e^{rt}."]]
+Как называется рост, описываемый формулой $N(t)=N_0 e^{rt}$?
+\[\[/open]]
+
+\[\[open regex="^https?://\[^\s]+\$" after\_ok="Отлично! Ссылка выглядит корректно." after\_fail="Нужен полноценный URL, начинающийся с http\:// или https\://, без пробелов."]]
+Укажите URL на источник данных, который вы могли бы визуализировать.
+\[\[/open]]
+
+\[\[open numeric="true" answer="2.72" tol="0.02" after\_ok="Да, $e \approx 2{,}72$ при округлении до сотых." after\_fail="Ближе к 2.72. Попробуйте округлить до сотых."]]
+Приблизительное значение числа $e$ до сотых?
+\[\[/open]]
+
+---
+
+## 9) Итог: сравниваем группы
+
+По таблице выше среднее значение на 4‑й день больше у группы **B**. Сравните ещё раз визуально:
+
+\[\[plot type="bar" title="День 4: сравнение групп A и B"]]
 {
-  "series": [
-    {"name":"S1","x":["Mon","Tue","Wed"],"y":[2,5,3]},
-    {"name":"S2","x":["Mon","Tue","Wed"],"y":[1,4,6]}
-  ]
+"series": \[
+{"name":"День 4","x":\["A","B"],"y":\[33,36]}
+]
 }
-[[/plot]]
+\[\[/plot]]
 
+Поздравляю! Вы потренировались работать с экспонентой и базовыми типами графиков, попрактиковались с LaTeX, таблицами, кодом и интерактивными заданиями.
 
-[[open regex="^https?://[^\\s]+$" after_ok="Корректный URL." after_fail="Нужен URL c http:// или https://, без пробелов."]]
-Введите URL (http/https):
-[[/open]]
-
-[[table caption="Результаты"]]
-| Имя   | Баллы |
-|------:|------:|
-| Анна  |   95  |
-| Иван  |   88  |
-[[/table]]
-
-
-
-        <h2>Проверка whiteboard</h2>
-        <p>Это тестовый абзац. Проверяем переносы строк, межстрочный интервал и базовую типографику.</p>
-        <ul>
-          <li>Пункт списка №1</li>
-          <li>Пункт списка №2</li>
-          <li><strong>Жирный</strong> и <em>курсив</em> внутри пункта</li>
-        </ul>
-        <p>Ещё абзац, чтобы увидеть отступы между блоками и как ведёт себя скролл при переполнении.</p>
-        <h2>Проверка whiteboard</h2>
-        <p>Это тестовый абзац. Проверяем переносы строк, межстрочный интервал и базовую типографику.</p>
-        <ul>
-          <li>Пункт списка №1</li>
-          <li>Пункт списка №2</li>
-          <li><strong>Жирный</strong> и <em>курсив</em> внутри пункта</li>
-        </ul>
-        <p>Ещё абзац, чтобы увидеть отступы между блоками и как ведёт себя скролл при переполнении.</p>
       </div>
 
     
@@ -385,6 +441,103 @@ function _parseAttrs(raw) {
   
   function _normalize(s) { return s.trim().replace(/\s+/g, ' '); }
   function _uid(prefix='wb') { return prefix + '_' + Math.random().toString(36).slice(2, 8); }
+// --- Markdown helpers (без код-блоков) ---
+function _escapeHtml(s) {
+  return s.replace(/[&<>"']/g, ch => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  })[ch]);
+}
+
+// инлайн-форматирование: **bold**, *em*, __bold__, _em_, `code`
+function _mdInline(s) {
+  let t = _escapeHtml(s);
+
+  // code (сначала)
+  t = t.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+  // bold: **...** и __...__
+  t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  t = t.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+
+  // italic: *...* и _..._  (избегаем пересечений с bold)
+  t = t.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+  t = t.replace(/(^|[^_])_([^_\n]+)_/g, '$1<em>$2</em>');
+
+  return t;
+}
+
+// конвертация блока текста (несколько строк) в HTML с h1..h6, p, ul/ol
+function _mdToHtml(block) {
+  const lines = block.replace(/^\n+|\n+$/g, '').split(/\r?\n/);
+
+  let html = '';
+  let inUL = false, inOL = false;
+  let paraBuf = [];
+
+  function flushPara() {
+    if (paraBuf.length) {
+      const txt = _mdInline(paraBuf.join(' '));
+      html += `<p>${txt}</p>`;
+      paraBuf = [];
+    }
+  }
+  function closeLists() {
+    if (inUL) { html += '</ul>'; inUL = false; }
+    if (inOL) { html += '</ol>'; inOL = false; }
+  }
+
+  for (const raw of lines) {
+    const line = raw.replace(/\s+$/, '');
+
+    // заголовки
+    const h = line.match(/^(#{1,6})\s+(.+)$/);
+    if (h) {
+      flushPara(); closeLists();
+      const level = h[1].length;
+      html += `<h${level}>${_mdInline(h[2])}</h${level}>`;
+      continue;
+    }
+
+    // пустая строка — конец параграфа/списка
+    if (!line.trim()) {
+      flushPara(); closeLists();
+      continue;
+    }
+
+    // ul
+    const mUL = line.match(/^\s*[-*]\s+(.+)$/);
+    if (mUL) {
+      flushPara();
+      if (!inUL) { closeLists(); html += '<ul>'; inUL = true; }
+      html += `<li>${_mdInline(mUL[1])}</li>`;
+      continue;
+    }
+
+    // ol
+    const mOL = line.match(/^\s*\d+\.\s+(.+)$/);
+    if (mOL) {
+      flushPara();
+      if (!inOL) { closeLists(); html += '<ol>'; inOL = true; }
+      html += `<li>${_mdInline(mOL[1])}</li>`;
+      continue;
+    }
+
+    // иначе — часть параграфа
+    paraBuf.push(line.trim());
+  }
+
+  // хвосты
+  flushPara(); closeLists();
+  return html;
+}
+
+// создаём DOM‑узел с разметкой markdown
+function _renderMarkdown(block) {
+  const wrap = document.createElement('div');
+  wrap.className = 'wb-md';
+  wrap.innerHTML = _mdToHtml(block);
+  return wrap;
+}
 
   function _parseArrayMaybeJSON(s) {
   if (!s) return [];
@@ -1129,11 +1282,11 @@ function addMessage(sender, messageText) {
       chunks.forEach(chunk => {
         const s = _normalize(chunk);
         if (!s) return;
-        const p = document.createElement('p');
-        p.textContent = s;
-        container.appendChild(p);
+        // рендерим markdown вместо простого <p>
+        container.appendChild(_renderMarkdown(chunk));
       });
     }
+
 
     while ((m = re.exec(messageText)) !== null) {
       const before = messageText.slice(last, m.index);
