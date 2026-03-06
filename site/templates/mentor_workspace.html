@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="username" content="{{ username }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mentor Setup — NeuroMentor</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+  <style>
+    /* ===== Reset & base ===== */
+    * { box-sizing: border-box; margin:0; padding:0; }
+    body {
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background:#f3f6fb;
+      color:#131722;
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+
+    /* ===== Header (берём твою шапку-логику) ===== */
+    header {
+      position: fixed; top: 0; left: 0; right: 0; height: 64px;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 2px 10px rgba(0,0,0,.06);
+      z-index: 1000;
+      display:flex; align-items:center;
+    }
+    .logo {
+      margin-left: 16px;
+      font-weight: 800; color:#1e6bff; text-decoration:none; font-size: 20px;
+    }
+    .header-right { margin-left:auto; display:flex; align-items:center; gap:12px; padding-right: 16px; }
+    .credits { 
+      font-weight:700; color:#fff; text-decoration:none; padding:8px 14px; border-radius:10px;
+      background: linear-gradient(135deg, #1e90ff, #0073e6);
+      box-shadow: 0 2px 6px rgba(0,0,0,.18);
+      white-space:nowrap;
+    }
+    .lang-btn {
+      width:40px; height:40px; border:1px solid #d9e2f5; border-radius:8px; background:#fff; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; font-weight:700; color:#2b3a55;
+    }
+    .lang-dropdown {
+      position:absolute; top:58px; right:110px; display:none; flex-direction:column;
+      background:#fff; border:1px solid #d9e2f5; border-radius:10px; overflow:hidden; z-index:1001;
+      box-shadow:0 10px 30px rgba(0,0,0,.08);
+    }
+    .lang-dropdown button {
+      padding:10px 14px; border:none; background:#fff; cursor:pointer; text-align:left;
+    }
+    .lang-dropdown button:hover { background:#f3f6ff; }
+
+    .account-avatar {
+      width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800;
+      border:2px solid #1e6bff;
+    }
+
+    /* ===== Background canvas (твои фигуры) ===== */
+    #backgroundCanvas {
+      position: fixed; inset:0; z-index: 0; pointer-events: none;
+    }
+
+    /* ===== Main layout ===== */
+    .page {
+      position:relative; z-index:1;
+      width: 100%;
+      max-width: 1400px;
+      margin: 88px auto 40px;
+      padding: 0 20px;
+    }
+
+    .grid {
+      display:grid;
+      grid-template-columns: 2fr 3fr 4fr; /* аватар:форма:чат */
+      gap: 40px;
+      align-items:start;
+    }
+
+    /* ===== Avatar panel (2/7 ширины) ===== */
+    .avatar-card {
+      margin-left:10px; /* отступ от левого края контейнера как просил */
+      background: linear-gradient(145deg, #cfe4ff, #8fc5ff);
+      border:1px solid #d6e8ff;
+      border-radius: 18px;
+      min-height: 320px;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow: 0 10px 30px rgba(30,107,255,0.15);
+      position:relative;
+      overflow:hidden;
+      cursor:pointer;
+    }
+    .avatar-card::after {
+      content:"";
+      position:absolute; inset:0;
+      background: radial-gradient(120px 120px at 30% 20%, rgba(255,255,255,.35), transparent 60%),
+                  radial-gradient(200px 200px at 80% 70%, rgba(255,255,255,.25), transparent 60%);
+      pointer-events:none;
+    }
+    .avatar-card .placeholder {
+      width: 70%;
+      aspect-ratio: 1/1;
+      border-radius: 16px;
+      border: 2px dashed rgba(255,255,255,.8);
+      display:flex; align-items:center; justify-content:center;
+      color:#fff; font-weight:800; font-size:14px; text-transform:uppercase; letter-spacing:.08em;
+      backdrop-filter: blur(1px);
+    }
+    .avatar-hint {
+      position:absolute; bottom:12px; left:12px;
+      background: rgba(255,255,255,.85);
+      color:#0c2b66; font-weight:700; font-size:12px; padding:6px 10px; border-radius:8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.12);
+    }
+
+    /* Avatar modal */
+    .modal {
+      position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:1200;
+    }
+    .modal-content {
+      width: min(880px, 92vw); background:#fff; border-radius:16px; padding:18px; box-shadow:0 20px 60px rgba(0,0,0,.25);
+    }
+    .modal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .modal-grid {
+      display:grid; grid-template-columns: repeat(5, 1fr); gap:12px; max-height:50vh; overflow:auto;
+    }
+    .avatar-tile {
+      aspect-ratio:1/1; border-radius:12px; background:#eef5ff; border:1px solid #d8e6ff; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; font-weight:700; color:#2b4ea2;
+      transition:.2s transform, .2s box-shadow, .2s background;
+    }
+    .avatar-tile:hover { transform: translateY(-2px); box-shadow:0 6px 16px rgba(30,107,255,.18); background:#e6f0ff; }
+
+    /* ===== Form panel (каждое поле шире аватара ~1.5x) ===== */
+    .form-card {
+      border:1px solid #e6eefc; border-radius:18px; background:#fff; padding:16px 16px 18px;
+      box-shadow:0 10px 24px rgba(0,0,0,.06);
+    }
+    .row { margin-bottom:14px; }
+    .label { font-weight:700; color:#213a7a; margin-bottom:8px; }
+
+    .input {
+      width:100%; border:1.5px solid #dbe6ff; border-radius:12px; padding:10px 12px; font-size:14px; outline: none;
+      transition: .15s border, .15s box-shadow;
+      background:#fbfdff;
+    }
+    .input:focus {
+      border-color:#2a77ff; box-shadow: 0 0 0 4px rgba(42,119,255,.12);
+      background:#fff;
+    }
+
+    /* Chips input for specializations */
+    .chips {
+      display:flex; gap:8px; flex-wrap:wrap; align-items:center; min-height:44px;
+      border:1.5px solid #dbe6ff; border-radius:12px; padding:8px; background:#fbfdff;
+    }
+    .chip {
+      background:#2a77ff; color:#fff; padding:6px 10px; border-radius:999px; font-weight:700; font-size:12px;
+      display:flex; align-items:center; gap:6px;
+    }
+    .chip .x { cursor:pointer; font-weight:900; opacity:.85; }
+    .chip .x:hover { opacity:1; }
+    .chips input {
+      min-width:140px; flex:1; border:none; outline:none; background:transparent; padding:6px 4px; font-size:14px;
+    }
+
+    /* Dropdowns */
+    .select {
+      position:relative;
+    }
+    .select-btn {
+      width:100%; border:1.5px solid #dbe6ff; border-radius:12px; padding:10px 12px; background:#fbfdff; text-align:left; cursor:pointer;
+      font-size:14px;
+    }
+    .select-btn.active { border-color:#2a77ff; box-shadow: 0 0 0 4px rgba(42,119,255,.12); background:#fff; }
+    .select-menu {
+      position:absolute; left:0; right:0; top: calc(100% + 6px);
+      background:#fff; border:1px solid #e2ebff; border-radius:12px; box-shadow:0 14px 40px rgba(0,0,0,.12);
+      display:none; z-index:50; overflow:hidden;
+    }
+    .select-menu button {
+      width:100%; text-align:left; padding:10px 12px; background:#fff; border:none; cursor:pointer;
+    }
+    .select-menu button:hover { background:#f3f7ff; }
+
+    /* ===== Chat panel ===== */
+    .chat-card {
+      border:1px solid #e6eefc; border-radius:18px; background:#fff; padding:0; display:flex; flex-direction:column;
+      box-shadow:0 10px 24px rgba(0,0,0,.06);
+    }
+    .chat-head {
+      padding:12px 16px; border-bottom:1px solid #eef3ff; display:flex; align-items:center; gap:10px;
+    }
+    .mentor-badge {
+      width:28px; height:28px; border-radius:50%; background:#8fc5ff; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-weight:800;
+    }
+    .mentor-name { font-weight:800; color:#1f3e8c; }
+    .chat-body {
+      padding:12px 16px; height: 320px; overflow:auto; background:#f9fbff;
+    }
+    .msg { display:flex; gap:10px; margin-bottom:10px; }
+    .msg .bubble {
+      background:#fff; border:1px solid #e6eefc; border-radius:12px; padding:10px 12px; max-width:80%;
+      box-shadow: 0 6px 16px rgba(0,0,0,.04);
+    }
+    .msg.you { justify-content:flex-end; }
+    .msg.you .bubble { background:#e8f2ff; border-color:#d6e8ff; }
+    .chat-foot {
+      padding:10px; border-top:1px solid #eef3ff; display:flex; gap:8px; background:#fff; align-items:center;
+    }
+    .chat-input {
+      flex:1; border:1.5px solid #dbe6ff; border-radius:12px; padding:10px 12px; outline:none; background:#fbfdff;
+    }
+    .chat-send {
+      padding:10px 14px; border:none; border-radius:12px; background:#2a77ff; color:#fff; font-weight:800; cursor:pointer;
+    }
+    .chat-disabled .chat-input,
+    .chat-disabled .chat-send {
+      pointer-events:none; opacity:.55; filter:grayscale(.14);
+    }
+    .chat-highlight {
+      animation: glow 1.2s ease-out 1;
+      box-shadow: 0 0 0 4px rgba(42,119,255,.14), 0 10px 24px rgba(42,119,255,.18);
+      border-color:#cfe0ff;
+    }
+    @keyframes glow {
+      0% { box-shadow: 0 0 0 0 rgba(42,119,255,.0); }
+      30% { box-shadow: 0 0 0 6px rgba(42,119,255,.18); }
+      100% { box-shadow: 0 0 0 0 rgba(42,119,255,.0); }
+    }
+
+    /* ===== Lessons (bottom) ===== */
+    .lessons {
+      margin-top: 24px;
+      border:1px solid #e6eefc; border-radius:18px; background:#fff;
+      box-shadow:0 10px 24px rgba(0,0,0,.06);
+    }
+    .lessons-head { padding:12px 16px; border-bottom:1px solid #eef3ff; font-weight:800; color:#1f3e8c; display:flex; align-items:center; justify-content:space-between; }
+    .lessons-grid {
+      padding:14px; display:grid; grid-template-columns: repeat(4, 1fr); gap:12px;
+    }
+    .lesson-card {
+      border:1px solid #e6eefc; border-radius:12px; padding:12px; background:#fbfdff;
+    }
+    .lesson-title { font-weight:800; color:#213a7a; margin-bottom:6px; }
+    .lesson-meta { font-size:12px; color:#55658a; }
+
+    /* Small helpers */
+    .hidden { display:none; }
+  </style>
+</head>
+<body>
+  <canvas id="backgroundCanvas"></canvas>
+
+  <header>
+    <a href="/" class="logo">NeuroMentor</a>
+    <div class="header-right">
+      <div class="lang-btn" id="lang-btn"><span id="lang-text">{% if session.get('language','ru') == 'ru' %}RU{% else %}EN{% endif %}</span></div>
+      <div class="lang-dropdown" id="lang-dropdown">
+        <button onclick="selectLanguage('en')">EN</button>
+        <button onclick="selectLanguage('ru')">RU</button>
+      </div>
+      <a href="https://t.me/NeuroMentor_payment_bot" class="credits" target="_blank">
+        {% if session.get('language','ru') == 'ru' %}{{ user.credits }} Кредитов{% else %}{{ user.credits }} Credits{% endif %}
+      </a>
+      <a href="/account" class="account"><div class="account-avatar"></div></a>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="grid">
+      <!-- Left: Avatar -->
+      <div class="avatar-card" id="avatarCard" title="{% if session.get('language','ru') == 'ru' %}Выбрать аватар{% else %}Choose avatar{% endif %}">
+        <div class="placeholder">{% if session.get('language','ru') == 'ru' %}Аватар{% else %}Avatar{% endif %}</div>
+        <div class="avatar-hint">{% if session.get('language','ru') == 'ru' %}Нажмите, чтобы выбрать{% else %}Click to choose{% endif %}</div>
+      </div>
+
+      <!-- Middle: Form -->
+      <div class="form-card">
+        <div class="row">
+          <div class="label">{% if session.get('language','ru') == 'ru' %}Имя ментора{% else %}Mentor name{% endif %}</div>
+          <input id="fName" class="input" placeholder="{% if session.get('language','ru') == 'ru' %}Введите имя...{% else %}Enter name...{% endif %}">
+        </div>
+
+        <div class="row">
+          <div class="label">{% if session.get('language','ru') == 'ru' %}Специализация{% else %}Specialization{% endif %}</div>
+          <div class="chips" id="chipsBox">
+            <input id="chipInput" placeholder="{% if session.get('language','ru') == 'ru' %}Напишите и Enter...{% else %}Type and Enter...{% endif %}">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="label">{% if session.get('language','ru') == 'ru' %}Язык{% else %}Language{% endif %}</div>
+          <div class="select">
+            <button type="button" class="select-btn" id="langSelectBtn">{% if session.get('language','ru') == 'ru' %}Выберите язык{% else %}Choose language{% endif %}</button>
+            <div class="select-menu" id="langMenu">
+              <button data-value="ru">Русский</button>
+              <button data-value="en">English</button>
+              <button data-value="es">Español</button>
+              <button data-value="de">Deutsch</button>
+              <button data-value="fr">Français</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="label">{% if session.get('language','ru') == 'ru' %}Стиль общения{% else %}Communication style{% endif %}</div>
+          <input id="fStyle" class="input" placeholder="{% if session.get('language','ru') == 'ru' %}Напр.: доброжелательный, структурный...{% else %}e.g., friendly, structured...{% endif %}">
+        </div>
+
+        <div class="row">
+          <div class="label">{% if session.get('language','ru') == 'ru' %}Голос{% else %}Voice{% endif %}</div>
+          <div class="select">
+            <button type="button" class="select-btn" id="voiceSelectBtn">{% if session.get('language','ru') == 'ru' %}Выберите голос{% else %}Choose voice{% endif %}</button>
+            <div class="select-menu" id="voiceMenu">
+              <button data-value="calm_f">Calm (F)</button>
+              <button data-value="energetic_m">Energetic (M)</button>
+              <button data-value="neutral_m">Neutral (M)</button>
+              <button data-value="neutral_f">Neutral (F)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Chat -->
+      <div class="chat-card chat-disabled" id="chatCard">
+        <div class="chat-head">
+          <div class="mentor-badge" id="mentorBadge">M</div>
+          <div class="mentor-name" id="mentorName">—</div>
+        </div>
+        <div class="chat-body" id="chatBody">
+          <div class="msg">
+            <div class="bubble">
+              {% if session.get('language','ru') == 'ru' %}
+              Заполните поля слева, чтобы начать.
+              {% else %}
+              Fill the fields on the left to get started.
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="chat-foot">
+          <input id="chatInput" class="chat-input" placeholder="{% if session.get('language','ru') == 'ru' %}Введите сообщение...{% else %}Type a message...{% endif %}">
+          <button id="chatSend" class="chat-send">{% if session.get('language','ru') == 'ru' %}Отправить{% else %}Send{% endif %}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lessons bottom -->
+    <div class="lessons" id="lessons">
+      <div class="lessons-head">
+        <div>{% if session.get('language','ru') == 'ru' %}План уроков{% else %}Lesson plan{% endif %}</div>
+        <button style="border:none;background:#2a77ff;color:#fff;font-weight:800;padding:8px 10px;border-radius:10px;cursor:pointer;">+ {% if session.get('language','ru') == 'ru' %}Урок{% else %}Lesson{% endif %}</button>
+      </div>
+      <div class="lessons-grid" id="lessonsGrid">
+        <!-- Пример карточек — потом заменим на реальные данные -->
+        <div class="lesson-card">
+          <div class="lesson-title">{% if session.get('language','ru') == 'ru' %}Урок 1{% else %}Lesson 1{% endif %}</div>
+          <div class="lesson-meta">{% if session.get('language','ru') == 'ru' %}Статус: Следующий{% else %}Status: Next{% endif %}</div>
+        </div>
+        <div class="lesson-card">
+          <div class="lesson-title">{% if session.get('language','ru') == 'ru' %}Урок 2{% else %}Lesson 2{% endif %}</div>
+          <div class="lesson-meta">{% if session.get('language','ru') == 'ru' %}Статус: —{% else %}Status: —{% endif %}</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Avatar chooser modal -->
+  <div class="modal" id="avatarModal">
+    <div class="modal-content">
+      <div class="modal-head">
+        <div style="font-weight:800; color:#1f3e8c;">
+          {% if session.get('language','ru') == 'ru' %}Выбор аватара{% else %}Choose avatar{% endif %}
+        </div>
+        <button id="avatarClose" style="border:none;background:#f1f5ff;color:#1f3e8c;padding:8px 10px;border-radius:10px;cursor:pointer;">✕</button>
+      </div>
+      <div class="modal-grid" id="avatarGrid">
+        <!-- Плейсхолдеры-тайлы -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Header language dropdown =====
+    const langBtn = document.getElementById('lang-btn');
+    const langDd = document.getElementById('lang-dropdown');
+    langBtn.addEventListener('click', () => {
+      langDd.style.display = (langDd.style.display === 'flex' ? 'none' : 'flex');
+    });
+    function selectLanguage(lang) {
+      fetch(`/set_language/${lang}`, { method: "POST" })
+        .then(r => r.ok && location.reload())
+        .catch(console.error);
+    }
+
+    // ===== Account avatar init =====
+    (function initHeaderAvatar(){
+      const username = document.querySelector('meta[name="username"]').getAttribute('content') || 'User';
+      const colors = ['#FF5733', '#33B5FF', '#FF33F6', '#33FF57', '#FFBD33'];
+      let hash = 0; for (let i=0;i<username.length;i++) hash = username.charCodeAt(i)+((hash<<5)-hash);
+      const idx = Math.abs(hash) % colors.length;
+      const el = document.querySelector('.account-avatar');
+      el.style.backgroundColor = colors[idx];
+      el.textContent = username.charAt(0).toUpperCase();
+    })();
+
+    // ===== Background shapes (твои) =====
+    const canvas = document.getElementById("backgroundCanvas");
+    const ctx = canvas.getContext("2d");
+    let shapes = []; const shapeCount = 110;
+    function resizeCanvas() { canvas.width = innerWidth; canvas.height = innerHeight; createShapes(); }
+    function createShapes(){
+      shapes = [];
+      for (let i=0;i<shapeCount;i++){
+        const size = Math.random()*30+20;
+        shapes.push({
+          x: Math.random()*canvas.width, y: Math.random()*canvas.height,
+          size, type: ["triangle0","triangle1","triangle2","triangle3","square","circle"][Math.floor(Math.random()*6)],
+          speedX:(Math.random()-.5)*1, speedY:(Math.random()-.5)*1
+        });
+      }
+    }
+    function drawShapes(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.strokeStyle="rgba(180,180,180,0.5)"; ctx.lineWidth=1.2;
+      for (let s of shapes){
+        ctx.beginPath();
+        if (s.type.startsWith("triangle")){
+          ctx.moveTo(s.x, s.y); ctx.lineTo(s.x+s.size, s.y); ctx.lineTo(s.x, s.y+s.size);
+        } else if (s.type==="square"){ ctx.rect(s.x, s.y, s.size, s.size); }
+        else { ctx.arc(s.x, s.y, s.size/2, 0, Math.PI*2); }
+        ctx.closePath(); ctx.stroke();
+      }
+    }
+    function updateShapes(){ for (let s of shapes){ s.x+=s.speedX; s.y+=s.speedY; if (s.x<0||s.x>canvas.width) s.speedX*=-1; if (s.y<0||s.y>canvas.height) s.speedY*=-1; } }
+    function animate(){ updateShapes(); drawShapes(); requestAnimationFrame(animate); }
+    addEventListener("resize", resizeCanvas); resizeCanvas(); animate();
+
+    // ===== Avatar choose modal =====
+    const avatarCard = document.getElementById('avatarCard');
+    const avatarModal = document.getElementById('avatarModal');
+    const avatarClose = document.getElementById('avatarClose');
+    const avatarGrid  = document.getElementById('avatarGrid');
+    let chosenAvatar = null;
+
+    function openAvatarModal(){
+      if (!avatarGrid.children.length){
+        for (let i=0;i<15;i++){
+          const t = document.createElement('div');
+          t.className='avatar-tile'; t.textContent = 'A'+(i+1);
+          t.addEventListener('click', () => {
+            chosenAvatar = 'A'+(i+1);
+            applyChosenAvatar();
+            avatarModal.style.display='none';
+            validateAll();
+          });
+          avatarGrid.appendChild(t);
+        }
+      }
+      avatarModal.style.display='flex';
+    }
+    function applyChosenAvatar(){
+      avatarCard.style.background = 'linear-gradient(145deg, #9fd0ff, #4fa8ff)';
+      avatarCard.querySelector('.placeholder').textContent = chosenAvatar;
+      document.getElementById('mentorBadge').textContent = chosenAvatar[0] || 'M';
+    }
+    avatarCard.addEventListener('click', openAvatarModal);
+    avatarClose.addEventListener('click', ()=> avatarModal.style.display='none');
+    avatarModal.addEventListener('click', (e)=>{ if (e.target===avatarModal) avatarModal.style.display='none'; });
+
+    // ===== Form logic =====
+    const fName  = document.getElementById('fName');
+    const fStyle = document.getElementById('fStyle');
+
+    // Specializations chips
+    const chipsBox = document.getElementById('chipsBox');
+    const chipInput = document.getElementById('chipInput');
+    let specs = [];
+    function redrawChips(){
+      chipsBox.querySelectorAll('.chip').forEach(c => c.remove());
+      specs.forEach((s, idx) => {
+        const chip = document.createElement('span');
+        chip.className = 'chip';
+        chip.innerHTML = `<span>${s}</span><span class="x" title="×">×</span>`;
+        chip.querySelector('.x').addEventListener('click', ()=>{
+          specs.splice(idx,1); redrawChips(); validateAll();
+        });
+        chipsBox.insertBefore(chip, chipInput);
+      });
+    }
+    chipInput.addEventListener('keydown', (e)=>{
+      if (e.key==='Enter' || e.key===',' ){
+        e.preventDefault();
+        const val = chipInput.value.trim();
+        if (val){
+          specs.push(val);
+          chipInput.value='';
+          redrawChips(); validateAll();
+        }
+      }
+    });
+
+    // Language dropdown
+    const langBtnSel = document.getElementById('langSelectBtn');
+    const langMenu   = document.getElementById('langMenu');
+    let langVal = null, langTitle = null;
+    langBtnSel.addEventListener('click', ()=>{
+      langBtnSel.classList.toggle('active');
+      langMenu.style.display = (langMenu.style.display==='block'?'none':'block');
+    });
+    langMenu.querySelectorAll('button').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        langVal = b.dataset.value; langTitle = b.textContent;
+        langBtnSel.textContent = langTitle;
+        langMenu.style.display='none';
+        langBtnSel.classList.remove('active');
+        validateAll();
+      });
+    });
+
+    // Voice dropdown
+    const voiceBtn = document.getElementById('voiceSelectBtn');
+    const voiceMenu= document.getElementById('voiceMenu');
+    let voiceVal = null, voiceTitle = null;
+    voiceBtn.addEventListener('click', ()=>{
+      voiceBtn.classList.toggle('active');
+      voiceMenu.style.display = (voiceMenu.style.display==='block'?'none':'block');
+    });
+    voiceMenu.querySelectorAll('button').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        voiceVal = b.dataset.value; voiceTitle = b.textContent;
+        voiceBtn.textContent = voiceTitle;
+        voiceMenu.style.display='none';
+        voiceBtn.classList.remove('active');
+        validateAll();
+      });
+    });
+
+    // ===== Chat enable + first message =====
+    const chatCard  = document.getElementById('chatCard');
+    const chatBody  = document.getElementById('chatBody');
+    const chatInput = document.getElementById('chatInput');
+    const chatSend  = document.getElementById('chatSend');
+    const mentorNameEl = document.getElementById('mentorName');
+
+    function i18nText(key){
+      const langUI = (document.getElementById('lang-text').textContent || 'EN').trim().toUpperCase();
+      const ru = {
+        hello: 'Привет! Давай создадим план обучения.',
+        placeholder:'Введите сообщение...',
+        send:'Отправить'
+      };
+      const en = {
+        hello: "Hi! Let's create a learning plan.",
+        placeholder:'Type a message...',
+        send:'Send'
+      };
+      return (langVal==='ru' || langUI==='RU') ? ru[key] : en[key];
+    }
+
+    let firstMessageShown = false;
+
+    function validateAll(){
+      const nameOk = fName.value.trim().length > 0;
+      const specsOk = specs.length > 0;
+      const langOk = !!langVal;
+      const styleOk = fStyle.value.trim().length > 0;
+      const voiceOk = !!voiceVal;
+
+      const all = nameOk && specsOk && langOk && styleOk && voiceOk && chosenAvatar;
+
+      mentorNameEl.textContent = nameOk ? fName.value.trim() : '—';
+
+      if (all) {
+        chatCard.classList.remove('chat-disabled');
+        chatCard.classList.add('chat-highlight');
+        setTimeout(()=> chatCard.classList.remove('chat-highlight'), 1300);
+
+        if (!firstMessageShown){
+          addMsg(false, i18nText('hello'));
+          firstMessageShown = true;
+          chatInput.placeholder = i18nText('placeholder');
+          chatSend.textContent = i18nText('send');
+
+          // TODO: API — отправить «create_intro_message» с выбранными параметрами
+          // fetch('/api/chat/mentor/intro', {method:'POST', body: JSON.stringify({...})})
+        }
+      }
+    }
+
+    fName.addEventListener('input', validateAll);
+    fStyle.addEventListener('input', validateAll);
+    document.addEventListener('click', (e)=> {
+      if (!langMenu.contains(e.target) && e.target!==langBtnSel) langMenu.style.display='none';
+      if (!voiceMenu.contains(e.target) && e.target!==voiceBtn) voiceMenu.style.display='none';
+    });
+
+    function addMsg(isUser, text){
+      const row = document.createElement('div');
+      row.className = 'msg' + (isUser ? ' you' : '');
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.textContent = text;
+      row.appendChild(bubble);
+      chatBody.appendChild(row);
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    chatSend.addEventListener('click', sendChat);
+    chatInput.addEventListener('keydown', (e)=> {
+      if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendChat(); }
+    });
+
+    function sendChat(){
+      const t = chatInput.value.trim(); if (!t) return;
+      addMsg(true, t);
+      chatInput.value='';
+      // TODO: API — отправить сообщение и получить ответ
+      setTimeout(()=> addMsg(false, '...'), 300);
+    }
+  </script>
+</body>
+</html>
