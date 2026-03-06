@@ -1,16 +1,11 @@
-from models import User
-from models import Mentor
-from quart import url_for
-from quart import redirect
-from quart import render_template
-from quart import session
-from quart import Blueprint
-
-
+from quart import Blueprint, request, session, render_template, redirect, url_for, jsonify
+from models import Mentor, Lesson, User
+from uuid import uuid4
 
 mentor_workspace = Blueprint("mentor_workspace", __name__)
 
-
+@mentor_workspace.route('/mentor_workspace/<int:user_id>/', methods=['GET'])
+@mentor_workspace.route('/mentor_workspace/<int:user_id>/<string:mentor_id>', methods=['GET'])
 async def workspace(user_id, mentor_id=None):
     user = await User.get(id=session['user_id'])
     if not user:
