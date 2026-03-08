@@ -89,3 +89,53 @@ async def mentor_intro(user_id: int):
             "avatar_url": avatar_url,
         }
     })
+
+
+SUPPORTED_VOICES = {
+    
+    "ru": ["anna", "mikhail", "alena"],
+    "en": ["jane", "john", "emma"],
+}
+
+
+SUPPORTED_LANGS = {"ru", "en"}
+
+
+async def validate_fields(user_id: int):
+    session_user_id = session.get("user_id")
+    if not session_user_id or session_user_id != user_id:
+        return jsonify({"ok": False, "error": "unauthorized"}), 401
+
+    payload = await request.get_json(force=True, silent=True) or {}
+    name: str = (payload.get("name") or "").strip()
+    specs = payload.get("specializations") or []  
+    language: str = (payload.get("language") or "").strip().lower()
+    style: str = (payload.get("style") or "").strip()
+    voice: str = (payload.get("voice") or "").strip().lower()
+    avatar_id: str = (payload.get("avatar_id") or "").strip()
+
+    errors = {}
+
+    if not name or len(name) < 2:
+        errors["name"] = "Имя слишком короткое." if language == "ru" else "Name is too short."
+
+    if not isinstance(specs, list) or not any((s or "").strip() for s in specs):
+        errors["specializations"] = "Добавьте хотя бы одну специализацию." if language == "ru"            else "Add at least one specialization."
+    else:
+        
+        specs = [str(s).strip() for s in specs if str(s).strip()]
+
+    if language not in SUPPORTED_LANGS:
+        errors["language"] = "Поддерживаются только RU и EN." if language == "ru" else "Only RU and EN are supported."
+
+    if language in SUPPORTED_VOICES and voice not in SUPPORTED_VOICES[language]:
+        errors["voice"] = ("Выберите голос из списка: " + ", ".join(SUPPORTED_VOICES[language]))            if language == "ru" else ("Choose a voice: " + ", ".join(SUPPORTED_VOICES[language]))
+
+    if style and len(style) < 3:
+        errors["style"] = "Слишком коротко." if language == "ru" else "Too short."
+
+    if avatar_id and avatar_id not in {a["id"] for a in AVATAR_OPTIONS}:
+        errors["avatar_id"] = "Некорректный аватар." if language == "ru" else "Invalid avatar."
+
+    ready = len(errors) == 0
+    return jsonify({"ok": True, "ready": ready, "errors": errors})
