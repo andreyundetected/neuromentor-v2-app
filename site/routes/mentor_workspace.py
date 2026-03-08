@@ -139,3 +139,32 @@ async def validate_fields(user_id: int):
 
     ready = len(errors) == 0
     return jsonify({"ok": True, "ready": ready, "errors": errors})
+
+
+async def workspace_entry():
+    session_user_id = session.get("user_id")
+    if not session_user_id:
+        return redirect(url_for("auth.login"))
+    return redirect(url_for("mentor_workspace.workspace", user_id=session_user_id))
+
+
+async def get_avatar_options(user_id: int):
+    
+    session_user_id = session.get("user_id")
+    if not session_user_id or session_user_id != user_id:
+        return jsonify({"ok": False, "error": "unauthorized"}), 401
+
+    return jsonify({"ok": True, "avatars": AVATAR_OPTIONS})
+
+
+async def save_draft(user_id: int):
+    session_user_id = session.get("user_id")
+    if not session_user_id or session_user_id != user_id:
+        return jsonify({"ok": False, "error": "unauthorized"}), 401
+
+    payload = await request.get_json(force=True, silent=True) or {}
+    
+    session.setdefault("mentor_draft", {})
+    session["mentor_draft"][str(user_id)] = payload
+    
+    return jsonify({"ok": True})
