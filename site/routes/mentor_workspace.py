@@ -84,8 +84,8 @@ async def mw_chat(user_id: int):
     payload = {
         "0_content": {
             "0_conversation": conversation,
-            "2_course_info": current_course,
             "1_user_info": user.user_info,
+            "2_course_info": current_course,
             "3_mentor_prefs": {
                 "name": state.get("name"),
                 "language": state.get("language"),
@@ -118,9 +118,7 @@ async def mw_chat(user_id: int):
 
     return jsonify({
         "response": response.get("response"),
-        "course_info": response.get("course_info"),
-        "progress": response.get("progress"),
-        "status": response.get("status")
+        "course_info": response.get("course_info")
     })
 
 @mentor_workspace.route('/mentor_workspace/<int:user_id>/status', methods=['POST'])
@@ -152,9 +150,7 @@ async def mw_status_poll(user_id: int):
 
     return jsonify({
         "response": response.get("response"),
-        "course_info": response.get("course_info"),
-        "progress": response.get("progress"),
-        "status": response.get("status")
+        "course_info": response.get("course_info")
     })
 
 @mentor_workspace.route("/mentor_workspace/<int:user_id>/avatar_options", methods=["GET"])
@@ -271,3 +267,26 @@ async def save_draft(user_id: int):
     session["mentor_draft"][str(user_id)] = payload
     
     return jsonify({"ok": True})
+
+async def mw_upsert_structure(user_id: int):
+    if 'user_id' not in session or session['user_id'] != user_id:
+        return jsonify({"error": "forbidden"}), 403
+
+    user = await User.get(id=user_id)
+    if not user:
+        return jsonify({"error": "no user"}), 404
+
+    data = await request.get_json()
+    course_info = data.get("course_info")
+    if not isinstance(course_info, list):
+        return jsonify({"error": "bad course_info"}), 400
+
+    if not isinstance(user.course_info, list):
+        user.course_info = []
+    if not user.course_info:
+        user.course_info.append({"course": {}, "course_settings": {}})
+
+    user.course_info[0]["course"] = course_info
+    await User.filter(id=user.id).update(course_info=user.course_info)
+
+    return jsonify({"ok": True, "course_info": course_info})

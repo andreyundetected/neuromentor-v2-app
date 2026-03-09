@@ -245,7 +245,9 @@
     }
     .lessons-head { padding:12px 16px; border-bottom:1px solid #eef3ff; font-weight:800; color:#1f3e8c; display:flex; align-items:center; justify-content:space-between; }
     .lessons-grid {
-      padding:14px; display:grid; grid-template-columns: repeat(4, 1fr); gap:12px;
+      display: flex;           /* столбик тем */
+      flex-direction: column;
+      gap: 14px;
     }
     .lesson-card {
       border:1px solid #e6eefc; border-radius:12px; padding:12px; background:#fbfdff;
@@ -255,6 +257,75 @@
 
     /* Small helpers */
     .hidden { display:none; }
+
+    /* Контейнер темы */
+.theme-group {
+  width: 100%;
+  border: 1px solid #e6eefc;
+  border-radius: 14px;
+  background: #fff;
+  padding: 12px;
+  box-shadow: 0 4px 14px rgba(0,0,0,.04);
+}
+
+
+/* Сетка уроков внутри темы: 4 на строку */
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+/* Режим редактирования — подсветка */
+.lessons.edit-mode .theme-group {
+  box-shadow: 0 0 0 3px rgba(30,144,255,0.10), 0 8px 20px rgba(30,144,255,0.12);
+}
+
+/* Кнопка-иконка в шапке секции уроков */
+.icon-btn {
+  border: none;
+  background: #eef5ff;
+  color: #1f3e8c;
+  font-weight: 800;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.icon-btn.active { background: #dbe9ff; }
+
+/* Карточка урока: корзина и состояния редактирования */
+.lesson-card {
+  position: relative;
+}
+.lesson-card .trash {
+  display: none;
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  background: #ffe8e8;
+  color: #c62828;
+  font-weight: 900;
+  border: 1px solid #ffcdcd;
+  cursor: pointer;
+}
+.lessons.edit-mode .lesson-card .trash { display: inline-flex; align-items:center; justify-content:center; }
+
+.lesson-title[contenteditable="true"],
+.lesson-meta[contenteditable="true"] {
+  outline: none;
+  box-shadow: inset 0 0 0 2px rgba(30,144,255,0.15);
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+
+/* Подпись темы на карточке выглядит как «лейбл» */
+.lesson-meta {
+  font-size: 12px; color:#55658a;
+  padding: 2px 6px; border-radius: 999px;
+  background: #f2f6ff; display: inline-block;
+}
+
   </style>
 </head>
 <body>
@@ -358,7 +429,7 @@
     <div class="lessons" id="lessons">
       <div class="lessons-head">
         <div>{% if session.get('language','ru') == 'ru' %}План уроков{% else %}Lesson plan{% endif %}</div>
-        <button style="border:none;background:#2a77ff;color:#fff;font-weight:800;padding:8px 10px;border-radius:10px;cursor:pointer;">+ {% if session.get('language','ru') == 'ru' %}Урок{% else %}Lesson{% endif %}</button>
+        <button id="editToggle" class="icon-btn" title="{% if session.get('language','ru') == 'ru' %}Редактировать{% else %}Edit{% endif %}">✎</button>
       </div>
       <div class="lessons-grid" id="lessonsGrid">
         <!-- Пример карточек — потом заменим на реальные данные -->
@@ -663,91 +734,196 @@ if (!firstMessageShown) {
       chatBody.appendChild(row);
       chatBody.scrollTop = chatBody.scrollHeight;
     }
-// ВСТАВЬ СРАЗУ ПОСЛЕ addMsg
-async function handleGenerationPolling(statusPayload){
-  try {
-    // небольшая задержка, чтобы избежать гонок
-    await new Promise(r => setTimeout(r, 250));
-    const res = await fetch('/mentor_workspace/{{ user.id }}/status', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ status_payload: statusPayload })
+
+
+
+let courseModel = []; // [{ id, title, topic }]
+let editMode = false;
+
+// Сериализация <-> десериализация
+function modelFromCourseInfo(courseInfo) {
+  const list = [];
+  let id = 1;
+  (courseInfo || []).forEach((obj) => {
+    const topic = (Object.keys(obj)[0] || '').trim() || 'Без темы';
+    const lessons = Array.isArray(obj[topic]) ? obj[topic] : [];
+    lessons.forEach((raw) => {
+      const title = (raw || '').trim();
+      if (title) list.push({ id: id++, title, topic });
     });
-    const data = await res.json();
-
-    if (data.response) addMsg(false, data.response);
-
-    if (data.course_info && data.course_info) {
-      renderStructure(data.course_info, data.course_info["3_name"]);
-    }
-    if (typeof data.progress === 'number') {
-      // если у тебя есть прогресс-бар — обнови
-      // document.querySelector('.progress-bar').style.width = data.progress + '%';
-      // document.querySelector('.progress-text').textContent = data.progress + '%';
-    }
-
-    if (data.status && data.status.includes("<GENERATION>")) {
-      // продолжаем поллинг цепочки
-      return handleGenerationPolling({
-        ...statusPayload,
-        "0_content": {
-          ...statusPayload["0_content"],
-          "set_status": data.status
-        }
-      });
-    }
-
-    if (data.status && data.status.includes("<END>")) {
-      // можно что-то финализировать
-      return;
-    }
-  } catch (e) {
-    console.error('GENERATION polling error', e);
-  }
+  });
+  return list;
 }
 
-function renderStructure(courseInfo, courseName) {
-  const grid = document.getElementById('lessonsGrid');
-  if (!grid) return;
-  grid.innerHTML = ''; // очистим плейсхолдеры
+function courseInfoFromModel(list) {
+  // сохраняем порядок тем по первому появлению
+  const map = new Map();
+  list.forEach(({ title, topic }) => {
+    if (!map.has(topic)) map.set(topic, []);
+    map.get(topic).push(title);
+  });
+  const out = [];
+  map.forEach((lessons, topic) => out.push({ [topic]: lessons }));
+  return out;
+}
 
-  const head = document.querySelector('.lessons-head div');
-  if (head && courseName) {
-    const title = document.getElementById('lang-text').textContent.trim().toUpperCase() === 'RU'
-      ? 'План уроков' : 'Lesson plan';
-    head.textContent = `${courseName} — ${title}`;
-  }
+// Группировка по теме в порядке появления
+function groupByTopic(list) {
+  const map = new Map();
+  list.forEach((lesson) => {
+    if (!map.has(lesson.topic)) map.set(lesson.topic, []);
+    map.get(lesson.topic).push(lesson);
+  });
+  return map;
+}
 
-  if (!Array.isArray(courseInfo) || courseInfo.length === 0) {
-    grid.innerHTML = `<div style="grid-column:1/-1; color:#7a8bb5;">${head.textContent.includes('План') ? 'Структура ещё не сгенерирована' : 'Structure not generated yet'}</div>`;
+// Рендерим из courseModel
+function renderFromModel() {
+  const root = document.getElementById('lessonsGrid');
+  if (!root) return;
+  root.innerHTML = '';
+
+  if (!Array.isArray(courseModel) || courseModel.length === 0) {
+    root.innerHTML = `<div style="color:#7a8bb5;">
+      ${document.getElementById('lang-text').textContent.trim().toUpperCase() === 'RU'
+        ? 'Структура ещё не сгенерирована'
+        : 'Structure not generated yet'}
+    </div>`;
     return;
   }
 
-  let lessonIndex = 1;
+  const grouped = groupByTopic(courseModel);
+  grouped.forEach((lessons, topic) => {
+    const group = document.createElement('div');
+    group.className = 'theme-group';
 
-  courseInfo.forEach((themeObj, i) => {
-    const topic = Object.keys(themeObj)[0]?.trim() || `Тема ${i + 1}`;
-    const lessons = Array.isArray(themeObj[topic]) ? themeObj[topic] : [];
+    const grid = document.createElement('div');
+    grid.className = 'theme-grid';
 
-    lessons.forEach((lesson, j) => {
-      const name = (lesson || '').trim();
-      if (!name) return; // пропускаем пустые
-
+    lessons.forEach((lesson) => {
       const card = document.createElement('div');
       card.className = 'lesson-card';
-      card.innerHTML = `
-        <div class="lesson-title">${name}</div>
-        <div class="lesson-meta">${topic}</div>
-      `;
+      card.dataset.id = lesson.id;
+
+      const titleEl = document.createElement('div');
+      titleEl.className = 'lesson-title';
+      titleEl.textContent = lesson.title;
+
+      const metaEl = document.createElement('div');
+      metaEl.className = 'lesson-meta';
+      metaEl.textContent = topic;
+
+      const trash = document.createElement('button');
+      trash.className = 'trash';
+      trash.title = 'Удалить';
+      trash.textContent = '🗑';
+
+      if (editMode) {
+        titleEl.setAttribute('contenteditable', 'true');
+        metaEl.setAttribute('contenteditable', 'true');
+
+        titleEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); } });
+        titleEl.addEventListener('blur', () => {
+          const val = titleEl.textContent.trim();
+          const idx = courseModel.findIndex(x => x.id === lesson.id);
+          if (idx >= 0 && val && val !== courseModel[idx].title) {
+            courseModel[idx].title = val;
+          }
+        });
+
+        metaEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); metaEl.blur(); } });
+        metaEl.addEventListener('blur', () => {
+          const newTopic = metaEl.textContent.trim() || 'Без темы';
+          const idx = courseModel.findIndex(x => x.id === lesson.id);
+          if (idx >= 0 && newTopic !== courseModel[idx].topic) {
+            courseModel[idx].topic = newTopic; // переносим в конец новой темы
+            renderFromModel();                  // полная перерисовка, чтобы темы не «раскалывались»
+          }
+        });
+
+        trash.addEventListener('click', () => {
+          courseModel = courseModel.filter(x => x.id !== lesson.id);
+          renderFromModel();
+        });
+      }
+
+      card.appendChild(titleEl);
+      card.appendChild(metaEl);
+      card.appendChild(trash);
       grid.appendChild(card);
-      lessonIndex++;
     });
+
+    group.appendChild(grid);
+    root.appendChild(group);
   });
 
-  if (lessonIndex === 1) {
-    grid.innerHTML = `<div style="grid-column:1/-1; color:#7a8bb5;">${head.textContent.includes('План') ? 'Нет ни одного урока' : 'No lessons available'}</div>`;
+  // визуальный флаг «режим редактирования»
+  const lessonsWrap = document.getElementById('lessons');
+  if (lessonsWrap) lessonsWrap.classList.toggle('edit-mode', editMode);
+}
+
+// Вызываем при получении ответа API
+function renderStructure(courseInfo) {
+  courseModel = modelFromCourseInfo(courseInfo);
+  renderFromModel();
+}
+
+async function persistCourseModel() {
+  try {
+    const courseInfo = courseInfoFromModel(courseModel);
+    const res = await fetch('/mentor_workspace/{{ user.id }}/upsert_structure', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ course_info: courseInfo })
+    });
+    const data = await res.json();
+    // Можно показать мини‑тост/подсветку об успешном сохранении
+    // console.log('Saved', data);
+    if (Array.isArray(data.course_info)) {
+      // если API вернул нормализованную структуру — сразу отрисуем
+      renderStructure(data.course_info);
+    }
+  } catch (e) {
+    console.error('persistCourseModel error', e);
   }
 }
+
+// Тоггл ✎/✓
+const editToggle = document.getElementById('editToggle');
+if (editToggle) {
+  editToggle.addEventListener('click', async () => {
+    editMode = !editMode;
+    editToggle.classList.toggle('active', editMode);
+    editToggle.textContent = editMode ? '✓' : '✎';
+    editToggle.title = editMode
+      ? ('{% if session.get("language","ru")=="ru" %}Готово{% else %}Done{% endif %}')
+      : ('{% if session.get("language","ru")=="ru" %}Редактировать{% else %}Edit{% endif %}');
+    renderFromModel();
+
+    // Если пользователь нажал «✓» (вышел из редактирования) — сразу сохраняем и отправляем в API
+    if (!editMode) {
+      await persistCourseModel();
+    }
+  });
+}
+
+
+// Тоггл режима редактирования
+const editToggle = document.getElementById('editToggle');
+if (editToggle) {
+  editToggle.addEventListener('click', () => {
+    editMode = !editMode;
+    editToggle.classList.toggle('active', editMode);
+    editToggle.textContent = editMode ? '✓' : '✎';
+    editToggle.title = editMode
+      ? ('{% if session.get("language","ru")=="ru" %}Готово{% else %}Done{% endif %}')
+      : ('{% if session.get("language","ru")=="ru" %}Редактировать{% else %}Edit{% endif %}');
+    renderFromModel(); // перерисуем с/без contenteditable и урн
+  });
+}
+
+
+
 
 
     
@@ -758,51 +934,32 @@ function renderStructure(courseInfo, courseName) {
 
 
 
-    async function sendChat(){
-    const t = (chatInput.value || '').trim();
-    if (!t) return;
+async function sendChat(){
+  const t = (chatInput.value || '').trim();
+  if (!t) return;
+  if (typeof finalizePendingChip === 'function') finalizePendingChip();
 
-    // если пользователь печатал спец-метку и ушёл — дорисуем
-    if (typeof finalizePendingChip === 'function') finalizePendingChip();
+  addMsg(true, t);
+  chatInput.value = '';
 
-    addMsg(true, t);
-    chatInput.value = '';
+  try {
+    const state = getMentorState();
+    const res = await fetch('/mentor_workspace/{{ user.id }}/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ message: t, state })
+    });
+    const data = await res.json();
 
-    try {
-        const state = getMentorState();
-        const res = await fetch('/mentor_workspace/{{ user.id }}/chat', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            message: t,
-            state
-        })
-        });
-        const data = await res.json();
+    if (data.response) addMsg(false, data.response);
+    if (Array.isArray(data.course_info)) renderStructure(data.course_info);
 
-        if (data.response) addMsg(false, data.response);
+  } catch (e) {
+    console.error('Chat error', e);
+    addMsg(false, '{% if session.get("language","ru")=="ru" %}Ошибка сервера. Попробуйте позже.{% else %}Server error. Try again later.{% endif %}');
+  }
+}
 
-        if (data.course_info && data.course_info) {
-        renderStructure(data.course_info, data.course_info["3_name"]);
-        }
-
-        if (typeof data.progress === 'number') {
-        // если нужен прогресс
-        // document.querySelector('.progress-bar').style.width = data.progress + '%';
-        // document.querySelector('.progress-text').textContent = data.progress + '%';
-        }
-
-        if (data.status && data.status.includes("<GENERATION>")) {
-        await handleGenerationPolling(data.status_payload);
-        }
-        if (data.status && data.status.includes("<END>")) {
-        // можно подсветить завершение
-        }
-    } catch (e) {
-        console.error('Chat error', e);
-        addMsg(false, '{% if session.get("language","ru")=="ru" %}Ошибка сервера. Попробуйте позже.{% else %}Server error. Try again later.{% endif %}');
-    }
-    }
 
   </script>
 </body>
