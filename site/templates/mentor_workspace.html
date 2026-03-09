@@ -668,7 +668,7 @@ async function handleGenerationPolling(statusPayload){
   try {
     // небольшая задержка, чтобы избежать гонок
     await new Promise(r => setTimeout(r, 250));
-    const res = await fetch(`/mentor_workspace/${{{ user.id }}}/status`, {
+    const res = await fetch('/mentor_workspace/{{ user.id }}/status', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ status_payload: statusPayload })
@@ -677,8 +677,8 @@ async function handleGenerationPolling(statusPayload){
 
     if (data.response) addMsg(false, data.response);
 
-    if (data.course_info && data.course_info["4_structure"]) {
-      renderStructure(data.course_info["4_structure"], data.course_info["3_name"]);
+    if (data.course_info && data.course_info) {
+      renderStructure(data.course_info, data.course_info["3_name"]);
     }
     if (typeof data.progress === 'number') {
       // если у тебя есть прогресс-бар — обнови
@@ -705,33 +705,48 @@ async function handleGenerationPolling(statusPayload){
     console.error('GENERATION polling error', e);
   }
 }
-// ВСТАВЬ СРАЗУ ПОСЛЕ handleGenerationPolling
-function renderStructure(structure, courseName){
+
+function renderStructure(courseInfo, courseName) {
   const grid = document.getElementById('lessonsGrid');
   if (!grid) return;
   grid.innerHTML = ''; // очистим плейсхолдеры
 
   const head = document.querySelector('.lessons-head div');
-  if (head && courseName) head.textContent = `${courseName} — {% if session.get('language','ru')=='ru' %}План уроков{% else %}Lesson plan{% endif %}`;
+  if (head && courseName) {
+    const title = document.getElementById('lang-text').textContent.trim().toUpperCase() === 'RU'
+      ? 'План уроков' : 'Lesson plan';
+    head.textContent = `${courseName} — ${title}`;
+  }
 
-  if (!Array.isArray(structure) || !structure.length){
-    grid.innerHTML = `<div style="grid-column:1/-1; color:#7a8bb5;">{% if session.get('language','ru')=='ru' %}Структура ещё не сгенерирована{% else %}Structure not generated yet{% endif %}</div>`;
+  if (!Array.isArray(courseInfo) || courseInfo.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1; color:#7a8bb5;">${head.textContent.includes('План') ? 'Структура ещё не сгенерирована' : 'Structure not generated yet'}</div>`;
     return;
   }
 
-  // Простой грид уроков (по темам)
-  structure.forEach((theme, ti) => {
-    const lessons = (theme["3_lessons"] || []);
-    lessons.forEach((l, li) => {
+  let lessonIndex = 1;
+
+  courseInfo.forEach((themeObj, i) => {
+    const topic = Object.keys(themeObj)[0]?.trim() || `Тема ${i + 1}`;
+    const lessons = Array.isArray(themeObj[topic]) ? themeObj[topic] : [];
+
+    lessons.forEach((lesson, j) => {
+      const name = (lesson || '').trim();
+      if (!name) return; // пропускаем пустые
+
       const card = document.createElement('div');
       card.className = 'lesson-card';
       card.innerHTML = `
-        <div class="lesson-title">${l.name || 'Lesson'}</div>
-        <div class="lesson-meta">{% if session.get('language','ru')=='ru' %}Тема{% else %}Topic{% endif %}: ${theme["0_topic"] || '-'}</div>
+        <div class="lesson-title">${name}</div>
+        <div class="lesson-meta">${topic}</div>
       `;
       grid.appendChild(card);
+      lessonIndex++;
     });
   });
+
+  if (lessonIndex === 1) {
+    grid.innerHTML = `<div style="grid-column:1/-1; color:#7a8bb5;">${head.textContent.includes('План') ? 'Нет ни одного урока' : 'No lessons available'}</div>`;
+  }
 }
 
 
@@ -755,7 +770,7 @@ function renderStructure(structure, courseName){
 
     try {
         const state = getMentorState();
-        const res = await fetch(`/mentor_workspace/${{{ user.id }}}/chat`, {
+        const res = await fetch('/mentor_workspace/{{ user.id }}/chat', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
@@ -767,8 +782,8 @@ function renderStructure(structure, courseName){
 
         if (data.response) addMsg(false, data.response);
 
-        if (data.course_info && data.course_info["4_structure"]) {
-        renderStructure(data.course_info["4_structure"], data.course_info["3_name"]);
+        if (data.course_info && data.course_info) {
+        renderStructure(data.course_info, data.course_info["3_name"]);
         }
 
         if (typeof data.progress === 'number') {

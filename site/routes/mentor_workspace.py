@@ -1,8 +1,7 @@
 from __future__ import annotations
 from quart import Blueprint, request, session, render_template, redirect, url_for, jsonify
 from models.user import User
-from utils.api import send_request_to_api
-import json
+from services.api_service import send_request_to_api
 
 mentor_workspace = Blueprint("mentor_workspace", __name__)
 
@@ -76,56 +75,32 @@ async def mw_chat(user_id: int):
     if not is_intro and message:
         conversation.append({"role": "user", "content": message})
 
-    current_course = {}
     try:
         current_course = user.course_info[0]["course"]
     except Exception:
         
-        current_course = {
-            "3_name": "",
-            "4_structure": []
-        }
+        current_course = []
 
     payload = {
         "0_content": {
             "0_conversation": conversation,
+            "2_course_info": current_course,
             "1_user_info": user.user_info,
-            "2_mentor_prefs": {
+            "3_mentor_prefs": {
                 "name": state.get("name"),
                 "language": state.get("language"),
                 "style": state.get("style"),
                 "voice": state.get("voice"),
                 "specializations": state.get("specializations") or [],
                 "avatar": state.get("avatar"),
-            },
-            "3_course_info": current_course
+            }
         },
-        
         "1_type": "course_creation"
     }
 
-    if is_intro:
-        payload["0_content"]["intent"] = "intro"
-
     response = await send_request_to_api(payload)
-
-    if "<GENERATION>" in response.get("status", ""):
-        
-        session[conv_key] = conversation
-        return jsonify({
-            "response": response.get("response"),
-            "status": response.get("status"),
-            "status_payload": {
-                "0_content": {
-                    "0_conversation": conversation,
-                    "1_user_info": user.user_info,
-                    "2_mentor_prefs": payload["0_content"]["2_mentor_prefs"],
-                    "3_course_info": current_course,
-                    "set_status": response["status"]
-                },
-                "1_type": payload["1_type"]
-            }
-        })
+    print("Payload:", payload)
+    print("Response:", response)
 
     if response.get("response"):
         conversation.append({"role": "manager", "content": response["response"]})
@@ -138,15 +113,6 @@ async def mw_chat(user_id: int):
             user.course_info.append({"course": {}, "course_settings": {}})
         user.course_info[0]["course"] = response["course_info"]
         await User.filter(id=user.id).update(course_info=user.course_info)
-
-    if "<END>" in response.get("status", ""):
-        try:
-            first_lesson = user.course_info[0]["course"]["4_structure"][0]["3_lessons"][0]["name"]
-        except Exception:
-            first_lesson = None
-        if first_lesson:
-            user.course_info[0]["course_settings"] = {"lesson": first_lesson}
-            await User.filter(id=user.id).update(course_info=user.course_info)
 
     session[conv_key] = conversation
 
