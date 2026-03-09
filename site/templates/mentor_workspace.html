@@ -223,6 +223,14 @@
       box-shadow: 0 0 0 4px rgba(42,119,255,.14), 0 10px 24px rgba(42,119,255,.18);
       border-color:#cfe0ff;
     }
+
+    /* У активного чата ввод и кнопка полностью рабочие */
+    .chat-card.chat-active .chat-input,
+    .chat-card.chat-active .chat-send {
+    pointer-events: auto;
+    opacity: 1;
+    filter: none;
+    }
     @keyframes glow {
       0% { box-shadow: 0 0 0 0 rgba(42,119,255,.0); }
       30% { box-shadow: 0 0 0 6px rgba(42,119,255,.18); }
@@ -489,6 +497,17 @@
         chipsBox.insertBefore(chip, chipInput);
       });
     }
+    // Добавляет чип из текущего значения, если в инпуте что‑то осталось
+    function finalizePendingChip() {
+      const val = (chipInput.value || '').trim();
+      if (val) {
+          specs.push(val);
+          chipInput.value = '';
+          redrawChips();
+          validateAll();
+      }
+    }
+
     chipInput.addEventListener('keydown', (e)=>{
       if (e.key==='Enter' || e.key===',' ){
         e.preventDefault();
@@ -500,6 +519,12 @@
         }
       }
     });
+    // Если пользователь ушёл фокусом с поля — дорисуем чип из незавершённого ввода
+    chipInput.addEventListener('blur', finalizePendingChip);
+
+    // На всякий случай для некоторых мобильных/IMEs
+    chipInput.addEventListener('change', finalizePendingChip);
+
 
     // Language dropdown
     const langBtnSel = document.getElementById('langSelectBtn');
@@ -544,6 +569,17 @@
     const chatSend  = document.getElementById('chatSend');
     const mentorNameEl = document.getElementById('mentorName');
 
+    function getMentorState(){
+    return {
+        name: (fName.value || '').trim(),
+        specializations: specs.slice(),
+        language: langVal,
+        style: (fStyle.value || '').trim(),
+        voice: voiceVal,
+        avatar: chosenAvatar
+    };
+    }
+
     function i18nText(key){
       const langUI = (document.getElementById('lang-text').textContent || 'EN').trim().toUpperCase();
       const ru = {
@@ -573,9 +609,14 @@
       mentorNameEl.textContent = nameOk ? fName.value.trim() : '—';
 
       if (all) {
+        // Постоянная активация чата
         chatCard.classList.remove('chat-disabled');
-        chatCard.classList.add('chat-highlight');
-        setTimeout(()=> chatCard.classList.remove('chat-highlight'), 1300);
+        chatCard.classList.add('chat-active');
+
+        // На всякий случай, если были заблокированы атрибутами
+        chatInput.disabled = false;
+        chatSend.disabled = false;
+
 
         if (!firstMessageShown){
           addMsg(false, i18nText('hello'));
@@ -588,6 +629,22 @@
         }
       }
     }
+    // Постоянно активный подсвеченный чат
+chatCard.classList.remove('chat-disabled');
+chatCard.classList.add('chat-active');
+
+// на всякий случай снимаем disabled
+chatInput.disabled = false;
+chatSend.disabled  = false;
+
+// Однократно показываем базовое приветствие (без API)
+if (!firstMessageShown) {
+  addMsg(false, i18nText('hello'));
+  chatInput.placeholder = i18nText('placeholder');
+  chatSend.textContent  = i18nText('send');
+  firstMessageShown = true;
+}
+
 
     fName.addEventListener('input', validateAll);
     fStyle.addEventListener('input', validateAll);
@@ -606,19 +663,132 @@
       chatBody.appendChild(row);
       chatBody.scrollTop = chatBody.scrollHeight;
     }
+// ВСТАВЬ СРАЗУ ПОСЛЕ addMsg
+async function handleGenerationPolling(statusPayload){
+  try {
+    // небольшая задержка, чтобы избежать гонок
+    await new Promise(r => setTimeout(r, 250));
+    const res = await fetch(`/mentor_workspace/${{{ user.id }}}/status`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ status_payload: statusPayload })
+    });
+    const data = await res.json();
 
+    if (data.response) addMsg(false, data.response);
+
+    if (data.course_info && data.course_info["4_structure"]) {
+      renderStructure(data.course_info["4_structure"], data.course_info["3_name"]);
+    }
+    if (typeof data.progress === 'number') {
+      // если у тебя есть прогресс-бар — обнови
+      // document.querySelector('.progress-bar').style.width = data.progress + '%';
+      // document.querySelector('.progress-text').textContent = data.progress + '%';
+    }
+
+    if (data.status && data.status.includes("<GENERATION>")) {
+      // продолжаем поллинг цепочки
+      return handleGenerationPolling({
+        ...statusPayload,
+        "0_content": {
+          ...statusPayload["0_content"],
+          "set_status": data.status
+        }
+      });
+    }
+
+    if (data.status && data.status.includes("<END>")) {
+      // можно что-то финализировать
+      return;
+    }
+  } catch (e) {
+    console.error('GENERATION polling error', e);
+  }
+}
+// ВСТАВЬ СРАЗУ ПОСЛЕ handleGenerationPolling
+function renderStructure(structure, courseName){
+  const grid = document.getElementById('lessonsGrid');
+  if (!grid) return;
+  grid.innerHTML = ''; // очистим плейсхолдеры
+
+  const head = document.querySelector('.lessons-head div');
+  if (head && courseName) head.textContent = `${courseName} — {% if session.get('language','ru')=='ru' %}План уроков{% else %}Lesson plan{% endif %}`;
+
+  if (!Array.isArray(structure) || !structure.length){
+    grid.innerHTML = `<div style="grid-column:1/-1; color:#7a8bb5;">{% if session.get('language','ru')=='ru' %}Структура ещё не сгенерирована{% else %}Structure not generated yet{% endif %}</div>`;
+    return;
+  }
+
+  // Простой грид уроков (по темам)
+  structure.forEach((theme, ti) => {
+    const lessons = (theme["3_lessons"] || []);
+    lessons.forEach((l, li) => {
+      const card = document.createElement('div');
+      card.className = 'lesson-card';
+      card.innerHTML = `
+        <div class="lesson-title">${l.name || 'Lesson'}</div>
+        <div class="lesson-meta">{% if session.get('language','ru')=='ru' %}Тема{% else %}Topic{% endif %}: ${theme["0_topic"] || '-'}</div>
+      `;
+      grid.appendChild(card);
+    });
+  });
+}
+
+
+    
     chatSend.addEventListener('click', sendChat);
     chatInput.addEventListener('keydown', (e)=> {
       if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendChat(); }
     });
 
-    function sendChat(){
-      const t = chatInput.value.trim(); if (!t) return;
-      addMsg(true, t);
-      chatInput.value='';
-      // TODO: API — отправить сообщение и получить ответ
-      setTimeout(()=> addMsg(false, '...'), 300);
+
+
+    async function sendChat(){
+    const t = (chatInput.value || '').trim();
+    if (!t) return;
+
+    // если пользователь печатал спец-метку и ушёл — дорисуем
+    if (typeof finalizePendingChip === 'function') finalizePendingChip();
+
+    addMsg(true, t);
+    chatInput.value = '';
+
+    try {
+        const state = getMentorState();
+        const res = await fetch(`/mentor_workspace/${{{ user.id }}}/chat`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            message: t,
+            state
+        })
+        });
+        const data = await res.json();
+
+        if (data.response) addMsg(false, data.response);
+
+        if (data.course_info && data.course_info["4_structure"]) {
+        renderStructure(data.course_info["4_structure"], data.course_info["3_name"]);
+        }
+
+        if (typeof data.progress === 'number') {
+        // если нужен прогресс
+        // document.querySelector('.progress-bar').style.width = data.progress + '%';
+        // document.querySelector('.progress-text').textContent = data.progress + '%';
+        }
+
+        if (data.status && data.status.includes("<GENERATION>")) {
+        await handleGenerationPolling(data.status_payload);
+        }
+        if (data.status && data.status.includes("<END>")) {
+        // можно подсветить завершение
+        }
+    } catch (e) {
+        console.error('Chat error', e);
+        addMsg(false, '{% if session.get("language","ru")=="ru" %}Ошибка сервера. Попробуйте позже.{% else %}Server error. Try again later.{% endif %}');
     }
+    }
+
   </script>
 </body>
 </html>

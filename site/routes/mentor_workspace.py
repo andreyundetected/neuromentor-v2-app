@@ -1,6 +1,8 @@
 from __future__ import annotations
 from quart import Blueprint, request, session, render_template, redirect, url_for, jsonify
 from models.user import User
+from utils.api import send_request_to_api
+import json
 
 mentor_workspace = Blueprint("mentor_workspace", __name__)
 
@@ -49,6 +51,145 @@ async def workspace(user_id: int):
         is_new=True,
         avatar_options=AVATAR_OPTIONS,
     )
+
+@mentor_workspace.route('/mentor_workspace/<int:user_id>/chat', methods=['POST'])
+async def mw_chat(user_id: int):
+    
+    if 'user_id' not in session or session['user_id'] != user_id:
+        return jsonify({"error": "forbidden"}), 403
+
+    user = await User.get(id=user_id)
+    if not user:
+        return jsonify({"error": "no user"}), 404
+
+    data = await request.get_json()
+    if not data:
+        return jsonify({"error": "no json"}), 400
+
+    message = (data.get("message") or "").strip()
+    state   = data.get("state") or {}  
+    is_intro = bool(data.get("intro"))
+
+    conv_key = f"mw_conv_{user_id}"
+    conversation = session.get(conv_key, [])
+
+    if not is_intro and message:
+        conversation.append({"role": "user", "content": message})
+
+    current_course = {}
+    try:
+        current_course = user.course_info[0]["course"]
+    except Exception:
+        
+        current_course = {
+            "3_name": "",
+            "4_structure": []
+        }
+
+    payload = {
+        "0_content": {
+            "0_conversation": conversation,
+            "1_user_info": user.user_info,
+            "2_mentor_prefs": {
+                "name": state.get("name"),
+                "language": state.get("language"),
+                "style": state.get("style"),
+                "voice": state.get("voice"),
+                "specializations": state.get("specializations") or [],
+                "avatar": state.get("avatar"),
+            },
+            "3_course_info": current_course
+        },
+        
+        "1_type": "course_creation"
+    }
+
+    if is_intro:
+        payload["0_content"]["intent"] = "intro"
+
+    response = await send_request_to_api(payload)
+
+    if "<GENERATION>" in response.get("status", ""):
+        
+        session[conv_key] = conversation
+        return jsonify({
+            "response": response.get("response"),
+            "status": response.get("status"),
+            "status_payload": {
+                "0_content": {
+                    "0_conversation": conversation,
+                    "1_user_info": user.user_info,
+                    "2_mentor_prefs": payload["0_content"]["2_mentor_prefs"],
+                    "3_course_info": current_course,
+                    "set_status": response["status"]
+                },
+                "1_type": payload["1_type"]
+            }
+        })
+
+    if response.get("response"):
+        conversation.append({"role": "manager", "content": response["response"]})
+
+    if "course_info" in response:
+        
+        if not isinstance(user.course_info, list):
+            user.course_info = []
+        if not user.course_info:
+            user.course_info.append({"course": {}, "course_settings": {}})
+        user.course_info[0]["course"] = response["course_info"]
+        await User.filter(id=user.id).update(course_info=user.course_info)
+
+    if "<END>" in response.get("status", ""):
+        try:
+            first_lesson = user.course_info[0]["course"]["4_structure"][0]["3_lessons"][0]["name"]
+        except Exception:
+            first_lesson = None
+        if first_lesson:
+            user.course_info[0]["course_settings"] = {"lesson": first_lesson}
+            await User.filter(id=user.id).update(course_info=user.course_info)
+
+    session[conv_key] = conversation
+
+    return jsonify({
+        "response": response.get("response"),
+        "course_info": response.get("course_info"),
+        "progress": response.get("progress"),
+        "status": response.get("status")
+    })
+
+@mentor_workspace.route('/mentor_workspace/<int:user_id>/status', methods=['POST'])
+async def mw_status_poll(user_id: int):
+    if 'user_id' not in session or session['user_id'] != user_id:
+        return jsonify({"error": "forbidden"}), 403
+
+    user = await User.get(id=user_id)
+    if not user:
+        return jsonify({"error": "no user"}), 404
+
+    data = await request.get_json()
+    if not data:
+        return jsonify({"error": "no json"}), 400
+
+    payload = data.get("status_payload")
+    if not payload:
+        return jsonify({"error": "no payload"}), 400
+
+    response = await send_request_to_api(payload)
+
+    if "course_info" in response:
+        if not isinstance(user.course_info, list):
+            user.course_info = []
+        if not user.course_info:
+            user.course_info.append({"course": {}, "course_settings": {}})
+        user.course_info[0]["course"] = response["course_info"]
+        await User.filter(id=user.id).update(course_info=user.course_info)
+
+    return jsonify({
+        "response": response.get("response"),
+        "course_info": response.get("course_info"),
+        "progress": response.get("progress"),
+        "status": response.get("status")
+    })
 
 @mentor_workspace.route("/mentor_workspace/<int:user_id>/avatar_options", methods=["GET"])
 async def get_avatar_options(user_id: int):
