@@ -268,6 +268,7 @@ async def save_draft(user_id: int):
     
     return jsonify({"ok": True})
 
+@mentor_workspace.route('/mentor_workspace/<int:user_id>/upsert_structure', methods=['POST'])
 async def mw_upsert_structure(user_id: int):
     if 'user_id' not in session or session['user_id'] != user_id:
         return jsonify({"error": "forbidden"}), 403
