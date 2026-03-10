@@ -143,13 +143,25 @@ async def mw_status_poll(user_id: int):
 
     response = await send_request_to_api(payload)
 
+    state = data.get("state") or {}
+
+    mentor_prefs = {
+        "name": state.get("name"),
+        "language": state.get("language"),
+        "style": state.get("style"),
+        "voice": state.get("voice"),
+        "specializations": state.get("specializations") or [],
+        "avatar": state.get("avatar"),
+    }
+
     if "course_info" in response:
-        if not isinstance(user.course_info, list):
-            user.course_info = []
-        if not user.course_info:
-            user.course_info.append({"course": {}, "course_settings": {}})
-        user.course_info[0]["course"] = response["course_info"]
-        await User.filter(id=user.id).update(course_info=user.course_info)
+        if not isinstance(user.courses_info, list):
+            user.courses_info = []
+        if not user.courses_info:
+            user.courses_info.append({"course": {}, "mentor": {}, "course_settings": {}})
+        user.courses_info[0]["course"] = response["course_info"]
+        user.courses_info[0]["mentor"] = mentor_prefs
+        await User.filter(id=user.id).update(course_info=user.courses_info)
 
     return jsonify({
         "response": response.get("response"),
