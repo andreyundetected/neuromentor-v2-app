@@ -286,11 +286,11 @@ async def start_recommendation(recommendation_idx):
     base_json = recommendation.get("base_json", {})
     start_message = recommendation.get("start_message", "Welcome to your recommended course!")
 
-    if not user.course_info:
-        user.course_info = []
+    if not user.courses_info:
+        user.courses_info = []
     
-    course_idx = len(user.course_info)
-    user.course_info.append({"course": base_json, "course_settings": {}})
-    await User.filter(id=user.id).update(course_info=user.course_info)
+    course_idx = len(user.courses_info)
+    user.courses_info.append({"course": base_json, "course_settings": {}})
+    await User.filter(id=user.id).update(course_info=user.courses_info)
 
     return redirect(url_for('course.course_creation', user_id=user.id, course_idx=course_idx, start_message=start_message))
