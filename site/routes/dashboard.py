@@ -25,18 +25,18 @@ async def library():
         user.recommendations = generate_default_recommendations(session.get("language"))
         await User.filter(id=user.id).update(recommendations=user.recommendations)
 
-    if not user.course_info:
-        user.course_info = []
+    if not user.courses_info:
+        user.courses_info = []
 
-    courses_with_indices = [{"index": idx, "course": course} for idx, course in enumerate(user.course_info)]
+    courses_with_indices = [{"index": idx, "course": course} for idx, course in enumerate(user.courses_info)]
 
     categories = []
-    for course_wrapper in user.course_info:
-        categories.extend(course_wrapper["course"].get("5_categories", []))
+    for course_wrapper in user.courses_info:
+        categories.extend(course_wrapper["mentor"].get("specializations", []))
     category_counts = Counter(categories)
     sorted_categories = sorted(category_counts.items(), key=lambda x: x[1], reverse=True)
 
-    new_course_index = len(user.course_info)
+    new_course_index = len(user.courses_info)
     new_course_url = url_for('course.course_creation', user_id=user.id, course_idx=new_course_index)
 
     return await render_template(
