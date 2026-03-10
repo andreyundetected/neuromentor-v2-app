@@ -76,24 +76,26 @@ async def mw_chat(user_id: int):
         conversation.append({"role": "user", "content": message})
 
     try:
-        current_course = user.course_info[0]["course"]
+        current_course = user.courses_info[0]["course"]
     except Exception:
         
         current_course = []
+
+    mentor_prefs = {
+        "name": state.get("name"),
+        "language": state.get("language"),
+        "style": state.get("style"),
+        "voice": state.get("voice"),
+        "specializations": state.get("specializations") or [],
+        "avatar": state.get("avatar"),
+    }
 
     payload = {
         "0_content": {
             "0_conversation": conversation,
             "1_user_info": user.user_info,
             "2_course_info": current_course,
-            "3_mentor_prefs": {
-                "name": state.get("name"),
-                "language": state.get("language"),
-                "style": state.get("style"),
-                "voice": state.get("voice"),
-                "specializations": state.get("specializations") or [],
-                "avatar": state.get("avatar"),
-            }
+            "3_mentor_prefs": mentor_prefs 
         },
         "1_type": "course_creation"
     }
@@ -107,12 +109,13 @@ async def mw_chat(user_id: int):
 
     if "course_info" in response:
         
-        if not isinstance(user.course_info, list):
-            user.course_info = []
-        if not user.course_info:
-            user.course_info.append({"course": {}, "course_settings": {}})
-        user.course_info[0]["course"] = response["course_info"]
-        await User.filter(id=user.id).update(course_info=user.course_info)
+        if not isinstance(user.courses_info, list):
+            user.courses_info = []
+        if not user.courses_info:
+            user.courses_info.append({"course": {}, "mentor": {}, "course_settings": {}})
+        user.courses_info[0]["course"] = response["course_info"]
+        user.courses_info[0]["mentor"] = mentor_prefs
+        await User.filter(id=user.id).update(course_info=user.courses_info)
 
     session[conv_key] = conversation
 
