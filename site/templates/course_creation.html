@@ -224,7 +224,7 @@
     const username = document.querySelector('meta[name="username"]').getAttribute('content') || 'User';
   
     let userInfo = {{ user.user_info | tojson | safe }};
-    let currentCourse = {{ user.courses_info[course_idx]["course"] | tojson | safe }};
+    let currentCourse = {{ user.course_info[course_idx]["course"] | tojson | safe }};
     let conversation = {{ session.get("conversation", []) | tojson | safe }};
   
     const form = document.getElementById('course-creation-form');

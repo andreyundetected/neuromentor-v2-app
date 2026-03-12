@@ -34,8 +34,8 @@ async def course_creation(user_id, course_idx):
             response = await send_request_to_api(payload)
 
             if "course_info" in response:
-                user.courses_info[course_idx]["course"] = response["course_info"]
-                await User.filter(id=user.id).update(course_info=user.courses_info)
+                user.course_info[course_idx]["course"] = response["course_info"]
+                await User.filter(id=user.id).update(course_info=user.course_info)
 
             if response.get("response"):
                 session['conversation'].append({"role": "manager", "content": response["response"]})
@@ -46,12 +46,12 @@ async def course_creation(user_id, course_idx):
             conversation = session.get('conversation', [])
             conversation.append({"role": "user", "content": conversation_text})
 
-            while len(user.courses_info) <= course_idx:
-                user.courses_info.append({
+            while len(user.course_info) <= course_idx:
+                user.course_info.append({
                     "course": await get_empty_course_info(),
                     "course_settings": {}
                 })
-            course_info = user.courses_info[course_idx]["course"]
+            course_info = user.course_info[course_idx]["course"]
             payload = {
                 "0_content": {
                     "0_conversation": conversation,
@@ -86,29 +86,29 @@ async def course_creation(user_id, course_idx):
                 })
 
             if "<END>" in response.get("status"):
-                first_lesson = user.courses_info[course_idx]["course"]["4_structure"][0]["3_lessons"][0]["name"]
-                user.courses_info[course_idx]["course_settings"] = {"lesson": first_lesson}
-                await User.filter(id=user.id).update(course_info=user.courses_info)
+                first_lesson = user.course_info[course_idx]["course"]["4_structure"][0]["3_lessons"][0]["name"]
+                user.course_info[course_idx]["course_settings"] = {"lesson": first_lesson}
+                await User.filter(id=user.id).update(course_info=user.course_info)
 
             if response.get("response"):
                 conversation.append({"role": "manager", "content": response["response"]})
             session['conversation'] = conversation
 
             if "course_info" in response:
-                user.courses_info[course_idx]["course"] = response["course_info"]
-                await User.filter(id=user.id).update(course_info=user.courses_info)
+                user.course_info[course_idx]["course"] = response["course_info"]
+                await User.filter(id=user.id).update(course_info=user.course_info)
 
             return jsonify(response)
 
     session['conversation'] = []
-    while len(user.courses_info) <= course_idx:
-        user.courses_info.append({
+    while len(user.course_info) <= course_idx:
+        user.course_info.append({
             "course": await get_empty_course_info(),
             "course_settings": {}
         })
-    await User.filter(id=user.id).update(course_info=user.courses_info)
+    await User.filter(id=user.id).update(course_info=user.course_info)
 
-    course_name = user.courses_info[course_idx]["course"].get("3_name", "")
+    course_name = user.course_info[course_idx]["course"].get("3_name", "")
     return await render_template('course_creation.html', user=user, course_idx=course_idx, username=user.username, course_name=course_name, start_message=start_message)
 
 @course_bp.route('/course_select/<int:user_id>/<int:course_idx>', methods=['GET', 'POST'])

@@ -76,7 +76,7 @@ async def mw_chat(user_id: int):
         conversation.append({"role": "user", "content": message})
 
     try:
-        current_course = user.courses_info[0]["course"]
+        current_course = user.course_info[0]["course"]
     except Exception:
         
         current_course = []
@@ -109,13 +109,13 @@ async def mw_chat(user_id: int):
 
     if "course_info" in response:
         
-        if not isinstance(user.courses_info, list):
-            user.courses_info = []
-        if not user.courses_info:
-            user.courses_info.append({"course": {}, "mentor": {}, "course_settings": {}})
-        user.courses_info[0]["course"] = response["course_info"]
-        user.courses_info[0]["mentor"] = mentor_prefs
-        await User.filter(id=user.id).update(course_info=user.courses_info)
+        if not isinstance(user.course_info, list):
+            user.course_info = []
+        if not user.course_info:
+            user.course_info.append({"course": {}, "mentor": {}, "course_settings": {}})
+        user.course_info[0]["course"] = response["course_info"]
+        user.course_info[0]["mentor"] = mentor_prefs
+        await User.filter(id=user.id).update(course_info=user.course_info)
 
     session[conv_key] = conversation
 
