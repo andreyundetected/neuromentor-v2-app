@@ -297,12 +297,12 @@ async def mw_upsert_structure(user_id: int):
     if not isinstance(course_info, list):
         return jsonify({"error": "bad course_info"}), 400
 
-    if not isinstance(user.courses_info, list):
-        user.courses_info = []
-    if not user.courses_info:
-        user.courses_info.append({"course": {}, "mentor": {}, "course_settings": {}})
+    if not isinstance(user.course_info, list):
+        user.course_info = []
+    if not user.course_info:
+        user.course_info.append({"course": {}, "mentor": {}, "course_settings": {}})
 
-    user.courses_info[0]["course"] = course_info
-    await User.filter(id=user.id).update(course_info=user.courses_info)
+    user.course_info[0]["course"] = course_info
+    await User.filter(id=user.id).update(course_info=user.course_info)
 
     return jsonify({"ok": True, "course_info": course_info})

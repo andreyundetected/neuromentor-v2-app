@@ -226,10 +226,10 @@ async def course_edit(user_id, course_idx):
         conversation = session.get('conversation', [])
         conversation.append({"role": "user", "content": conversation_text})
 
-        if len(user.courses_info) <= course_idx:
+        if len(user.course_info) <= course_idx:
             return "Курс с указанным индексом не найден.", 404
 
-        course_info = user.courses_info[course_idx]["course"]
+        course_info = user.course_info[course_idx]["course"]
 
         payload = {
             "0_content": {
@@ -246,13 +246,13 @@ async def course_edit(user_id, course_idx):
         session['conversation'] = conversation
 
         if "course_info" in response:
-            user.courses_info[course_idx]["course"] = response["course_info"]
-            await User.filter(id=user.id).update(course_info=user.courses_info)
+            user.course_info[course_idx]["course"] = response["course_info"]
+            await User.filter(id=user.id).update(course_info=user.course_info)
 
         return jsonify(response)
 
     session['conversation'] = []
-    course_name = user.courses_info[course_idx]["course"].get("3_name", "")
+    course_name = user.course_info[course_idx]["course"].get("3_name", "")
     return await render_template(
         'course_edit.html',
         user=user, course_idx=course_idx,
