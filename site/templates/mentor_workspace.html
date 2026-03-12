@@ -252,7 +252,7 @@
     .lesson-card {
       border:1px solid #e6eefc; border-radius:12px; padding:12px; background:#fbfdff;
     }
-    .lesson-title { font-weight:800; color:#213a7a; margin-bottom:6px; }
+    .lesson-title { font-weight:800; color:#213a7a; }
     .lesson-meta { font-size:12px; color:#55658a; }
 
     /* Small helpers */
@@ -295,21 +295,32 @@
 
 /* Карточка урока: корзина и состояния редактирования */
 .lesson-card {
-  position: relative;
+  border: 1px solid #e6eefc;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fbfdff;
+  display: block;
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
 }
 .lesson-card .trash {
   display: none;
   position: absolute;
-  top: 8px; right: 8px;
-  width: 24px; height: 24px;
+  top: 8px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
   border-radius: 6px;
-  background: #ffe8e8;
+  align-items: center;
+  justify-content: center;
+  background: #ffe9ea;
+  border: 1px solid #ffc8cc;
   color: #c62828;
   font-weight: 900;
-  border: 1px solid #ffcdcd;
   cursor: pointer;
 }
-.lessons.edit-mode .lesson-card .trash { display: inline-flex; align-items:center; justify-content:center; }
+.lessons.edit-mode .lesson-card .trash {
+  display: inline-flex;
+}
 
 .lesson-title[contenteditable="true"],
 .lesson-meta[contenteditable="true"] {
@@ -321,9 +332,123 @@
 
 /* Подпись темы на карточке выглядит как «лейбл» */
 .lesson-meta {
-  font-size: 12px; color:#55658a;
-  padding: 2px 6px; border-radius: 999px;
-  background: #f2f6ff; display: inline-block;
+  font-size: 12px;
+  color: #55658a;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #f2f6ff;
+  margin-top: 4px;
+}
+/* Хэндл: две полоски */
+.drag-handle {
+  width: 22px;
+  min-width: 22px;
+  height: 24px;
+  margin-left: auto;
+  border-radius: 6px;
+  background:
+    linear-gradient(#c6d3f3 2px, transparent 2px) 0 6px/100% 6px,
+    linear-gradient(#c6d3f3 2px, transparent 2px) 0 12px/100% 6px;
+  opacity: .9;
+  cursor: grab;
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+}
+.drag-handle:active { cursor: grabbing; }
+
+/* Контейнер темы (занимает всю ширину: 1 колонка грида) */
+.topic-block {
+  grid-column: 1 / -1;
+  border: 1px dashed transparent;
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: #fff;
+  box-shadow: 0 4px 10px rgba(0,0,0,.03);
+  position: relative;
+  transition: .15s box-shadow, .15s border-color, .15s background;
+}
+
+/* Заголовок блока темы (без явного текста темы — просто верхняя плашка) */
+.topic-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 2px 8px 2px;
+}
+
+/* Сетка уроков внутри темы: 4 в строке */
+.topic-lessons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+/* Карточка урока */
+.lesson-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  border: 1px solid #e6eefc;
+  border-radius: 12px;
+  padding: 12px 36px 12px 12px;
+  background: #fbfdff;
+}
+
+/* Текст урока (редактируемый при editMode) */
+.lesson-title[contenteditable="true"] {
+  outline: none;
+  border-bottom: 1px dashed #cad7ff;
+}
+
+/* Урна удаления урока (в editMode) */
+.lesson-delete {
+  margin-left: auto;
+  width: 22px; height: 22px;
+  border-radius: 6px;
+  display: none; /* по умолчанию скрыта, показываем при editMode */
+  align-items: center; justify-content: center;
+  background: #ffe9ea;
+  border: 1px solid #ffc8cc;
+  cursor: pointer;
+}
+.lesson-delete:hover { background: #ffdfe2; }
+
+/* Подсветка зоны дропа */
+.drop-target {
+  border-color: #bcd0ff !important;
+  background: #f6f9ff !important;
+}
+.dragging { opacity: .6; }
+/* Во время перетаскивания сама карточка становится полупрозрачной */
+.lesson-card.dragging { opacity: .35; }
+
+/* Плейсхолдер-место, куда «встанет» карточка */
+.lesson-placeholder {
+  border: 2px dashed #bcd0ff;
+  background: #eef4ff;
+  border-radius: 12px;
+}
+
+/* Клонированное изображение карточки, которое следует за мышью */
+.drag-image {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-9999px, -9999px); /* уводим за экран, используем как dragImage */
+}
+
+.lesson-card.dragging-card {
+  position: fixed !important;
+  z-index: 9999;
+  pointer-events: none;
+  box-shadow: 0 10px 24px rgba(0,0,0,.18);
+  transform: scale(1.02);
+  opacity: 0.97;
+}
+
+.topic-lessons .lesson-card {
+  transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
 }
 
   </style>
@@ -739,128 +864,264 @@ if (!firstMessageShown) {
 
 let courseModel = []; // [{ id, title, topic }]
 let editMode = false;
+let nextLessonId = 1;
+let dragImageEl = null;       // DOM-элемент кастомного dragImage
+
 
 // Сериализация <-> десериализация
 function modelFromCourseInfo(courseInfo) {
-  const list = [];
-  let id = 1;
-  (courseInfo || []).forEach((obj) => {
-    const topic = (Object.keys(obj)[0] || '').trim() || 'Без темы';
-    const lessons = Array.isArray(obj[topic]) ? obj[topic] : [];
-    lessons.forEach((raw) => {
-      const title = (raw || '').trim();
-      if (title) list.push({ id: id++, title, topic });
-    });
+  nextLessonId = 1;
+  const model = [];
+  (courseInfo || []).forEach((obj, tIdx) => {
+    const topic = (Object.keys(obj)[0] || '').trim() || `Тема ${tIdx + 1}`;
+    const rawLessons = Array.isArray(obj[topic]) ? obj[topic] : [];
+    const lessons = rawLessons
+      .map(t => String(t || '').trim())
+      .filter(Boolean)
+      .map(title => ({ id: nextLessonId++, title, draft: false }));
+    model.push({ topic, lessons });
   });
-  return list;
+  return model;
 }
 
-function courseInfoFromModel(list) {
-  // сохраняем порядок тем по первому появлению
-  const map = new Map();
-  list.forEach(({ title, topic }) => {
-    if (!map.has(topic)) map.set(topic, []);
-    map.get(topic).push(title);
+
+
+function courseInfoFromModel(model) {
+  return (model || []).map(t => ({
+    [t.topic]: t.lessons.filter(l => !l.draft).map(l => l.title)
+  })).filter(obj => {
+    const topic = Object.keys(obj)[0];
+    return Array.isArray(obj[topic]) && obj[topic].length > 0;
   });
-  const out = [];
-  map.forEach((lessons, topic) => out.push({ [topic]: lessons }));
-  return out;
 }
 
-// Группировка по теме в порядке появления
-function groupByTopic(list) {
-  const map = new Map();
-  list.forEach((lesson) => {
-    if (!map.has(lesson.topic)) map.set(lesson.topic, []);
-    map.get(lesson.topic).push(lesson);
-  });
-  return map;
-}
+
+
 
 // Рендерим из courseModel
+// Рендерим из courseModel
 function renderFromModel() {
-  const root = document.getElementById('lessonsGrid');
-  if (!root) return;
-  root.innerHTML = '';
+  const container = document.getElementById('lessonsGrid');
+  if (!container) return;
+  container.innerHTML = '';
 
-  if (!Array.isArray(courseModel) || courseModel.length === 0) {
-    root.innerHTML = `<div style="color:#7a8bb5;">
+  // Пустая структура
+  if (!Array.isArray(courseModel) || !courseModel.length) {
+    container.innerHTML = `<div style="grid-column:1/-1; color:#7a8bb5;">
       ${document.getElementById('lang-text').textContent.trim().toUpperCase() === 'RU'
-        ? 'Структура ещё не сгенерирована'
-        : 'Structure not generated yet'}
+        ? 'Структура ещё не сгенерирована' : 'Structure not generated yet'}
     </div>`;
+    const lessonsBox = document.getElementById('lessons');
+    if (lessonsBox) lessonsBox.classList.toggle('edit-mode', editMode);
     return;
   }
 
-  const grouped = groupByTopic(courseModel);
-  grouped.forEach((lessons, topic) => {
-    const group = document.createElement('div');
-    group.className = 'theme-group';
+  courseModel.forEach((topicObj, ti) => {
+    // ——— Блок темы на всю ширину
+    const topicBlock = document.createElement('div');
+    topicBlock.className = 'topic-block';
+    topicBlock.dataset.topicIndex = String(ti);
 
-    const grid = document.createElement('div');
-    grid.className = 'theme-grid';
+    // ——— Верхняя полоска: хэндл темы + "+" (только в editMode)
+    const head = document.createElement('div');
+    head.className = 'topic-head';
 
-    lessons.forEach((lesson) => {
+    if (editMode) {
+      // Хэндл перетаскивания темы (HTML5 DnD)
+      const th = document.createElement('span');
+      th.textContent = '⋮⋮';
+      th.className = 'drag-handle';
+      th.title = uiIsRU() ? 'Перетащить тему' : 'Drag topic';
+      th.setAttribute('draggable', 'true');
+
+      th.addEventListener('dragstart', (e) => {
+        dragState.type = 'topic';
+        dragState.fromTopic = ti;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', 'topic');
+        topicBlock.classList.add('dragging');
+      });
+
+      th.addEventListener('dragend', () => {
+        topicBlock.classList.remove('dragging');
+        dragState.type = null;
+        dragState.fromTopic = null;
+      });
+
+      // Кнопка «+» — добавляет черновик урока в конец темы
+      const addBtn = document.createElement('button');
+      addBtn.textContent = '+';
+      addBtn.className = 'icon-btn';
+      addBtn.title = uiIsRU() ? 'Добавить урок' : 'Add lesson';
+      addBtn.style.marginLeft = '8px';
+      addBtn.addEventListener('click', () => addLesson(ti));
+
+      head.appendChild(th);
+      head.appendChild(addBtn);
+    } else {
+      const spacer = document.createElement('div');
+      spacer.style.flex = '1';
+      head.appendChild(spacer);
+    }
+
+    topicBlock.appendChild(head);
+
+    // ——— Сетка уроков 4 в строке
+    const lessonsWrap = document.createElement('div');
+    lessonsWrap.className = 'topic-lessons';
+    lessonsWrap.dataset.topicIndex = String(ti);
+
+    // ——— Карточки уроков
+    topicObj.lessons.forEach((lessonObj, li) => {
       const card = document.createElement('div');
       card.className = 'lesson-card';
-      card.dataset.id = lesson.id;
+      card.dataset.topicIndex = String(ti);
+      card.dataset.lessonIndex = String(li);
 
-      const titleEl = document.createElement('div');
-      titleEl.className = 'lesson-title';
-      titleEl.textContent = lesson.title;
-
-      const metaEl = document.createElement('div');
-      metaEl.className = 'lesson-meta';
-      metaEl.textContent = topic;
-
-      const trash = document.createElement('button');
-      trash.className = 'trash';
-      trash.title = 'Удалить';
-      trash.textContent = '🗑';
-
+      // Хэндл урока (Pointer Events — «живая» перетаскиваемая карточка)
       if (editMode) {
-        titleEl.setAttribute('contenteditable', 'true');
-        metaEl.setAttribute('contenteditable', 'true');
-
-        titleEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); } });
-        titleEl.addEventListener('blur', () => {
-          const val = titleEl.textContent.trim();
-          const idx = courseModel.findIndex(x => x.id === lesson.id);
-          if (idx >= 0 && val && val !== courseModel[idx].title) {
-            courseModel[idx].title = val;
-          }
+        const handle = document.createElement('span');
+        handle.textContent = '⋮⋮';
+        handle.className = 'drag-handle';
+        handle.title = uiIsRU() ? 'Перетащить урок' : 'Drag lesson';
+        handle.addEventListener('pointerdown', (e) => {
+          startLessonDrag(e, card, ti, li); // <- твой pointer‑drag хендлер
         });
-
-        metaEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); metaEl.blur(); } });
-        metaEl.addEventListener('blur', () => {
-          const newTopic = metaEl.textContent.trim() || 'Без темы';
-          const idx = courseModel.findIndex(x => x.id === lesson.id);
-          if (idx >= 0 && newTopic !== courseModel[idx].topic) {
-            courseModel[idx].topic = newTopic; // переносим в конец новой темы
-            renderFromModel();                  // полная перерисовка, чтобы темы не «раскалывались»
-          }
-        });
-
-        trash.addEventListener('click', () => {
-          courseModel = courseModel.filter(x => x.id !== lesson.id);
-          renderFromModel();
-        });
+        card.appendChild(handle);
       }
 
+      // Название (inline‑edit в editMode)
+      const titleEl = document.createElement('div');
+      titleEl.className = 'lesson-title';
+      titleEl.textContent = lessonObj.title;
+
+      if (editMode) {
+        makeInlineEditable(titleEl, async (newTitle) => {
+          const trimmed = (newTitle || '').trim();
+          if (!trimmed) {
+            // Оставляем прежнее/черновое имя, не сохраняем пустое
+            titleEl.textContent = lessonObj.title || getDraftTitle();
+            return;
+          }
+          lessonObj.title = trimmed;
+          // если это был черновик — снимаем флаг
+          if (lessonObj.draft && trimmed !== getDraftTitle()) {
+            lessonObj.draft = false;
+          }
+          // Сохраняем по желанию сразу или при «✓»
+          // await persistCourseModel();
+        });
+      }
       card.appendChild(titleEl);
+
+      // Тема под названием (лейбл)
+      const metaEl = document.createElement('div');
+      metaEl.className = 'lesson-meta';
+      metaEl.textContent = topicObj.topic;
       card.appendChild(metaEl);
-      card.appendChild(trash);
-      grid.appendChild(card);
+
+      // Красная урна удаления (в editMode)
+      if (editMode) {
+        const del = document.createElement('button');
+        del.className = 'trash';
+        del.textContent = '🗑';
+        del.title = uiIsRU() ? 'Удалить урок' : 'Delete lesson';
+        del.addEventListener('click', async () => {
+          courseModel[ti].lessons.splice(li, 1);
+          // если уроков не осталось — удаляем тему
+          if (courseModel[ti].lessons.length === 0) {
+            courseModel.splice(ti, 1);
+          }
+          renderFromModel();
+          await persistCourseModel();
+        });
+        card.appendChild(del);
+      }
+
+      lessonsWrap.appendChild(card);
     });
 
-    group.appendChild(grid);
-    root.appendChild(group);
+    // ——— Перетаскивание тем: «дроп перед» этой темой
+    if (editMode) {
+      topicBlock.addEventListener('dragover', (e) => {
+        if (dragState.type === 'topic') {
+          e.preventDefault();
+          topicBlock.classList.add('drop-target');
+        }
+      });
+      topicBlock.addEventListener('dragleave', () => {
+        topicBlock.classList.remove('drop-target');
+      });
+      topicBlock.addEventListener('drop', async () => {
+        topicBlock.classList.remove('drop-target');
+        if (dragState.type !== 'topic') return;
+        const { fromTopic } = dragState;
+        if (fromTopic == null) return;
+        const toTopic = ti;
+
+        const [movedTopic] = courseModel.splice(fromTopic, 1);
+        const insertIndex = (fromTopic < toTopic) ? (toTopic - 1) : toTopic;
+        courseModel.splice(insertIndex, 0, movedTopic);
+
+        dragState.type = null;
+        dragState.fromTopic = null;
+        renderFromModel();
+        await persistCourseModel();
+      });
+    }
+
+    topicBlock.appendChild(lessonsWrap);
+    container.appendChild(topicBlock);
   });
 
-  // визуальный флаг «режим редактирования»
-  const lessonsWrap = document.getElementById('lessons');
-  if (lessonsWrap) lessonsWrap.classList.toggle('edit-mode', editMode);
+  // Флаг режима редактирования для стилей
+  const lessonsBox = document.getElementById('lessons');
+  if (lessonsBox) lessonsBox.classList.toggle('edit-mode', editMode);
 }
+
+
+
+
+// Единый обработчик «✎/✓» (БЕЗ cloneNode)
+const editToggleEl = document.getElementById('editToggle');
+if (editToggleEl) {
+  editToggleEl.addEventListener('click', async () => {
+    editMode = !editMode;
+    editToggleEl.classList.toggle('active', editMode);
+    editToggleEl.textContent = editMode ? '✓' : '✎';
+    editToggleEl.title = editMode
+      ? ('{% if session.get("language","ru")=="ru" %}Готово{% else %}Done{% endif %}')
+      : ('{% if session.get("language","ru")=="ru" %}Редактировать{% else %}Edit{% endif %}');
+
+    renderFromModel();
+    if (!editMode) await persistCourseModel();
+  });
+}
+
+async function onEditToggleClick() {
+  editMode = !editMode;
+  editToggleEl.classList.toggle('active', editMode);
+  editToggleEl.textContent = editMode ? '✓' : '✎';
+  editToggleEl.title = editMode
+    ? (uiIsRU() ? 'Готово' : 'Done')
+    : (uiIsRU() ? 'Редактировать' : 'Edit');
+
+  // Если выходим из режима редактирования — удаляем все не‑переименованные черновики и пустые темы
+  if (!editMode) {
+    purgeDraftsAndEmptyTopics();
+  }
+  renderFromModel();
+
+  if (!editMode) {
+    await persistCourseModel();
+  }
+}
+if (editToggleEl) {
+  editToggleEl.replaceWith(editToggleEl.cloneNode(true));
+  document.getElementById('editToggle').addEventListener('click', onEditToggleClick);
+}
+
+
 
 // Вызываем при получении ответа API
 function renderStructure(courseInfo) {
@@ -870,57 +1131,265 @@ function renderStructure(courseInfo) {
 
 async function persistCourseModel() {
   try {
-    const courseInfo = courseInfoFromModel(courseModel);
+    const course_info = courseInfoFromModel(courseModel);
     const res = await fetch('/mentor_workspace/{{ user.id }}/upsert_structure', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ course_info: courseInfo })
+      body: JSON.stringify({ course_info })
     });
     const data = await res.json();
-    // Можно показать мини‑тост/подсветку об успешном сохранении
-    // console.log('Saved', data);
     if (Array.isArray(data.course_info)) {
-      // если API вернул нормализованную структуру — сразу отрисуем
-      renderStructure(data.course_info);
+      // если бэкенд нормализовал — перерисуем
+      courseModel = modelFromCourseInfo(data.course_info);
+      renderFromModel();
     }
   } catch (e) {
     console.error('persistCourseModel error', e);
   }
 }
 
-// Тоггл ✎/✓
-const editToggle = document.getElementById('editToggle');
-if (editToggle) {
-  editToggle.addEventListener('click', async () => {
-    editMode = !editMode;
-    editToggle.classList.toggle('active', editMode);
-    editToggle.textContent = editMode ? '✓' : '✎';
-    editToggle.title = editMode
-      ? ('{% if session.get("language","ru")=="ru" %}Готово{% else %}Done{% endif %}')
-      : ('{% if session.get("language","ru")=="ru" %}Редактировать{% else %}Edit{% endif %}');
-    renderFromModel();
+const dragState = {
+  type: null,        // 'topic' | 'lesson'
+  fromTopic: null,   // индекс темы
+  fromLesson: null   // индекс урока (если lesson)
+};
 
-    // Если пользователь нажал «✓» (вышел из редактирования) — сразу сохраняем и отправляем в API
-    if (!editMode) {
-      await persistCourseModel();
+function makeDragImageFromCard(card) {
+  // создаём клон для красивого превью под курсором
+  const clone = card.cloneNode(true);
+  clone.classList.add('drag-image');
+  clone.style.width = card.getBoundingClientRect().width + 'px';
+  document.body.appendChild(clone);
+  return clone;
+}
+
+function ensurePlaceholder(h) {
+  if (!dragPlaceholderEl) {
+    dragPlaceholderEl = document.createElement('div');
+    dragPlaceholderEl.className = 'lesson-card lesson-placeholder';
+  }
+  dragPlaceholderEl.style.height = (h || 52) + 'px';
+}
+
+let drag = null;              // текущее перетаскивание
+let dragPlaceholderEl = null; // плейсхолдер (DOM-узел)
+let hoverTimer = null;        // таймер «задержки» перед вставкой плейсхолдера
+let hoverTarget = null;       // {wrap, index} для «намерения»
+
+function startLessonDrag(e, card, topicIndex, lessonIndex) {
+  e.preventDefault();
+  card.setPointerCapture?.(e.pointerId);
+
+  const rect = card.getBoundingClientRect();
+
+  drag = {
+    pointerId: e.pointerId,
+    card,
+    width: rect.width,
+    height: rect.height,
+    offsetX: e.clientX - rect.left,
+    offsetY: e.clientY - rect.top,
+    fromTopic: topicIndex,
+    fromLesson: lessonIndex,
+    originWrap: card.parentElement
+  };
+
+  // Вырвать карточку из потока (остальные сожмутся)
+  card.classList.add('dragging-card');
+  card.style.width = rect.width + 'px';
+  card.style.left = (e.clientX - drag.offsetX) + 'px';
+  card.style.top  = (e.clientY - drag.offsetY) + 'px';
+
+  window.addEventListener('pointermove', onPointerMove, { passive: false });
+  window.addEventListener('pointerup', endLessonDrag, { passive: true });
+}
+
+
+function onPointerMove(e) {
+  if (!drag || e.pointerId !== drag.pointerId) return;
+  e.preventDefault();
+
+  // Двигаем карточку под курсором
+  drag.card.style.left = (e.clientX - drag.offsetX) + 'px';
+  drag.card.style.top  = (e.clientY - drag.offsetY) + 'px';
+
+  // Находим контейнер тем/уроков под курсором
+  const wrap = findLessonsWrapAt(e.clientX, e.clientY);
+  if (!wrap) {
+    // если ушли из всех зон — уберём плейсхолдер (чтобы список «досжался»)
+    if (dragPlaceholderEl?.parentElement) dragPlaceholderEl.remove();
+    clearHoverIntent();
+    return;
+  }
+
+  // Считаем индекс вставки по геометрии
+  const index = getInsertionIndex(wrap, e.clientX, e.clientY);
+
+  // Если цель не изменилась — ничего не делаем
+  if (hoverTarget && hoverTarget.wrap === wrap && hoverTarget.index === index) return;
+
+  // Обновляем «намерение» и перезапускаем таймер «задержки»
+  clearHoverIntent();
+  hoverTarget = { wrap, index };
+  hoverTimer = setTimeout(() => {
+    // Вставляем/перемещаем плейсхолдер после короткой паузы
+    ensurePlaceholder(drag.height);
+    const siblings = [...wrap.querySelectorAll('.lesson-card:not(.dragging-card):not(.lesson-placeholder)')];
+    if (index >= siblings.length) {
+      wrap.appendChild(dragPlaceholderEl);
+    } else {
+      wrap.insertBefore(dragPlaceholderEl, siblings[index]);
     }
-  });
+  }, 120); // «задержка» — ощущение, что место освобождается при короткой паузе
+}
+
+async function endLessonDrag(e) {
+  if (!drag || e.pointerId !== drag.pointerId) return;
+
+  // Куда дропаем?
+  let toWrap = null;
+  let toIndex = null;
+
+  if (dragPlaceholderEl && dragPlaceholderEl.parentElement) {
+    toWrap = dragPlaceholderEl.parentElement;
+    const order = [...toWrap.querySelectorAll('.lesson-card')];
+    toIndex = order.indexOf(dragPlaceholderEl);
+  } else {
+    // Если плейсхолдера нет — ищем wrap под курсором и ставим в конец
+    toWrap = findLessonsWrapAt(e.clientX, e.clientY);
+    if (toWrap) {
+      const allCards = [...toWrap.querySelectorAll('.lesson-card:not(.dragging-card)')];
+      toIndex = allCards.length; // конец
+    }
+  }
+
+  // Сначала вернуть карточку в нормальный вид
+  drag.card.classList.remove('dragging-card');
+  drag.card.style.left = '';
+  drag.card.style.top = '';
+  drag.card.style.width = '';
+
+  // Мутируем модель, если есть валидная точка назначения
+  if (toWrap != null && typeof toIndex === 'number') {
+    const toTopic = Number(toWrap.dataset.topicIndex);
+    const { fromTopic, fromLesson } = drag;
+    // снять из старого места
+    const [moved] = courseModel[fromTopic].lessons.splice(fromLesson, 1);
+    // скорректировать индекс, если перетаскивание в ту же тему «вперёд»
+    let insertIndex = toIndex;
+    if (fromTopic === toTopic && fromLesson < toIndex) insertIndex -= 1;
+    courseModel[toTopic].lessons.splice(Math.max(0, Math.min(insertIndex, courseModel[toTopic].lessons.length)), 0, moved);
+
+    clearDragArtifacts();
+    renderFromModel();
+    await persistCourseModel();
+  } else {
+    clearDragArtifacts();
+    renderFromModel(); // просто вернуть как было
+  }
+
+  window.removeEventListener('pointermove', onPointerMove);
+  window.removeEventListener('pointerup', endLessonDrag);
+}
+
+function findLessonsWrapAt(x, y) {
+  const el = document.elementFromPoint(x, y);
+  if (!el) return null;
+  return el.closest('.topic-lessons');
+}
+
+// Вычисляем позицию вставки: индекс среди карточек в контейнере, ближе всего к курсору
+function getInsertionIndex(wrap, x, y) {
+  const items = [...wrap.querySelectorAll('.lesson-card:not(.dragging-card):not(.lesson-placeholder)')];
+  if (items.length === 0) return 0;
+
+  // Идём по DOM-порядку и ищем первый элемент,
+  // у которого указатель «выше его вертикального центра»
+  for (let i = 0; i < items.length; i++) {
+    const r = items[i].getBoundingClientRect();
+    const midY = r.top + r.height / 2;
+    if (y < midY) {
+      // внутри строки — уточним по X
+      const rowTop = r.top;
+      // элементы этой строки (с похожим top)
+      const sameRow = items.filter(it => Math.abs(it.getBoundingClientRect().top - rowTop) < r.height * 0.5);
+      // найдём позицию в строке
+      for (let j = 0; j < sameRow.length; j++) {
+        const rr = sameRow[j].getBoundingClientRect();
+        const midX = rr.left + rr.width / 2;
+        if (x < midX) {
+          // вставлять перед sameRow[j] => его глобальный индекс в items
+          return items.indexOf(sameRow[j]);
+        }
+      }
+      // если курсор правее всех — вставляем после элементов строки
+      const lastInRow = sameRow[sameRow.length - 1];
+      return items.indexOf(lastInRow) + 1;
+    }
+  }
+  // ниже всех — конец списка
+  return items.length;
+}
+
+function clearHoverIntent() {
+  if (hoverTimer) { clearTimeout(hoverTimer); hoverTimer = null; }
+  hoverTarget = null;
+}
+
+function clearDragArtifacts() {
+  clearHoverIntent();
+  if (dragPlaceholderEl?.parentElement) dragPlaceholderEl.remove();
+  dragPlaceholderEl = null;
+  drag = null;
 }
 
 
-// Тоггл режима редактирования
-const editToggle = document.getElementById('editToggle');
-if (editToggle) {
-  editToggle.addEventListener('click', () => {
-    editMode = !editMode;
-    editToggle.classList.toggle('active', editMode);
-    editToggle.textContent = editMode ? '✓' : '✎';
-    editToggle.title = editMode
-      ? ('{% if session.get("language","ru")=="ru" %}Готово{% else %}Done{% endif %}')
-      : ('{% if session.get("language","ru")=="ru" %}Редактировать{% else %}Edit{% endif %}');
-    renderFromModel(); // перерисуем с/без contenteditable и урн
+function makeInlineEditable(el, onCommit) {
+  el.setAttribute('contenteditable', 'true');
+  el.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+  });
+  el.addEventListener('blur', () => {
+    const val = el.textContent.trim();
+    onCommit(val);
   });
 }
+
+async function addLesson(topicIndex) {
+  const t = courseModel[topicIndex];
+  if (!t) return;
+  const draftLesson = { id: nextLessonId++, title: getDraftTitle(), draft: true };
+  t.lessons.push(draftLesson);
+  renderFromModel();
+
+  // после рендера — фокус на только что добавленном уроке
+  setTimeout(() => {
+    const wrap = document.querySelector(`.topic-block[data-topic-index="${topicIndex}"] .topic-lessons`);
+    if (!wrap) return;
+    const cards = wrap.querySelectorAll('.lesson-card');
+    const card = cards[cards.length - 1];
+    const titleEl = card?.querySelector('.lesson-title');
+    if (titleEl) {
+      try {
+        const range = document.createRange();
+        range.selectNodeContents(titleEl);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        titleEl.focus();
+      } catch (_) {
+        titleEl.focus();
+      }
+    }
+  }, 0);
+}
+
+
+
+
+
+
+
 
 
 
@@ -959,6 +1428,27 @@ async function sendChat(){
     addMsg(false, '{% if session.get("language","ru")=="ru" %}Ошибка сервера. Попробуйте позже.{% else %}Server error. Try again later.{% endif %}');
   }
 }
+
+// === Helpers: язык и дефолтное имя чернового урока ===
+function uiIsRU() {
+  return (document.getElementById('lang-text')?.textContent || 'EN').trim().toUpperCase() === 'RU';
+}
+function getDraftTitle() {
+  return uiIsRU() ? 'Новый урок' : 'New lesson';
+}
+
+
+function purgeDraftsAndEmptyTopics() {
+  const defaultTitle = getDraftTitle();
+  courseModel.forEach(t => {
+    t.lessons = t.lessons.filter(l => !l.draft && l.title.trim() !== defaultTitle);
+  });
+  // удалить темы, у которых не осталось уроков
+  for (let i = courseModel.length - 1; i >= 0; i--) {
+    if (!courseModel[i].lessons.length) courseModel.splice(i, 1);
+  }
+}
+
 
 
   </script>

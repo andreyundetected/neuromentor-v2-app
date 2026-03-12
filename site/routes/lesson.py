@@ -19,15 +19,15 @@ async def lesson_call(user_id, course_idx):
     if not user or user.id != session['user_id']:
         return "Доступ запрещен", 403
     
-    lesson_topic = user.course_info[course_idx]["course_settings"].get("lesson")
+    lesson_topic = user.courses_info[course_idx]["course_settings"].get("lesson")
     if not lesson_topic:
         
-        lesson_topic = user.course_info[course_idx]["course"]["4_structure"][0]["3_lessons"][0]["name"]
-        user.course_info[course_idx]["course_settings"]["lesson"] = lesson_topic
-        await User.filter(id=user.id).update(course_info=user.course_info)
+        lesson_topic = user.courses_info[course_idx]["course"]["4_structure"][0]["3_lessons"][0]["name"]
+        user.courses_info[course_idx]["course_settings"]["lesson"] = lesson_topic
+        await User.filter(id=user.id).update(course_info=user.courses_info)
 
     paid_status = False
-    for topic in user.course_info[course_idx]["course"]["4_structure"]:
+    for topic in user.courses_info[course_idx]["course"]["4_structure"]:
         for lesson in topic["3_lessons"]:
             if lesson["name"] == lesson_topic:
                 paid_status = lesson.get("paid", False)
@@ -108,22 +108,22 @@ async def lesson_call(user_id, course_idx):
             except Exception as e:
                 print("[LESSON_CALL] Error transcribing audio:", e)
 
-        if len(user.course_info) <= course_idx:
+        if len(user.courses_info) <= course_idx:
             return "Course not found", 404
 
-        if not user.course_info[course_idx]["course_settings"].get("lesson"):
-            user.course_info[course_idx]["course_settings"]["lesson"] = (
-                user.course_info[course_idx]["course"]["4_structure"][0]["3_lessons"][0]["name"]
+        if not user.courses_info[course_idx]["course_settings"].get("lesson"):
+            user.courses_info[course_idx]["course_settings"]["lesson"] = (
+                user.courses_info[course_idx]["course"]["4_structure"][0]["3_lessons"][0]["name"]
             )
-            await User.filter(id=user.id).update(course_info=user.course_info)
+            await User.filter(id=user.id).update(course_info=user.courses_info)
 
-        lesson_topic = user.course_info[course_idx]["course_settings"].get("lesson")
+        lesson_topic = user.courses_info[course_idx]["course_settings"].get("lesson")
 
         if lesson_plan == "":
             payload = {
                 "0_content": {
                     "1_user_info": user.user_info,
-                    "2_course_info": user.course_info[course_idx]["course"],
+                    "2_course_info": user.courses_info[course_idx]["course"],
                     "3_lesson_topic": lesson_topic,
                 },
                 "1_type": "lesson_plan"
@@ -140,7 +140,7 @@ async def lesson_call(user_id, course_idx):
                 "0_conversation_call": conversation_call,   
                 "0_conversation": conversation,   
                 "1_user_info": user.user_info,
-                "2_course_info": user.course_info[course_idx]["course"],
+                "2_course_info": user.courses_info[course_idx]["course"],
                 "3_lesson_topic": lesson_topic,
                 "4_progress": progress,
                 "5_presentation_history": presentation_history,
@@ -222,7 +222,7 @@ async def lesson_call(user_id, course_idx):
     
     session['lesson_plan'] = ""
     session['progress'] = 0
-    lesson_title = user.course_info[course_idx]["course_settings"].get("lesson", "")
+    lesson_title = user.courses_info[course_idx]["course_settings"].get("lesson", "")
     return await render_template(
         'lesson_call.html',
         user=user,
