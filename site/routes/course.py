@@ -120,19 +120,19 @@ async def course_select(user_id, course_idx):
     if not user or user.id != session['user_id']:
         return "Доступ запрещен", 403
 
-    if course_idx >= len(user.courses_info):
+    if course_idx >= len(user.course_info):
         return "Курс не найден", 404
 
-    course = user.courses_info[course_idx]["course"]
+    course = user.course_info[course_idx]["course"]
 
     if "4_structure" not in course or not course["4_structure"]:
         return redirect(url_for('course.course_creation', user_id=user_id, course_idx=course_idx))
 
-    if "lesson" not in user.courses_info[course_idx]["course_settings"]:
+    if "lesson" not in user.course_info[course_idx]["course_settings"]:
         try:
             first_lesson = course["4_structure"][0]["3_lessons"][0]["name"]
-            user.courses_info[course_idx]["course_settings"]["lesson"] = first_lesson
-            await User.filter(id=user.id).update(course_info=user.courses_info)
+            user.course_info[course_idx]["course_settings"]["lesson"] = first_lesson
+            await User.filter(id=user.id).update(course_info=user.course_info)
         except (IndexError, KeyError):
             pass
 
@@ -140,9 +140,9 @@ async def course_select(user_id, course_idx):
         for i, lesson in enumerate(topic["3_lessons"]):
             if "paid" not in lesson:
                 lesson["paid"] = (topic == course["4_structure"][0] and i == 0)
-    await User.filter(id=user.id).update(course_info=user.courses_info)
+    await User.filter(id=user.id).update(course_info=user.course_info)
 
-    next_lesson = user.courses_info[course_idx]["course_settings"].get("lesson")
+    next_lesson = user.course_info[course_idx]["course_settings"].get("lesson")
     next_lesson_paid = False
     if next_lesson:
         for topic in course["4_structure"]:
@@ -167,7 +167,7 @@ async def course_select(user_id, course_idx):
                         if lesson["name"] == next_lesson:
                             lesson["paid"] = True
                             break
-                await User.filter(id=user.id).update(course_info=user.courses_info)
+                await User.filter(id=user.id).update(course_info=user.course_info)
                 return redirect(url_for('lesson.lesson_call', user_id=user_id, course_idx=course_idx))
             else:
                 total_lessons = sum(len(t["3_lessons"]) for t in course["4_structure"])
@@ -286,11 +286,11 @@ async def start_recommendation(recommendation_idx):
     base_json = recommendation.get("base_json", {})
     start_message = recommendation.get("start_message", "Welcome to your recommended course!")
 
-    if not user.courses_info:
-        user.courses_info = []
+    if not user.course_info:
+        user.course_info = []
     
-    course_idx = len(user.courses_info)
-    user.courses_info.append({"course": base_json, "course_settings": {}})
-    await User.filter(id=user.id).update(course_info=user.courses_info)
+    course_idx = len(user.course_info)
+    user.course_info.append({"course": base_json, "course_settings": {}})
+    await User.filter(id=user.id).update(course_info=user.course_info)
 
     return redirect(url_for('course.course_creation', user_id=user.id, course_idx=course_idx, start_message=start_message))
