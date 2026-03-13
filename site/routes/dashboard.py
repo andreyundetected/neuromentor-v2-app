@@ -56,10 +56,10 @@ async def delete_course(course_idx):
     if isinstance(user, Response):
         return user
 
-    if course_idx < 0 or course_idx >= len(user.courses_info):
+    if course_idx < 0 or course_idx >= len(user.course_info):
         return "Course not found", 404
 
-    user.courses_info.pop(course_idx)
+    user.course_info.pop(course_idx)
     await user.save()
 
     return redirect(url_for('dashboard.library'))
