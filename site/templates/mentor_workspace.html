@@ -586,6 +586,81 @@
   </div>
 
   <script>
+// --- ДАННЫЕ С СЕРВЕРА (если есть сохранённый ментор/курс)
+const initialMentorData = {{ mentor_data|tojson if mentor_data is not none else 'null' }};
+
+// Утилита RU/EN (у тебя уже была, если нет — простая версия)
+function uiIsRU() {
+  const langUI = (document.getElementById('lang-text')?.textContent || 'EN').trim().toUpperCase();
+  return langUI === 'RU';
+}
+
+// Заполнение формы/состояния/уроков из initialMentorData
+function prefillFromMentor(md) {
+  if (!md || typeof md !== 'object') return;
+
+  const m = md.mentor || {};
+  const c = md.course || [];
+
+  // 1) Имя/стиль
+  if (m.name) { fName.value = m.name; }
+  if (m.style) { fStyle.value = m.style; }
+
+  // 2) Специализации -> чипсы
+  if (Array.isArray(m.specializations)) {
+    specs = m.specializations.slice();
+    redrawChips();
+  }
+
+  // 3) Язык
+  if (m.language) {
+    langVal = m.language;
+    const btn = document.getElementById('langSelectBtn');
+    if (btn) btn.textContent = (
+      m.language === 'ru' ? 'Русский' :
+      m.language === 'en' ? 'English' : m.language
+    );
+  }
+
+  // 4) Голос
+  if (m.voice) {
+    voiceVal = m.voice;
+    const vbtn = document.getElementById('voiceSelectBtn');
+    if (vbtn) vbtn.textContent = m.voice;
+  }
+
+  // 5) Аватар
+  if (m.avatar) {
+    chosenAvatar = m.avatar; // у тебя строковый id/метка
+    applyChosenAvatar();
+  }
+
+  // 6) Имя в шапке чата
+  mentorNameEl.textContent = m.name || '—';
+
+  // 7) Разблокировать чат сразу
+  chatCard.classList.remove('chat-disabled');
+  chatCard.classList.add('chat-active');
+  chatInput.disabled = false;
+  chatSend.disabled = false;
+
+  // 8) Рендер уроков
+  courseModel = modelFromCourseInfo(c);
+  renderFromModel();
+
+  // 9) Без авто‑приветствия — но можно добавить мягкий hint
+  // addMsg(false, uiIsRU() ? 'Загружен сохранённый план.' : 'Loaded saved plan.');
+}
+
+// Авто‑инициализация после определения функций и переменных
+document.addEventListener('DOMContentLoaded', () => {
+  if (initialMentorData) {
+    prefillFromMentor(initialMentorData);
+  }
+});
+</script>
+
+  <script>
     // ===== Header language dropdown =====
     const langBtn = document.getElementById('lang-btn');
     const langDd = document.getElementById('lang-dropdown');
@@ -825,21 +900,7 @@
         }
       }
     }
-    // Постоянно активный подсвеченный чат
-chatCard.classList.remove('chat-disabled');
-chatCard.classList.add('chat-active');
 
-// на всякий случай снимаем disabled
-chatInput.disabled = false;
-chatSend.disabled  = false;
-
-// Однократно показываем базовое приветствие (без API)
-if (!firstMessageShown) {
-  addMsg(false, i18nText('hello'));
-  chatInput.placeholder = i18nText('placeholder');
-  chatSend.textContent  = i18nText('send');
-  firstMessageShown = true;
-}
 
 
     fName.addEventListener('input', validateAll);

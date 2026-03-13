@@ -41,11 +41,25 @@ async def workspace(user_id: int):
     if not user:
         return redirect(url_for("auth.login"))
 
+    mentor_data = None
+    try:
+        if isinstance(user.course_info, list) and user.course_info:
+            
+            root = user.course_info[0] or {}
+            if isinstance(root, dict) and ("course" in root or "mentor" in root):
+                mentor_data = {
+                    "course": root.get("course") or [],
+                    "mentor": root.get("mentor") or {},
+                    "course_settings": root.get("course_settings") or {},
+                }
+    except Exception:
+        mentor_data = None
+
     return await render_template(
         "mentor_workspace.html",
         user=user,
         mentor_id=None,
-        mentor_data=None,
+        mentor_data=mentor_data,
         lessons=[],     
         is_new=True,
         avatar_options=AVATAR_OPTIONS,

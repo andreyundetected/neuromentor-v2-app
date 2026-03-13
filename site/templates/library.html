@@ -89,19 +89,19 @@
       </div>
       <!-- Существующие курсы -->
       {% for course in courses_with_indices %}
-      <div class="course-card" onclick="window.location.href=&quot;{{ url_for('course.course_select', user_id=user.id, course_idx=course.index) }}&quot;">
-        <div class="course-avatar" data-categories="{{ course.course['course']['5_categories'] | join(', ') }}"></div>
-        <h2>{{ course.course["course"]["3_name"] or "Untitled" }}</h2>
+      <div class="course-card" onclick="window.location.href=&quot;{{ url_for('mentor_workspace.workspace', user_id=user.id, course_idx=course.index) }}&quot;">
+        <div class="course-avatar" data-categories="{{ course.course['mentor']['name'] | join(', ') }}"></div>
+        <h2>{{ course.course["mentor"]["3_name"] or "Untitled" }}</h2>
         {% if session.get('language', 'ru') == 'ru' %}
-          <p>Тема: {{ course.course["course"]["0_topic"] or "Not specified" }}</p>
+          <p></p>
         {% elif session.get('language', 'ru') == 'en' %}
-          <p>Topic: {{ course.course["course"]["0_topic"] or "Not specified" }}</p>
+          <p></p>
         {% endif %}
         <p class="course-categories">
           {% if session.get('language', 'ru') == 'ru' %}
-            Категории: {{ course.course["course"]["5_categories"] | join(', ') or "Not specified" }}
+            {{ course.course["mentor"]["specializations"] | join(', ') or "Not specified" }}
           {% elif session.get('language', 'ru') == 'en' %}
-            Categories: {{ course.course["course"]["5_categories"] | join(', ') or "Not specified" }}
+            {{ course.course["mentor"]["specializations"] | join(', ') or "Not specified" }}
           {% endif %}
         </p>
       </div>      
