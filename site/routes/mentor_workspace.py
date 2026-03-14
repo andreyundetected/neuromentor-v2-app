@@ -25,7 +25,15 @@ async def workspace_entry():
     session_user_id = session.get("user_id")
     if not session_user_id:
         return redirect(url_for("auth.login"))
-    return redirect(url_for("mentor_workspace.workspace", user_id=session_user_id))
+
+    user = await User.get_or_none(id=session_user_id)
+    if not user:
+        return redirect(url_for("auth.login"))
+
+    courses = user.course_info if isinstance(user.course_info, list) else []
+    course_idx = len(courses or [])
+
+    return redirect(url_for("mentor_workspace.workspace", user_id=session_user_id, course_idx=course_idx))
 
 @mentor_workspace.route("/mentor_workspace/<int:user_id>", methods=["GET"])
 @mentor_workspace.route("/mentor_workspace/<int:user_id>/", methods=["GET"])
@@ -152,6 +160,15 @@ async def mw_status_poll(user_id: int):
     if not data:
         return jsonify({"error": "no json"}), 400
 
+    course_idx = request.args.get("course_idx", type=int)
+    if course_idx is None:
+        course_idx = 0
+
+    if not isinstance(user.course_info, list):
+        user.course_info = []
+    while len(user.course_info) <= course_idx:
+        user.course_info.append({"course": [], "mentor": {}, "course_settings": {}})
+
     payload = data.get("status_payload")
     if not payload:
         return jsonify({"error": "no payload"}), 400
@@ -159,7 +176,6 @@ async def mw_status_poll(user_id: int):
     response = await send_request_to_api(payload)
 
     state = data.get("state") or {}
-
     mentor_prefs = {
         "name": state.get("name"),
         "language": state.get("language"),
@@ -170,12 +186,8 @@ async def mw_status_poll(user_id: int):
     }
 
     if "course_info" in response:
-        if not isinstance(user.course_info, list):
-            user.course_info = []
-        if not user.course_info:
-            user.course_info.append({"course": {}, "mentor": {}, "course_settings": {}})
-        user.course_info[0]["course"] = response["course_info"]
-        user.course_info[0]["mentor"] = mentor_prefs
+        user.course_info[course_idx]["course"] = response["course_info"]
+        user.course_info[course_idx]["mentor"] = mentor_prefs
         await User.filter(id=user.id).update(course_info=user.course_info)
 
     return jsonify({

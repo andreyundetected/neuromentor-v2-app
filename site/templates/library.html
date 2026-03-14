@@ -77,7 +77,7 @@
     <!-- Сетка курсов -->
     <div class="course-grid">
       <!-- Карточка для создания нового курса -->
-      <div class="course-card add-course-card" onclick="checkInterview('{{ new_course_url }}')">
+      <div class="course-card add-course-card" onclick="location.href='/mentor_workspace'">
         <img src="/static/images/add_icon.jpg" alt="Create a course">
         {% if session.get('language', 'ru') == 'ru' %}
           <h2>Создать новый курс</h2>
@@ -90,8 +90,8 @@
       <!-- Существующие курсы -->
       {% for course in courses_with_indices %}
       <div class="course-card" onclick="window.location.href=&quot;{{ url_for('mentor_workspace.workspace', user_id=user.id, course_idx=course.index) }}&quot;">
-        <div class="course-avatar" data-categories="{{ course.course['mentor']['name'] | join(', ') }}"></div>
-        <h2>{{ course.course["mentor"]["3_name"] or "Untitled" }}</h2>
+        <div class="course-avatar" data-categories="{{ course.course['mentor']['specializations'] | join(', ') }}"></div>
+        <h2>{{ course.course["mentor"]["name"] or "Untitled" }}</h2>
         {% if session.get('language', 'ru') == 'ru' %}
           <p></p>
         {% elif session.get('language', 'ru') == 'en' %}
