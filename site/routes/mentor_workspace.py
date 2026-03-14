@@ -337,3 +337,69 @@ async def mw_upsert_structure(user_id: int):
     await User.filter(id=user.id).update(course_info=user.course_info)
 
     return jsonify({"ok": True, "course_info": course_info})
+
+@mentor_workspace.route('/mentor_workspace/<int:user_id>/lesson', methods=['GET'])
+async def open_lesson(user_id: int):
+    
+    if 'user_id' not in session or session['user_id'] != user_id:
+        return redirect(url_for("auth.login"))
+
+    course_idx = request.args.get("course_idx", type=int)
+    topic_idx  = request.args.get("topic_idx",  type=int)
+    lesson_idx = request.args.get("lesson_idx", type=int)
+
+    if course_idx is None or topic_idx is None or lesson_idx is None:
+        
+        return redirect(url_for("mentor_workspace.workspace", user_id=user_id, course_idx=course_idx or 0))
+
+    user = await User.get_or_none(id=user_id)
+    if not user:
+        return redirect(url_for("auth.login"))
+
+    courses = user.course_info if isinstance(user.course_info, list) else []
+    if not (0 <= course_idx < len(courses)):
+        
+        return redirect(url_for("mentor_workspace.workspace", user_id=user_id, course_idx=len(courses)))
+
+    course_obj = courses[course_idx] or {}
+    topics = course_obj.get("course") or []   
+
+    if not (0 <= topic_idx < len(topics)):
+        return redirect(url_for("mentor_workspace.workspace", user_id=user_id, course_idx=course_idx))
+
+    topic_title = list(topics[topic_idx].keys())[0]
+    lesson_list = topics[topic_idx].get(topic_title) or []
+
+    if not (0 <= lesson_idx < len(lesson_list)):
+        return redirect(url_for("mentor_workspace.workspace", user_id=user_id, course_idx=course_idx))
+
+    lesson_title = lesson_list[lesson_idx]
+    mentor = course_obj.get("mentor") or {}
+
+    lesson_id = f"{course_idx}-{topic_idx}-{lesson_idx}"
+
+    legacy = {
+        "3_name": mentor.get("name") or "Mentor",
+        "0_topic": topic_title,
+        "5_categories": mentor.get("specializations") or [],
+        
+        "4_structure": [
+            {"0_topic": t_title, "3_lessons": [{"name": l} for l in (topics[i][t_title])]}
+            for i, t in enumerate(topics)
+            for t_title in t.keys()
+        ],
+    }
+
+    lesson_ctx = {
+        "course_idx": course_idx,
+        "topic_idx": topic_idx,
+        "lesson_idx": lesson_idx,
+        "lesson_id": lesson_id,
+        "topic_title": topic_title,
+        "lesson_title": lesson_title,
+        "mentor": mentor,
+        "course": topics,   
+        "legacy": legacy,   
+    }
+
+    return await render_template("lesson.html", user=user, **lesson_ctx)

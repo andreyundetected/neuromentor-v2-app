@@ -586,6 +586,14 @@
   </div>
 
   <script>
+    function openLesson(topicIdx, lessonIdx) {
+      // course_idx прокидывается из бэкенда в шаблон
+      const url = `/mentor_workspace/{{ user.id }}/lesson?course_idx={{ course_idx|default(0, true) }}&topic_idx=${topicIdx}&lesson_idx=${lessonIdx}`;
+      window.location.href = url;
+    }
+
+  </script>
+  <script>
 // --- ДАННЫЕ С СЕРВЕРА (если есть сохранённый ментор/курс)
 const initialMentorData = {{ mentor_data|tojson if mentor_data is not none else 'null' }};
 
@@ -1044,12 +1052,19 @@ function renderFromModel() {
         const handle = document.createElement('span');
         handle.textContent = '⋮⋮';
         handle.className = 'drag-handle';
-        handle.title = uiIsRU() ? 'Перетащить урок' : 'Drag lesson';
+        handle.title = '{% if session.get("language","ru")=="ru" %}Перетащить урок{% else %}Drag lesson{% endif %}';
         handle.addEventListener('pointerdown', (e) => {
-          startLessonDrag(e, card, ti, li); // <- твой pointer‑drag хендлер
+          e.stopPropagation();               // ← важно: чтобы клик по карточке не стрелял
+          startLessonDrag(e, card, ti, li);
         });
         card.appendChild(handle);
+      } else {
+        // В не-редактируемом режиме кликабельна вся карточка
+        card.classList.add('clickable');
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', () => openLesson(ti, li));
       }
+
 
       // Название (inline‑edit в editMode)
       const titleEl = document.createElement('div');
