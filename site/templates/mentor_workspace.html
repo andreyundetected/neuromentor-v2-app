@@ -1193,11 +1193,13 @@ function renderStructure(courseInfo) {
 async function persistCourseModel() {
   try {
     const course_info = courseInfoFromModel(courseModel);
-    const res = await fetch('/mentor_workspace/{{ user.id }}/upsert_structure', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ course_info })
+    const res = await fetch('/mentor_workspace/{{ user.id }}/upsert_structure?course_idx={{ course_idx }}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ course_info })
     });
+
+
     const data = await res.json();
     if (Array.isArray(data.course_info)) {
       // если бэкенд нормализовал — перерисуем
@@ -1474,11 +1476,12 @@ async function sendChat(){
 
   try {
     const state = getMentorState();
-    const res = await fetch('/mentor_workspace/{{ user.id }}/chat', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ message: t, state })
+    const res = await fetch('/mentor_workspace/{{ user.id }}/chat?course_idx={{ course_idx }}', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ message: t, state })
     });
+
     const data = await res.json();
 
     if (data.response) addMsg(false, data.response);

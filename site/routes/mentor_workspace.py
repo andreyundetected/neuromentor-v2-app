@@ -33,7 +33,6 @@ async def workspace(user_id: int):
     session_user_id = session.get("user_id")
     if not session_user_id:
         return redirect(url_for("auth.login"))
-
     if session_user_id != user_id:
         return redirect(url_for("mentor_workspace.workspace", user_id=session_user_id))
 
@@ -41,33 +40,37 @@ async def workspace(user_id: int):
     if not user:
         return redirect(url_for("auth.login"))
 
+    course_idx = request.args.get("course_idx", type=int)
+
+    courses = user.course_info if isinstance(user.course_info, list) else []
+    total = len(courses)
+
+    if course_idx is None:
+        course_idx = total
+
     mentor_data = None
-    try:
-        if isinstance(user.course_info, list) and user.course_info:
-            
-            root = user.course_info[0] or {}
-            if isinstance(root, dict) and ("course" in root or "mentor" in root):
-                mentor_data = {
-                    "course": root.get("course") or [],
-                    "mentor": root.get("mentor") or {},
-                    "course_settings": root.get("course_settings") or {},
-                }
-    except Exception:
-        mentor_data = None
+    is_existing = 0 <= course_idx < total
+    if is_existing:
+        root = courses[course_idx] or {}
+        mentor_data = {
+            "course": root.get("course") or [],
+            "mentor": root.get("mentor") or {},
+            "course_settings": root.get("course_settings") or {},
+        }
 
     return await render_template(
         "mentor_workspace.html",
         user=user,
         mentor_id=None,
-        mentor_data=mentor_data,
-        lessons=[],     
-        is_new=True,
+        mentor_data=mentor_data,  
+        lessons=[],
+        is_new=not is_existing,
         avatar_options=AVATAR_OPTIONS,
+        course_idx=course_idx,     
     )
 
 @mentor_workspace.route('/mentor_workspace/<int:user_id>/chat', methods=['POST'])
 async def mw_chat(user_id: int):
-    
     if 'user_id' not in session or session['user_id'] != user_id:
         return jsonify({"error": "forbidden"}), 403
 
@@ -79,21 +82,26 @@ async def mw_chat(user_id: int):
     if not data:
         return jsonify({"error": "no json"}), 400
 
+    course_idx = request.args.get("course_idx", type=int)
+    if course_idx is None:
+        course_idx = 0
+
+    if not isinstance(user.course_info, list):
+        user.course_info = []
+    while len(user.course_info) <= course_idx:
+        user.course_info.append({"course": [], "mentor": {}, "course_settings": {}})
+
     message = (data.get("message") or "").strip()
-    state   = data.get("state") or {}  
+    state   = data.get("state") or {}
     is_intro = bool(data.get("intro"))
 
-    conv_key = f"mw_conv_{user_id}"
+    conv_key = f"mw_conv_{user_id}_{course_idx}"
     conversation = session.get(conv_key, [])
 
     if not is_intro and message:
         conversation.append({"role": "user", "content": message})
 
-    try:
-        current_course = user.course_info[0]["course"]
-    except Exception:
-        
-        current_course = []
+    current_course = user.course_info[course_idx].get("course") or []
 
     mentor_prefs = {
         "name": state.get("name"),
@@ -109,26 +117,19 @@ async def mw_chat(user_id: int):
             "0_conversation": conversation,
             "1_user_info": user.user_info,
             "2_course_info": current_course,
-            "3_mentor_prefs": mentor_prefs 
+            "3_mentor_prefs": mentor_prefs
         },
         "1_type": "course_creation"
     }
 
     response = await send_request_to_api(payload)
-    print("Payload:", payload)
-    print("Response:", response)
 
     if response.get("response"):
         conversation.append({"role": "manager", "content": response["response"]})
 
     if "course_info" in response:
-        
-        if not isinstance(user.course_info, list):
-            user.course_info = []
-        if not user.course_info:
-            user.course_info.append({"course": {}, "mentor": {}, "course_settings": {}})
-        user.course_info[0]["course"] = response["course_info"]
-        user.course_info[0]["mentor"] = mentor_prefs
+        user.course_info[course_idx]["course"] = response["course_info"]
+        user.course_info[course_idx]["mentor"] = mentor_prefs
         await User.filter(id=user.id).update(course_info=user.course_info)
 
     session[conv_key] = conversation
@@ -306,6 +307,10 @@ async def mw_upsert_structure(user_id: int):
     if not user:
         return jsonify({"error": "no user"}), 404
 
+    course_idx = request.args.get("course_idx", type=int)
+    if course_idx is None:
+        course_idx = 0
+
     data = await request.get_json()
     course_info = data.get("course_info")
     if not isinstance(course_info, list):
@@ -313,10 +318,10 @@ async def mw_upsert_structure(user_id: int):
 
     if not isinstance(user.course_info, list):
         user.course_info = []
-    if not user.course_info:
-        user.course_info.append({"course": {}, "mentor": {}, "course_settings": {}})
+    while len(user.course_info) <= course_idx:
+        user.course_info.append({"course": [], "mentor": {}, "course_settings": {}})
 
-    user.course_info[0]["course"] = course_info
+    user.course_info[course_idx]["course"] = course_info
     await User.filter(id=user.id).update(course_info=user.course_info)
 
     return jsonify({"ok": True, "course_info": course_info})
