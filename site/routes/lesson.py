@@ -8,9 +8,8 @@ from services.transcription import transcribe_audio_with_prepare_data
 
 lesson_bp = Blueprint('lesson', __name__)
 
-@lesson_bp.route('/course_select/<int:user_id>/<int:course_idx>/lesson_call', methods=['GET', 'POST'])
-async def lesson_call(user_id, course_idx):
-
+@lesson_bp.route('/lesson_call/<int:user_id>/<int:mentor_idx>/<int:lesson_id>', methods=['GET', 'POST'])
+async def lesson_call(user_id, mentor_idx, lesson_id):
     user = await require_login()
     if isinstance(user, Response):
         return user
@@ -18,26 +17,31 @@ async def lesson_call(user_id, course_idx):
 
     if not user or user.id != session['user_id']:
         return "Доступ запрещен", 403
-    
-    lesson_topic = user.course_info[course_idx]["course_settings"].get("lesson")
-    if not lesson_topic:
-        
-        lesson_topic = user.course_info[course_idx]["course"]["4_structure"][0]["3_lessons"][0]["name"]
-        user.course_info[course_idx]["course_settings"]["lesson"] = lesson_topic
-        await User.filter(id=user.id).update(course_info=user.course_info)
 
-    paid_status = False
-    for topic in user.course_info[course_idx]["course"]["4_structure"]:
-        for lesson in topic["3_lessons"]:
-            if lesson["name"] == lesson_topic:
-                paid_status = lesson.get("paid", False)
-                break
-        if paid_status:
-            break
+    courses = user.course_info if isinstance(user.course_info, list) else []
+    if not (0 <= mentor_idx < len(courses)):
+        return redirect(url_for('dashboard.library'))
+
+    course_obj   = courses[mentor_idx] or {}
+    course_struct = course_obj.get("course") or []          
+    course_sets   = course_obj.get("course_settings") or {}
+
+    flat = _flatten_course(course_struct)
+    if not (0 <= lesson_id < len(flat)):
+        
+        return redirect(url_for('mentor_workspace.workspace', user_id=user_id, mentor_idx=mentor_idx))
+
+    topic_idx, lesson_idx, topic_title, lesson_title = flat[lesson_id]
+
+    course_sets["lesson"] = lesson_title
+    user.course_info[mentor_idx]["course_settings"] = course_sets
+    await User.filter(id=user.id).update(course_info=user.course_info)
+
+    paid_status = True
 
     if not paid_status:
         
-        return redirect(url_for('course.course_select', user_id=user_id, course_idx=course_idx))
+        return redirect(url_for('course.course_select', user_id=user_id, mentor_idx=mentor_idx))
 
     conversation_chat = session.get('conversation_chat', [])
     conversation_call = session.get('conversation_call', [])
@@ -108,23 +112,15 @@ async def lesson_call(user_id, course_idx):
             except Exception as e:
                 print("[LESSON_CALL] Error transcribing audio:", e)
 
-        if len(user.course_info) <= course_idx:
+        if len(user.course_info) < mentor_idx:
             return "Course not found", 404
 
-        if not user.course_info[course_idx]["course_settings"].get("lesson"):
-            user.course_info[course_idx]["course_settings"]["lesson"] = (
-                user.course_info[course_idx]["course"]["4_structure"][0]["3_lessons"][0]["name"]
-            )
-            await User.filter(id=user.id).update(course_info=user.course_info)
-
-        lesson_topic = user.course_info[course_idx]["course_settings"].get("lesson")
-
-        if lesson_plan == "":
+        if lesson_plan == "" and False:
             payload = {
                 "0_content": {
                     "1_user_info": user.user_info,
-                    "2_course_info": user.course_info[course_idx]["course"],
-                    "3_lesson_topic": lesson_topic,
+                    "2_course_info": user.course_info[mentor_idx]["course"],
+                    "3_lesson_topic": topic_title,
                 },
                 "1_type": "lesson_plan"
             }
@@ -140,8 +136,8 @@ async def lesson_call(user_id, course_idx):
                 "0_conversation_call": conversation_call,   
                 "0_conversation": conversation,   
                 "1_user_info": user.user_info,
-                "2_course_info": user.course_info[course_idx]["course"],
-                "3_lesson_topic": lesson_topic,
+                "2_course_info": user.course_info[mentor_idx]["course"],
+                "3_lesson_topic": topic_title,
                 "4_progress": progress,
                 "5_presentation_history": presentation_history,
                 "6_lesson_plan": lesson_plan,
@@ -222,12 +218,23 @@ async def lesson_call(user_id, course_idx):
     
     session['lesson_plan'] = ""
     session['progress'] = 0
-    lesson_title = user.course_info[course_idx]["course_settings"].get("lesson", "")
+    lesson_title = user.course_info[mentor_idx]["course_settings"].get("lesson", "")
     return await render_template(
         'lesson_call.html',
         user=user,
-        course_idx=course_idx,
+        mentor_idx=mentor_idx,
         username=user.username,
         lesson_title=lesson_title,
         transcript_history=conversation_call
     )
+
+def _flatten_course(course_struct):
+    out = []
+    for t_idx, t in enumerate(course_struct or []):
+        topic_title = next(iter(t.keys()), None)
+        if topic_title is None:
+            continue
+        lessons = t.get(topic_title) or []
+        for l_idx, title in enumerate(lessons):
+            out.append((t_idx, l_idx, topic_title, title))
+    return out

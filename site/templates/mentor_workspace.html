@@ -586,11 +586,28 @@
   </div>
 
   <script>
-    function openLesson(topicIdx, lessonIdx) {
-      // course_idx прокидывается из бэкенда в шаблон
-      const url = `/mentor_workspace/{{ user.id }}/lesson?course_idx={{ course_idx|default(0, true) }}&topic_idx=${topicIdx}&lesson_idx=${lessonIdx}`;
-      window.location.href = url;
+  // Посчитать плоский индекс урока внутри курса по (topicIdx, lessonIdx)
+  function flatLessonIndex(topicIdx, lessonIdx) {
+    let idx = 0;
+    for (let i = 0; i < courseModel.length; i++) {
+      const len = (courseModel[i].lessons || []).length;
+      if (i === topicIdx) {
+        idx += lessonIdx;
+        break;
+      }
+      idx += len;
     }
+    return idx;
+  }
+  
+  // Переход на новый URL урока
+  function goToLesson(topicIdx, lessonIdx) {
+    const mentorIdx = {{ course_idx|default(0, true) }}; // если ты уже прокидываешь course_idx в шаблон; иначе 0
+    const lessonId  = flatLessonIndex(topicIdx, lessonIdx);
+    // новый маршрут
+    window.location.href = `/lesson_call/{{ user.id }}/${mentorIdx}/${lessonId}`;
+  }
+
 
   </script>
   <script>
@@ -1058,12 +1075,11 @@ function renderFromModel() {
           startLessonDrag(e, card, ti, li);
         });
         card.appendChild(handle);
-      } else {
-        // В не-редактируемом режиме кликабельна вся карточка
-        card.classList.add('clickable');
-        card.style.cursor = 'pointer';
-        card.addEventListener('click', () => openLesson(ti, li));
-      }
+        } else {
+          card.classList.add('clickable');
+          card.style.cursor = 'pointer';
+          card.addEventListener('click', () => goToLesson(ti, li));
+        }
 
 
       // Название (inline‑edit в editMode)
