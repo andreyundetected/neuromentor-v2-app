@@ -97,15 +97,40 @@
                   radial-gradient(200px 200px at 80% 70%, rgba(255,255,255,.25), transparent 60%);
       pointer-events:none;
     }
-    .avatar-card .placeholder {
-      width: 70%;
-      aspect-ratio: 1/1;
-      border-radius: 16px;
-      border: 2px dashed rgba(255,255,255,.8);
-      display:flex; align-items:center; justify-content:center;
-      color:#fff; font-weight:800; font-size:14px; text-transform:uppercase; letter-spacing:.08em;
-      backdrop-filter: blur(1px);
-    }
+.avatar-card .placeholder {
+  width: 80%;
+  aspect-ratio: 1/1;
+  border-radius: 20px;
+  border: 3px dashed rgba(255,255,255,.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 900;
+  font-size: 20px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  backdrop-filter: blur(1px);
+  animation: avatarAppear 0.5s ease both;
+}
+.avatar-card:hover .placeholder {
+  transform: scale(1.05);
+  transition: transform 0.25s ease;
+}
+@keyframes avatarAppear {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.95);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.02);
+  }
+  100% {
+    transform: none;
+  }
+}
+
     .avatar-hint {
       position:absolute; bottom:12px; left:12px;
       background: rgba(255,255,255,.85);
@@ -124,12 +149,81 @@
     .modal-grid {
       display:grid; grid-template-columns: repeat(5, 1fr); gap:12px; max-height:50vh; overflow:auto;
     }
-    .avatar-tile {
-      aspect-ratio:1/1; border-radius:12px; background:#eef5ff; border:1px solid #d8e6ff; cursor:pointer;
-      display:flex; align-items:center; justify-content:center; font-weight:700; color:#2b4ea2;
-      transition:.2s transform, .2s box-shadow, .2s background;
-    }
+.avatar-tile {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 14px;
+  background: #eef5ff;
+  border: 1px solid #d8e6ff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #2b4ea2;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, opacity 0.2s ease;
+  animation: avatarIn 0.4s ease both;
+}
+.avatar-tile img {
+  max-width: 90%;
+  max-height: 90%;
+  transition: transform 0.2s ease;
+}
+.avatar-tile:hover img {
+  transform: scale(1.05);
+}
+@keyframes avatarIn {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.95);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.02);
+  }
+  100% {
+    transform: none;
+  }
+}
     .avatar-tile:hover { transform: translateY(-2px); box-shadow:0 6px 16px rgba(30,107,255,.18); background:#e6f0ff; }
+
+    /* Когда в placeholder реально вставлен аватар — делаем контейнер чуть больше и убираем пунктир */
+.avatar-card .placeholder.has-avatar {
+  width: 92%;                 /* был 80% — теперь чуть крупнее */
+  border: none;               /* убираем пунктир вокруг реального аватара */
+  background: transparent;
+  padding: 0;
+}
+
+/* Сам аватар на основной странице: большой, анимация выезда снизу + fade-in */
+.avatar-card .main-avatar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;        /* PNG без фона аккуратно впишется */
+  transform-origin: 50% 100%; /* точка анимации — снизу по центру */
+  animation: avatarLift .50s cubic-bezier(.22,.75,.25,1) both;
+  will-change: transform, opacity;
+}
+
+/* Ключевые кадры «вылез снизу и проявился» */
+@keyframes avatarLift {
+  0%   { opacity: 0; transform: translateY(28px) scale(.94); }
+  60%  { opacity: 1; transform: translateY(-3px) scale(1.04); }
+  100% { transform: none; }
+}
+
+.avatar-card::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 18%;
+  pointer-events: none;
+  background: linear-gradient(to top, rgba(79,168,255,.10), transparent);
+}
+
 
     /* ===== Form panel (каждое поле шире аватара ~1.5x) ===== */
     .form-card {
@@ -839,21 +933,18 @@ function openAvatarModal(){
     for (let i = 1; i <= 15; i++) {
       const t = document.createElement('div');
       t.className = 'avatar-tile';
+      t.style.animationDelay = `${i * 40}ms`;  // stagger эффект
 
-      // создаём img-элемент с fallback
       const img = document.createElement('img');
       img.src = `/static/avatars/${i}/base.png`;
       img.alt = `Avatar ${i}`;
-      img.style.maxWidth = '80%';
-      img.style.maxHeight = '80%';
       img.onerror = () => {
-        img.remove(); // если base.png не найден — удаляем картинку
-        t.textContent = `A${i}`; // показываем текст как раньше
+        img.remove();
+        t.textContent = `A${i}`;
       };
 
       t.appendChild(img);
 
-      // выбор аватара
       t.addEventListener('click', () => {
         chosenAvatar = `A${i}`;
         applyChosenAvatar();
@@ -866,14 +957,41 @@ function openAvatarModal(){
   }
   avatarModal.style.display='flex';
 }
-function applyChosenAvatar(){
-  avatarCard.style.background = 'linear-gradient(145deg, #9fd0ff, #4fa8ff)';
+
+function applyChosenAvatar() {
   const placeholder = avatarCard.querySelector('.placeholder');
-  if (placeholder) {
-    placeholder.innerHTML = `<img src="/static/avatars/${chosenAvatar.slice(1)}/base.png" style="max-width:90%; max-height:90%;" onerror="this.parentNode.textContent='${chosenAvatar}'">`;
-  }
-  document.getElementById('mentorBadge').textContent = chosenAvatar[0] || 'M';
+  if (!placeholder) return;
+
+  // Фон карточки можно оставить как у тебя
+  avatarCard.style.background = 'linear-gradient(145deg, #9fd0ff, #4fa8ff)';
+
+  // Готовим контейнер под реальное изображение
+  placeholder.classList.add('has-avatar');
+  placeholder.innerHTML = '';
+
+  const id = chosenAvatar ? chosenAvatar.slice(1) : null; // из "A7" -> "7"
+  const img = new Image();
+  img.className = 'main-avatar';
+  img.alt = id ? `Avatar ${id}` : 'Avatar';
+  img.src = id ? `/static/avatars/${id}/base.png` : '';
+
+  img.onload = () => {
+    // вставляем только после загрузки — анимация стартует на вставке
+    placeholder.innerHTML = '';
+    placeholder.appendChild(img);
+  };
+
+  img.onerror = () => {
+    // если файла нет — возвращаем текстовый плейсхолдер
+    placeholder.classList.remove('has-avatar');
+    placeholder.textContent = chosenAvatar || (uiIsRU() ? 'Аватар' : 'Avatar');
+  };
+
+  // Обновим бейдж в чате
+  const badge = document.getElementById('mentorBadge');
+  if (badge) badge.textContent = (chosenAvatar && chosenAvatar[0]) || 'M';
 }
+
 
     avatarCard.addEventListener('click', openAvatarModal);
     avatarClose.addEventListener('click', ()=> avatarModal.style.display='none');
