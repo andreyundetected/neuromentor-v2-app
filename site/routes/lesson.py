@@ -41,7 +41,7 @@ async def lesson_call(user_id, mentor_idx, lesson_id):
 
     if not paid_status:
         
-        return redirect(url_for('course.course_select', user_id=user_id, mentor_idx=mentor_idx))
+        return redirect(url_for('mentor_workspace.workspace', user_id=user_id, course_idx=mentor_idx))
 
     conversation_chat = session.get('conversation_chat', [])
     conversation_call = session.get('conversation_call', [])
@@ -137,12 +137,13 @@ async def lesson_call(user_id, mentor_idx, lesson_id):
                 "0_conversation": conversation,   
                 "1_user_info": user.user_info,
                 "2_course_info": user.course_info[mentor_idx]["course"],
+                "2_mentor_prefs": user.course_info[mentor_idx]["mentor"],
                 "3_lesson_topic": topic_title,
                 "4_progress": progress,
                 "5_presentation_history": presentation_history,
                 "6_lesson_plan": lesson_plan,
                 "6_lesson_blocks": lesson_blocks,
-                "7_mode": response_mode,
+                "7_lesson_info": {"topic": topic_title, "lesson_name": lesson_title},
             },
             "1_type": "lesson_call"
         }
@@ -223,6 +224,7 @@ async def lesson_call(user_id, mentor_idx, lesson_id):
         'lesson_call.html',
         user=user,
         mentor_idx=mentor_idx,
+        lesson_id=lesson_id,
         username=user.username,
         lesson_title=lesson_title,
         transcript_history=conversation_call

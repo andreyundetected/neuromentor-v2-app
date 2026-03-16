@@ -402,4 +402,4 @@ async def open_lesson(user_id: int):
         "legacy": legacy,   
     }
 
-    return await render_template("lesson.html", user=user, **lesson_ctx)
+    return redirect(url_for('lesson.lesson_call', user_id=user_id, mentor_idx=course_idx, lesson_id=lesson_id))

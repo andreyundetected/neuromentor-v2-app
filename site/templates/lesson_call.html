@@ -1449,14 +1449,18 @@ function getEdgeAverageColor(img, downScale = 32) {
     zone.style.background = `rgb(${r}, ${g}, ${b})`;
   }
 </script>
+<script>
+  const userId    = "{{ user.id }}";
+  const mentorIdx = "{{ mentor_idx }}";
+  const lessonId  = "{{ lesson_id }}";
 
+  const lessonCallUrl = `/lesson_call/${userId}/${mentorIdx}/${lessonId}`;
+</script>
       
       <script>
         // 6) Микрофон: запись и отправка аудио на lesson_call
         let mediaRecorder;
         let audioChunks = [];
-        const userId   = "{{ user.id }}";
-        const courseIdx = "{{ course_idx }}";
         let micLocked = false;
         let chatLocked = false;
         let micUnlockTimeout = null;
@@ -1508,7 +1512,6 @@ function getEdgeAverageColor(img, downScale = 32) {
             console.log("[MIC] Audio blob size:", audioBlob.size);
             const formData = new FormData();
             formData.append('audio', audioBlob, 'recording.webm');
-            const lessonCallUrl = `/course_select/${userId}/${courseIdx}/lesson_call`;
             try {
               const resp = await fetch(lessonCallUrl, { method: 'POST', body: formData });
               const data = await resp.json();
