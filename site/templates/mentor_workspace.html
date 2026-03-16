@@ -451,6 +451,92 @@
   transition: transform .12s ease, box-shadow .12s ease, opacity .12s ease;
 }
 
+/* === Появление сообщений === */
+@keyframes msgIn {
+  0%   { opacity: 0; transform: translateY(6px) scale(.98); }
+  60%  { opacity: 1; transform: translateY(0)   scale(1.02); }
+  100% { opacity: 1; transform: none; }
+}
+
+/* Для чата ( .chat-body > .msg ) — анимируем только новые */
+.msg.msg--in { animation: msgIn .24s cubic-bezier(.22,.75,.25,1) both; transform-origin: 0 0; }
+.msg.you.msg--in { transform-origin: 100% 0; }
+
+/* Для whiteboard (wb-user / wb-teacher) */
+.wb-user.wb--in, .wb-teacher.wb--in { animation: msgIn .24s cubic-bezier(.22,.75,.25,1) both; }
+
+/* Индикация «печатает…» */
+.typing {
+  display:flex; gap:10px; margin-bottom:10px; align-items:flex-end;
+}
+.typing .bubble {
+  background:#fff; border:1px solid #e6eefc; border-radius:12px; padding:10px 12px;
+  box-shadow: 0 6px 16px rgba(0,0,0,.04);
+}
+.typing .dots { display:inline-flex; gap:6px; vertical-align:middle; }
+.typing .dot {
+  width:6px; height:6px; border-radius:50%; background:#9bb0d9; opacity:.5;
+  animation: dotBlink 1s infinite ease-in-out;
+}
+.typing .dot:nth-child(2) { animation-delay:.15s; }
+.typing .dot:nth-child(3) { animation-delay:.30s; }
+@keyframes dotBlink {
+  0%, 80%, 100% { transform: translateY(0);   opacity:.45; }
+  40%          { transform: translateY(-3px); opacity:1; }
+}
+
+
+/* единый переход уже есть; усилим hover/active */
+.lesson-card {
+  position: relative;
+  display: flex; flex-direction: column; gap: 6px;
+  border: 1px solid #e6eefc;
+  border-radius: 12px;
+  padding: 12px 36px 12px 12px;
+  background: #fbfdff;
+  transition: transform .16s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease;
+  will-change: transform, box-shadow;
+}
+
+.topic-lessons .lesson-card:hover {
+  transform: translateY(-2px) scale(1.015);
+  background: #ffffff;
+  border-color: #d2e2ff;
+  box-shadow:
+    0 12px 30px rgba(30,107,255,.08),
+    0 4px 12px rgba(0,0,0,.06);
+}
+.topic-lessons .lesson-card:active {
+  transform: translateY(0) scale(.995);
+}
+
+/* легкий акцент названия при hover */
+.topic-lessons .lesson-card:hover .lesson-title {
+  text-decoration: underline;
+}
+
+/* в режиме редактирования можно ослабить hover, чтобы не мешал */
+.lessons.edit-mode .lesson-card:hover {
+  transform: none;
+  box-shadow: 0 6px 16px rgba(0,0,0,.04);
+}
+
+/* во время перетаскивания hover/анимации не мешают */
+.lesson-card.dragging-card,
+.lesson-card.dragging,
+.lesson-card.dragging-card:hover {
+  transform: none !important;
+  box-shadow: 0 10px 24px rgba(0,0,0,.18) !important; /* остаётся «поднятая» тень перетаскивания */
+}
+
+/* (опционально) плавное «въезжание» карточек при первом рендере/перерисовке */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(6px) scale(.98); }
+  to   { opacity: 1; transform: none; }
+}
+.lesson-card.card-stagger { animation: cardIn .22s ease both; animation-delay: var(--delay, 0ms); }
+    
+
   </style>
 </head>
 <body>
@@ -748,27 +834,47 @@ document.addEventListener('DOMContentLoaded', () => {
     const avatarGrid  = document.getElementById('avatarGrid');
     let chosenAvatar = null;
 
-    function openAvatarModal(){
-      if (!avatarGrid.children.length){
-        for (let i=0;i<15;i++){
-          const t = document.createElement('div');
-          t.className='avatar-tile'; t.textContent = 'A'+(i+1);
-          t.addEventListener('click', () => {
-            chosenAvatar = 'A'+(i+1);
-            applyChosenAvatar();
-            avatarModal.style.display='none';
-            validateAll();
-          });
-          avatarGrid.appendChild(t);
-        }
-      }
-      avatarModal.style.display='flex';
+function openAvatarModal(){
+  if (!avatarGrid.children.length){
+    for (let i = 1; i <= 15; i++) {
+      const t = document.createElement('div');
+      t.className = 'avatar-tile';
+
+      // создаём img-элемент с fallback
+      const img = document.createElement('img');
+      img.src = `/static/avatars/${i}/base.png`;
+      img.alt = `Avatar ${i}`;
+      img.style.maxWidth = '80%';
+      img.style.maxHeight = '80%';
+      img.onerror = () => {
+        img.remove(); // если base.png не найден — удаляем картинку
+        t.textContent = `A${i}`; // показываем текст как раньше
+      };
+
+      t.appendChild(img);
+
+      // выбор аватара
+      t.addEventListener('click', () => {
+        chosenAvatar = `A${i}`;
+        applyChosenAvatar();
+        avatarModal.style.display='none';
+        validateAll();
+      });
+
+      avatarGrid.appendChild(t);
     }
-    function applyChosenAvatar(){
-      avatarCard.style.background = 'linear-gradient(145deg, #9fd0ff, #4fa8ff)';
-      avatarCard.querySelector('.placeholder').textContent = chosenAvatar;
-      document.getElementById('mentorBadge').textContent = chosenAvatar[0] || 'M';
-    }
+  }
+  avatarModal.style.display='flex';
+}
+function applyChosenAvatar(){
+  avatarCard.style.background = 'linear-gradient(145deg, #9fd0ff, #4fa8ff)';
+  const placeholder = avatarCard.querySelector('.placeholder');
+  if (placeholder) {
+    placeholder.innerHTML = `<img src="/static/avatars/${chosenAvatar.slice(1)}/base.png" style="max-width:90%; max-height:90%;" onerror="this.parentNode.textContent='${chosenAvatar}'">`;
+  }
+  document.getElementById('mentorBadge').textContent = chosenAvatar[0] || 'M';
+}
+
     avatarCard.addEventListener('click', openAvatarModal);
     avatarClose.addEventListener('click', ()=> avatarModal.style.display='none');
     avatarModal.addEventListener('click', (e)=>{ if (e.target===avatarModal) avatarModal.style.display='none'; });
@@ -935,6 +1041,44 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!voiceMenu.contains(e.target) && e.target!==voiceBtn) voiceMenu.style.display='none';
     });
 
+
+function appendChatMessage(role /* 'you' | 'mentor' */, html) {
+  const body = document.getElementById('chatBody');
+  const row = document.createElement('div');
+  row.className = 'msg' + (role === 'you' ? ' you' : '');
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = html;
+  row.appendChild(bubble);
+  body.appendChild(row);
+
+  // анимация появления
+  requestAnimationFrame(() => row.classList.add('msg--in'));
+  row.addEventListener('animationend', () => row.classList.remove('msg--in'), { once: true });
+
+  body.scrollTop = body.scrollHeight;
+}
+
+let typingEl = null;
+
+function showTyping() {
+  if (typingEl) return;
+  const body = document.getElementById('chatBody');
+  typingEl = document.createElement('div');
+  typingEl.className = 'typing';
+  typingEl.innerHTML = `
+    <div class="bubble">
+      <span class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
+    </div>`;
+  body.appendChild(typingEl);
+  body.scrollTop = body.scrollHeight;
+}
+function hideTyping() {
+  if (typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
+  typingEl = null;
+}
+
+
     function addMsg(isUser, text){
       const row = document.createElement('div');
       row.className = 'msg' + (isUser ? ' you' : '');
@@ -944,6 +1088,10 @@ document.addEventListener('DOMContentLoaded', () => {
       row.appendChild(bubble);
       chatBody.appendChild(row);
       chatBody.scrollTop = chatBody.scrollHeight;
+
+      requestAnimationFrame(() => row.classList.add('chatBody--in'));
+      row.addEventListener('animationend', () => row.classList.remove('chatBody--in'), { once: true });
+
     }
 
 
@@ -984,7 +1132,6 @@ function courseInfoFromModel(model) {
 
 
 
-// Рендерим из courseModel
 // Рендерим из courseModel
 function renderFromModel() {
   const container = document.getElementById('lessonsGrid');
@@ -1110,6 +1257,9 @@ function renderFromModel() {
       const metaEl = document.createElement('div');
       metaEl.className = 'lesson-meta';
       metaEl.textContent = topicObj.topic;
+      card.style.setProperty('--delay', `${Math.min(li * 30, 200)}ms`);
+      card.classList.add('card-stagger');
+
       card.appendChild(metaEl);
 
       // Красная урна удаления (в editMode)
@@ -1224,11 +1374,13 @@ function renderStructure(courseInfo) {
 async function persistCourseModel() {
   try {
     const course_info = courseInfoFromModel(courseModel);
+    showTyping()
     const res = await fetch('/mentor_workspace/{{ user.id }}/upsert_structure?course_idx={{ course_idx }}', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ course_info })
     });
+    hideTyping()
 
 
     const data = await res.json();
@@ -1507,11 +1659,13 @@ async function sendChat(){
 
   try {
     const state = getMentorState();
+    showTyping()
     const res = await fetch('/mentor_workspace/{{ user.id }}/chat?course_idx={{ course_idx }}', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ message: t, state })
     });
+    hideTyping()
 
     const data = await res.json();
 
