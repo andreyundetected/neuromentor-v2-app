@@ -761,3 +761,65 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   font-size: 0.95em;
 }
+
+/* Визуальный блок в шапке карточки: слева аватар, справа градиент */
+.course-visual {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* Контейнер под PNG-аватар (с прозрачным фоном у файла) */
+.mentor-figure {
+  width: 92px;             /* подгони при желании: 84–108 */
+  min-width: 92px;
+  aspect-ratio: 1 / 1;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #eef5ff;     /* будет виден сквозь прозрачные пиксели PNG */
+  border: 1px solid #d8e6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Сам PNG-аватар внутри */
+.mentor-figure img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.07));
+  animation: libAvatarIn .35s cubic-bezier(.22,.75,.25,1) both;
+  transform-origin: 50% 100%;
+}
+
+/* Fallback — первая буква, если файла нет */
+.mentor-figure.fallback {
+  color: #2b4ea2;
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: 0.02em;
+  background: #eaf2ff;
+}
+
+/* Градиентный прямоугольник справа (у тебя уже есть JS, который накидывает градиент) */
+.course-avatar {
+  flex: 1;
+  height: 92px;            /* делаем единый рост с аватаром */
+  border-radius: 14px;
+  border: 1px solid #e1e9ff;
+}
+
+/* Лёгкая анимация появления PNG */
+@keyframes libAvatarIn {
+  0%   { opacity: 0; transform: translateY(8px) scale(.98); }
+  60%  { opacity: 1; transform: translateY(-2px) scale(1.02); }
+  100% { transform: none; }
+}
+
+/* Адаптив: на узких экранах чуть уменьшим */
+@media (max-width: 720px) {
+  .mentor-figure { width: 76px; min-width: 76px; }
+  .course-avatar { height: 76px; }
+}

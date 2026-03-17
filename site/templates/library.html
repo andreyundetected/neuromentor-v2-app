@@ -90,7 +90,14 @@
       <!-- Существующие курсы -->
       {% for course in courses_with_indices %}
       <div class="course-card" onclick="window.location.href=&quot;{{ url_for('mentor_workspace.workspace', user_id=user.id, course_idx=course.index) }}&quot;">
-        <div class="course-avatar" data-categories="{{ course.course['mentor']['specializations'] | join(', ') }}"></div>
+        <div class="course-visual">
+          <div
+            class="mentor-figure"
+            data-avatar="{{ course.course['mentor'].get('avatar','') }}"
+            data-mentor-name="{{ course.course['mentor']['name'] or 'M' }}"
+          ></div>
+          <div class="course-avatar" data-categories="{{ course.course['mentor']['specializations'] | join(', ') }}"></div>
+        </div>
         <h2>{{ course.course["mentor"]["name"] or "Untitled" }}</h2>
         {% if session.get('language', 'ru') == 'ru' %}
           <p></p>
@@ -390,6 +397,33 @@
             el.style.background = generateGradient(categories);
         });
     });
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll(".mentor-figure").forEach(el => {
+    const avatarTag = (el.dataset.avatar || '').trim();   // например "A7"
+    const mentorName = (el.dataset.mentorName || 'M').trim();
+    let num = null;
+
+    // Ждём формат A<число> (A7 -> 7)
+    if (/^A\d+$/i.test(avatarTag)) {
+      num = avatarTag.slice(1);
+    }
+
+    if (num) {
+      const img = new Image();
+      img.alt = `Avatar ${num}`;
+      img.src = `/static/avatars/${num}/base.png`;
+      img.onload = () => { el.appendChild(img); };
+      img.onerror = () => setFallback();
+    } else {
+      setFallback();
+    }
+
+    function setFallback() {
+      el.classList.add('fallback');
+      el.textContent = (mentorName[0] || 'M').toUpperCase();
+    }
+  });
+});
 
     function startRecommendation(index) {
         fetch(`/start_recommendation/${index}`, {
