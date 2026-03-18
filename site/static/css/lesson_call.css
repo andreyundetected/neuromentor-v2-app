@@ -761,21 +761,126 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   font-size: 0.95em;
 }
-/* Mentor sticker (bottom-left) */
+/* === Glass dock стикер === */
 #mentorSticker{
   position: fixed;
   left: 20px;
   bottom: 20px;
-  width: 240px;                 /* сделай больше/меньше по вкусу */
-  z-index: 2300;                /* выше call-zone (2100) */
-  pointer-events: none;         /* не перекрывает клики по интерфейсу */
+  width: 220px;
+  height: 220px;
+  z-index: 2600;
+  border-radius: 18px;
+  overflow: hidden;
+  pointer-events: none;              /* чтобы не перехватывал клики */
 }
 
-#mentorSticker canvas,
-#mentorSticker img{
+/* Стеклянный фон, в тон твоему header-шторке */
+#mentorSticker.sticker--glass{
+  background: rgba(255,255,255,0.16);
+  border: 1px solid rgba(255,255,255,0.28);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+/* Лёгкий верхний блик */
+#mentorSticker.sticker--glass::before{
+  content:"";
+  position:absolute; inset:0;
+  border-radius:inherit;
+  background: radial-gradient(120% 60% at 20% 0%, rgba(255,255,255,.33), transparent 60%);
+  pointer-events:none;
+}
+
+/* Слой мягкого голубого свечения позади ментора (off по умолчанию) */
+#mentorSticker .sticker-glow{
+  position:absolute; inset:0;
+  background:
+    radial-gradient(60% 60% at 50% 55%, rgba(66,180,255,.22), transparent 70%),
+    radial-gradient(35% 35% at 50% 55%, rgba(66,180,255,.28), transparent 70%);
+  opacity: 0;
+  transition: opacity .35s ease;
+  filter: blur(0.5px);
+  pointer-events: none;
+}
+
+/* Когда говорит — плавно включаем подсветку и лёгкую пульсацию */
+#mentorSticker.speaking .sticker-glow{
+  opacity: .9;
+  animation: glowPulse 2.4s ease-in-out infinite;
+}
+@keyframes glowPulse{
+  0%,100% { opacity:.75; filter: blur(0.5px); }
+  50%     { opacity:.95; filter: blur(1px); }
+}
+
+/* Верхняя плашка с именем, тонкие линии по бокам */
+#mentorSticker .sticker-namebar{
+  position:absolute;
+  top: 6px;
+  left: 12px;
+  right: 12px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.6);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  font-size: 13px;
+  font-weight: 700;
+  color: #2b4ea2;                      /* сочетается с твоей палитрой */
+  display:flex; align-items:center; justify-content:center;
+  letter-spacing:.02em;
+  pointer-events:none;
+}
+
+/* Тонкие линии по бокам имени */
+#mentorSticker .sticker-namebar::before,
+#mentorSticker .sticker-namebar::after{
+  content:"";
+  position:absolute;
+  top: 50%;
+  width: 30%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(43,78,162,.45));
+}
+#mentorSticker .sticker-namebar::before{
+  left: -10px; transform: translateY(-50%);
+}
+#mentorSticker .sticker-namebar::after{
+  right: -10px; transform: translateY(-50%) rotate(180deg);
+}
+
+/* Небольшой «подбородок» снизу, чтобы тело не обрывалось резко */
+#mentorSticker .sticker-dock{
+  position:absolute;
+  left: 14px;
+  right: 14px;
+  bottom: -8px;                        /* чуть «вылезает» наружу */
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.7);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+  pointer-events:none;
+  z-index: 3;
+}
+
+/* Слоты картинки/канваса */
+#mentorCanvas, #mentorPNG{
+  position: relative;
+  z-index: 2;                          /* над glow, под namebar */
+  width: 100%; height: 100%;
   display: block;
-  width: 100%;
-  height: auto;
-  filter: drop-shadow(0 6px 18px rgba(0,0,0,.18));
-  image-rendering: auto;        /* сглаженно, прозрачность сохраняется */
+  object-fit: contain;
+  background: transparent;
+}
+
+/* Чуть больше «воздуха» снизу, чтобы dock прикрывал низ тела */
+#mentorCanvas, #mentorPNG{
+  -webkit-mask-image: linear-gradient(to bottom, #000 86%, rgba(0,0,0,0.9) 92%, rgba(0,0,0,0) 100%);
+  mask-image: linear-gradient(to bottom, #000 86%, rgba(0,0,0,0.9) 92%, rgba(0,0,0,0) 100%);
 }

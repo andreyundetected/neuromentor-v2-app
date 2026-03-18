@@ -37,7 +37,7 @@
 <script id="MathJax-script" async
         src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=29">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=30">
   </head>
   <body>
     <canvas id="backgroundCanvas"></canvas>
@@ -361,27 +361,51 @@ console.log(demo);
             console.log(p_x, p_y)
         } 
         </script>
-    <script>
-        function playTeacherAudio(base64Audio) {
-          if (!base64Audio) return;
-          try {
-            const binary = atob(base64Audio);
-            const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) {
-              bytes[i] = binary.charCodeAt(i);
-            }
-            // Изменили тип с 'audio/mp3' на 'audio/mpeg'
-            const blob = new Blob([bytes], { type: 'audio/mpeg' });
-            const audioURL = URL.createObjectURL(blob);
-            const audioElem = new Audio(audioURL);
-            audioElem.play().catch(err => {
-              console.warn("[playTeacherAudio] can't play:", err);
-            });
-          } catch (err) {
-            console.error("[playTeacherAudio] error decoding base64:", err);
-          }
-        }
-      </script>
+<script>
+(function(){
+  let speakingTokens = 0; // на случай параллельных аудио
+
+  function setStickerSpeaking(isOn){
+    const el = document.getElementById('mentorSticker');
+    if (!el) return;
+    el.classList.toggle('speaking', !!isOn);
+  }
+  function incSpeak(){ speakingTokens++; setStickerSpeaking(true); }
+  function decSpeak(){
+    speakingTokens = Math.max(0, speakingTokens - 1);
+    setStickerSpeaking(speakingTokens > 0);
+  }
+
+  // === PATCH: переопределяем playTeacherAudio ===
+  window.playTeacherAudio = function playTeacherAudio(base64Audio) {
+    if (!base64Audio) return;
+    try {
+      const binary = atob(base64Audio);
+      const bytes  = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+      const blob = new Blob([bytes], { type: 'audio/mpeg' });
+      const url  = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+
+      // Отслеживаем воспроизведение
+      audio.addEventListener('playing', incSpeak, { once: true });
+      audio.addEventListener('ended', () => { decSpeak(); URL.revokeObjectURL(url); }, { once: true });
+      audio.addEventListener('pause',  decSpeak);   // на всякий случай
+      audio.addEventListener('error',  decSpeak);
+
+      audio.play().catch(err => {
+        console.warn('[playTeacherAudio] can’t play:', err);
+        decSpeak();
+        URL.revokeObjectURL(url);
+      });
+    } catch (err) {
+      console.error('[playTeacherAudio] error decoding base64:', err);
+    }
+  };
+})();
+</script>
+
       
       
       
@@ -1731,12 +1755,19 @@ function getEdgeAverageColor(img, downScale = 32) {
       
 
       <!-- Mentor sticker (bottom-left) -->
-<div id="mentorSticker"
-     data-avatar="{{ mentor_avatar or '' }}"
-     data-mentor-name="{{ mentor_name or 'Mentor' }}">
+<div id="mentorSticker" class="sticker--glass"
+     data-avatar="{{ course.course['mentor'].get('avatar','') }}"
+     data-mentor-name="{{ course.course['mentor'].get('name','Mentor') }}">
+  <!-- Добавили 2 слоя: имя и glow-подложка -->
+  <div class="sticker-namebar" id="mentorName"></div>
+  <div class="sticker-glow" aria-hidden="true"></div>
+
   <canvas id="mentorCanvas" width="256" height="256"></canvas>
   <img id="mentorPNG" alt="Mentor" style="display:none;" />
+  <!-- Низ-«подбородок», чтобы не было резкого обрыва -->
+  <div class="sticker-dock" aria-hidden="true"></div>
 </div>
+
 
 <!-- Библиотека для декодирования GIF -->
 <script src="https://unpkg.com/gifuct-js@2.1.2/dist/gifuct-js.min.js"></script>
@@ -1832,6 +1863,36 @@ function getEdgeAverageColor(img, downScale = 32) {
       console.warn('[mentorSticker] GIF decode failed, fallback to PNG', err);
       showPNG();
     });
+})();
+</script>
+<script>
+(function initStickerUI(){
+  const sticker = document.getElementById('mentorSticker');
+  if (!sticker) return;
+
+  // Если разметка из п.1 не добавлена вручную — сделаем автодобавление
+  let nameEl = sticker.querySelector('.sticker-namebar');
+  if (!nameEl) {
+    nameEl = document.createElement('div');
+    nameEl.className = 'sticker-namebar';
+    sticker.prepend(nameEl);
+  }
+  let glowEl = sticker.querySelector('.sticker-glow');
+  if (!glowEl) {
+    glowEl = document.createElement('div');
+    glowEl.className = 'sticker-glow';
+    sticker.insertBefore(glowEl, sticker.firstChild);
+  }
+  let dockEl = sticker.querySelector('.sticker-dock');
+  if (!dockEl) {
+    dockEl = document.createElement('div');
+    dockEl.className = 'sticker-dock';
+    sticker.appendChild(dockEl);
+  }
+
+  // Подписываем именем из data-mentor-name
+  const mentorName = (sticker.dataset.mentorName || 'Mentor').trim();
+  nameEl.textContent = mentorName;
 })();
 </script>
 
