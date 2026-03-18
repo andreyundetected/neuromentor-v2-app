@@ -761,3 +761,21 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   font-size: 0.95em;
 }
+/* Mentor sticker (bottom-left) */
+#mentorSticker{
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  width: 240px;                 /* сделай больше/меньше по вкусу */
+  z-index: 2300;                /* выше call-zone (2100) */
+  pointer-events: none;         /* не перекрывает клики по интерфейсу */
+}
+
+#mentorSticker canvas,
+#mentorSticker img{
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 6px 18px rgba(0,0,0,.18));
+  image-rendering: auto;        /* сглаженно, прозрачность сохраняется */
+}

@@ -37,7 +37,7 @@
 <script id="MathJax-script" async
         src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=28">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=29">
   </head>
   <body>
     <canvas id="backgroundCanvas"></canvas>
@@ -1729,6 +1729,111 @@ function getEdgeAverageColor(img, downScale = 32) {
         };
       </script>
       
+
+      <!-- Mentor sticker (bottom-left) -->
+<div id="mentorSticker"
+     data-avatar="{{ mentor_avatar or '' }}"
+     data-mentor-name="{{ mentor_name or 'Mentor' }}">
+  <canvas id="mentorCanvas" width="256" height="256"></canvas>
+  <img id="mentorPNG" alt="Mentor" style="display:none;" />
+</div>
+
+<!-- Библиотека для декодирования GIF -->
+<script src="https://unpkg.com/gifuct-js@2.1.2/dist/gifuct-js.min.js"></script>
+
+<script>
+(function () {
+  const sticker = document.getElementById('mentorSticker');
+  if (!sticker) return;
+
+  const tag = (sticker.dataset.avatar || '').trim();   // например "A7"
+  const name = (sticker.dataset.mentorName || 'M').trim();
+
+  let num = null;
+  if (/^A\d+$/i.test(tag)) num = tag.slice(1);
+
+  // Пути
+  const basePath = num ? `/static/avatars/${num}` : null;
+  const gifUrl   = basePath ? `${basePath}/base.gif` : null;
+  const pngUrl   = basePath ? `${basePath}/base.png` : null;
+
+  const canvas = document.getElementById('mentorCanvas');
+  const ctx    = canvas.getContext('2d');
+  const pngEl  = document.getElementById('mentorPNG');
+
+  function showPNG() {
+    if (!pngUrl) {
+      // нет даже png — покажем заглушку буквой
+      canvas.width = canvas.height = 256;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = 'rgba(0,0,0,0)';
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle = '#3a6ad6';
+      ctx.font = 'bold 120px system-ui, Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText((name[0]||'M').toUpperCase(), 128, 136);
+      return;
+    }
+    pngEl.src = pngUrl;
+    pngEl.style.display = 'block';
+    // canvas остаётся под ним; можно скрыть, если хочешь:
+    // canvas.style.display = 'none';
+  }
+
+  // Если нет gif — сразу png
+  if (!gifUrl) { showPNG(); return; }
+
+  // Проверяем наличие gifuct-js
+  const parseGIF = window.gifuct && window.gifuct.parseGIF;
+  const decompressFrames = window.gifuct && window.gifuct.decompressFrames;
+  if (!parseGIF || !decompressFrames) {
+    // библиотека не подгрузилась — покажем обычный gif (как <img>), НО скорость не замедлим
+    // Если хочешь именно замедление, оставь canvas-вариант с библиотекой
+    const img = new Image();
+    img.src = gifUrl;
+    pngEl.replaceWith(img);
+    return;
+  }
+
+  // Загружаем и замедляем GIF (×2 по времени кадра)
+  fetch(gifUrl)
+    .then(r => { if (!r.ok) throw new Error('HTTP '+r.status); return r.arrayBuffer(); })
+    .then(buf => {
+      const gif    = parseGIF(buf);
+      const frames = decompressFrames(gif, true); // usePatch=true: получаем RGBA-«заплатки»
+      if (!frames.length) throw new Error('no frames');
+
+      // Размер холста = логический размер GIF
+      canvas.width  = gif.lsd.width  || frames[0].dims.width;
+      canvas.height = gif.lsd.height || frames[0].dims.height;
+
+      let i = 0;
+
+      function drawNext() {
+        const f = frames[i];
+        const { dims, patch, delay } = f;  // delay в сотых долях секунды (10мс)
+        // disposal 2 = очистить фон — тогда чистим холст
+        if (f.disposalType === 2) ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Рисуем RGBA-патч кадра
+        const imgData = ctx.createImageData(dims.width, dims.height);
+        imgData.data.set(patch);
+        ctx.putImageData(imgData, dims.left, dims.top);
+
+        // Задержка (мс): умножаем на 2 (медленнее)
+        const nextDelay = Math.max(10, (delay || 10) * 10 * 2);
+        i = (i + 1) % frames.length;
+        setTimeout(drawNext, nextDelay);
+      }
+      drawNext();
+    })
+    .catch(err => {
+      console.warn('[mentorSticker] GIF decode failed, fallback to PNG', err);
+      showPNG();
+    });
+})();
+</script>
 
 </body>
 </html>
