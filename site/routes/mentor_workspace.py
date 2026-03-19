@@ -70,11 +70,11 @@ async def workspace(user_id: int):
         "mentor_workspace.html",
         user=user,
         mentor_id=None,
-        mentor_data=mentor_data,  
+        mentor_data=mentor_data,                                       
         lessons=[],
         is_new=not is_existing,
         avatar_options=AVATAR_OPTIONS,
-        course_idx=course_idx,     
+        course_idx=course_idx,                                         
     )
 
 @mentor_workspace.route('/mentor_workspace/<int:user_id>/chat', methods=['POST'])
@@ -285,7 +285,7 @@ async def mentor_intro(user_id: int):
         "message": msg,
         "hint": hint,
         "send_label": send_label,
-        
+                                              
         "mentor_preview": {
             "name": name,
             "language": language,

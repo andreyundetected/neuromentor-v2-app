@@ -230,13 +230,4 @@ async def lesson_call(user_id, mentor_idx, lesson_id):
         transcript_history=conversation_call
     )
 
-def _flatten_course(course_struct):
-    out = []
-    for t_idx, t in enumerate(course_struct or []):
-        topic_title = next(iter(t.keys()), None)
-        if topic_title is None:
-            continue
-        lessons = t.get(topic_title) or []
-        for l_idx, title in enumerate(lessons):
-            out.append((t_idx, l_idx, topic_title, title))
-    return out
+
