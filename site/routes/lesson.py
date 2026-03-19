@@ -6,7 +6,7 @@ from models.user import User
 from services.api_service import send_request_to_api
 from services.transcription import transcribe_audio_with_prepare_data  
 
-lesson_bp = Blueprint('lesson', __name__)
+
 
 @lesson_bp.route('/lesson_call/<int:user_id>/<int:mentor_idx>/<int:lesson_id>', methods=['GET', 'POST'])
 async def lesson_call(user_id, mentor_idx, lesson_id):

@@ -7,7 +7,7 @@ mentor_workspace = Blueprint("mentor_workspace", __name__)
 
 SUPPORTED_LANGS = {"ru", "en"}
 SUPPORTED_VOICES = {
-    
+                                                         
     "ru": ["anna", "mikhail", "alena"],
     "en": ["jane", "john", "emma"],
 }
@@ -212,7 +212,7 @@ async def validate_fields(user_id: int):
 
     payload = await request.get_json(force=True, silent=True) or {}
     name: str = (payload.get("name") or "").strip()
-    specs = payload.get("specializations") or []  
+    specs = payload.get("specializations") or []                        
     language: str = (payload.get("language") or "").strip().lower()
     style: str = (payload.get("style") or "").strip()
     voice: str = (payload.get("voice") or "").strip().lower()
@@ -224,16 +224,18 @@ async def validate_fields(user_id: int):
         errors["name"] = "Имя слишком короткое." if language == "ru" else "Name is too short."
 
     if not isinstance(specs, list) or not any((s or "").strip() for s in specs):
-        errors["specializations"] = "Добавьте хотя бы одну специализацию." if language == "ru"            else "Add at least one specialization."
+        errors["specializations"] = "Добавьте хотя бы одну специализацию." if language == "ru"\
+            else "Add at least one specialization."
     else:
-        
+                     
         specs = [str(s).strip() for s in specs if str(s).strip()]
 
     if language not in SUPPORTED_LANGS:
         errors["language"] = "Поддерживаются только RU и EN." if language == "ru" else "Only RU and EN are supported."
 
     if language in SUPPORTED_VOICES and voice not in SUPPORTED_VOICES[language]:
-        errors["voice"] = ("Выберите голос из списка: " + ", ".join(SUPPORTED_VOICES[language]))            if language == "ru" else ("Choose a voice: " + ", ".join(SUPPORTED_VOICES[language]))
+        errors["voice"] = ("Выберите голос из списка: " + ", ".join(SUPPORTED_VOICES[language]))\
+            if language == "ru" else ("Choose a voice: " + ", ".join(SUPPORTED_VOICES[language]))
 
     if style and len(style) < 3:
         errors["style"] = "Слишком коротко." if language == "ru" else "Too short."
