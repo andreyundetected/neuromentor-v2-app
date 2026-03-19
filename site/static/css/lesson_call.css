@@ -763,9 +763,9 @@
 }
 /* === Glass dock стикер === */
   :root {
-    --sticker-size: 256px;   /* базовый размер окна */
-    --pad-top:  36px;        /* место под плашку с именем */
-    --pad-bot:  56px;        /* место под «док» снизу */
+    --sticker-size: 300px;   /* базовый размер окна */
+    --pad-top:  28px;        /* место под плашку с именем */
+    --pad-bot:  0px;        /* место под «док» снизу */
   }
 
   /* Корневой контейнер стикера */
@@ -828,7 +828,7 @@
   /* «Док» снизу (чтобы не было резкого обрыва туловища) */
   .sticker-dock {
     position: absolute;
-    left: 8px; right: 8px; bottom: 6px;
+    left: 8px; right: 8px; bottom: -25px;
     height: 46px;
     background: rgba(255,255,255,0.18);
     border: 1px solid rgba(255,255,255,0.28);

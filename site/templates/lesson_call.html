@@ -37,7 +37,7 @@
 <script id="MathJax-script" async
         src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=32">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=33">
   </head>
   <body>
     <canvas id="backgroundCanvas"></canvas>
@@ -1779,132 +1779,61 @@ function getEdgeAverageColor(img, downScale = 32) {
   const sticker = document.getElementById('mentorSticker');
   if (!sticker) return;
 
-  const tag  = (sticker.dataset.avatar || '').trim();   // "A7" и т.п.
+  const tag  = (sticker.dataset.avatar || '').trim();
   const name = (sticker.dataset.mentorName || 'Mentor').trim();
 
-  // Нода «имя» (если не создал ранее)
-  let nameEl = sticker.querySelector('.sticker-namebar');
-  if (!nameEl) {
-    nameEl = document.createElement('div');
-    nameEl.className = 'sticker-namebar';
-    sticker.prepend(nameEl);
-  }
-  nameEl.textContent = name;
-
-  // Нода glow
-  let glowEl = sticker.querySelector('.sticker-glow');
-  if (!glowEl) {
-    glowEl = document.createElement('div');
-    glowEl.className = 'sticker-glow';
-    sticker.insertBefore(glowEl, sticker.firstChild);
-  }
-  // Нода dock
-  let dockEl = sticker.querySelector('.sticker-dock');
-  if (!dockEl) {
-    dockEl = document.createElement('div');
-    dockEl.className = 'sticker-dock';
-    sticker.appendChild(dockEl);
-  }
-
-  // Парсим номер
   let num = null;
   if (/^A\d+$/i.test(tag)) num = tag.slice(1);
-
-  // Пути
   const basePath = num ? `/static/avatars/${num}` : null;
   const gifUrl   = basePath ? `${basePath}/base.gif` : null;
   const pngUrl   = basePath ? `${basePath}/base.png` : null;
 
   const canvas = document.getElementById('mentorCanvas');
-  const ctx    = canvas.getContext('2d');
   const pngEl  = document.getElementById('mentorPNG');
 
-  // --- универсальный фолбэк: буква на канвасе ---
-  function drawLetterFallback() {
+  function drawLetter() {
+    const ctx = canvas.getContext('2d');
     canvas.style.display = 'block';
-    pngEl.style.display = 'none';
-
-    // логический размер холста
-    const S = 256;
-    canvas.width = canvas.height = S;
-
-    // чистим
+    pngEl.style.display  = 'none';
+    const S = 256; canvas.width = canvas.height = S;
     ctx.clearRect(0,0,S,S);
-
-    // фон прозрачный
-    // рисуем букву
-    const letter = (name[0] || 'M').toUpperCase();
     ctx.fillStyle = '#3a6ad6';
-    ctx.font = 'bold 120px system-ui, Arial, "Segoe UI"';
+    ctx.font = 'bold 120px system-ui, Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(letter, S/2, S/2 + 8);
+    ctx.fillText((name[0]||'M').toUpperCase(), S/2, S/2 + 8);
   }
 
-  // --- показать PNG (с фолбэком на букву) ---
-  function showPNG() {
-    if (!pngUrl) {
-      drawLetterFallback();
-      return;
-    }
-    pngEl.alt = name || 'Mentor';
-    pngEl.onload  = () => {
-      // успех: показываем png
-      pngEl.style.display = 'block';
-      canvas.style.display = 'none';
-    };
-    pngEl.onerror = () => {
-      // png не загрузился — буква
-      drawLetterFallback();
-    };
-    pngEl.src = pngUrl + `?v=${Date.now()}`; // bust cache для надёжности
-  }
-
-  // --- GIF через gifuct-js (замедляем в 2 раза). При ошибке → PNG ---
-  if (!gifUrl || !(window.gifuct && gifuct.parseGIF && gifuct.decompressFrames)) {
-    // нет гифа или нет либы — сразу пробуем png
-    showPNG();
+  // ---- Вариант А: форсим нативный GIF (без gifuct) ----
+  const FORCE_NATIVE_GIF = true;
+  if (FORCE_NATIVE_GIF && gifUrl) {
+    const gifImg = new Image();
+    gifImg.alt = name;
+    // чтобы попал в тот же слой и рамку:
+    gifImg.style.position = 'absolute';
+    gifImg.style.left = '12px';
+    gifImg.style.right = '12px';
+    gifImg.style.top = 'var(--pad-top)';
+    gifImg.style.bottom = 'var(--pad-bot)';
+    gifImg.style.width = 'auto';
+    gifImg.style.height = 'auto';
+    gifImg.style.maxWidth = 'calc(100% - 24px)';
+    gifImg.style.maxHeight = 'calc(100% - var(--pad-top) - var(--pad-bot))';
+    gifImg.style.objectFit = 'contain';
+    gifImg.style.zIndex = 1;
+    gifImg.onload = () => { canvas.style.display='none'; pngEl.style.display='none'; };
+    gifImg.onerror = () => { if (pngUrl) { pngEl.src = pngUrl; pngEl.style.display='block'; canvas.style.display='none'; } else drawLetter(); };
+    gifImg.src = gifUrl + '?v=' + Date.now(); // на всякий случай bust cache
+    sticker.appendChild(gifImg);
     return;
   }
 
-  fetch(gifUrl, { cache: 'no-store' })
-    .then(r => { if (!r.ok) throw new Error('HTTP '+r.status); return r.arrayBuffer(); })
-    .then(buf => {
-      const { parseGIF, decompressFrames } = gifuct;
-      const gif    = parseGIF(buf);
-      const frames = decompressFrames(gif, true);
-      if (!frames.length) throw new Error('no frames');
-
-      canvas.style.display = 'block';
-      pngEl.style.display  = 'none';
-
-      // Размер холста = логический размер GIF
-      canvas.width  = gif.lsd.width  || frames[0].dims.width;
-      canvas.height = gif.lsd.height || frames[0].dims.height;
-
-      let i = 0;
-      (function loop() {
-        const f = frames[i];
-        const { dims, patch, delay } = f;
-
-        // disposal 2 — очистить фон
-        if (f.disposalType === 2) ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        const imageData = ctx.createImageData(dims.width, dims.height);
-        imageData.data.set(patch);
-        ctx.putImageData(imageData, dims.left, dims.top);
-
-        const nextDelay = Math.max(10, (delay || 10) * 10 * 2);
-        i = (i + 1) % frames.length;
-        setTimeout(loop, nextDelay);
-      })();
-    })
-    .catch(err => {
-      console.warn('[mentorSticker] GIF failed → PNG fallback', err);
-      showPNG();
-    });
+  // ---- Вариант B: gifuct + контроль скорости (как у тебя) ----
+  // (оставь твой существующий код; чтобы вернуть нормальную скорость,
+  // просто убери умножение на 2: (delay||10) * 10  вместо  *10*2)
 })();
 </script>
+
 
 <script>
 (function initStickerUI(){
