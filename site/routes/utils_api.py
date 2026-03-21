@@ -23,4 +23,4 @@ async def set_language(lang):
 
     session["language"] = lang
 
-    return "", 204  
+    return "", 204                           

@@ -14,6 +14,7 @@ app.secret_key = 'supersecretkey'
 for bp in blueprints:
     app.register_blueprint(bp)
 
+
 DATABASE_URL = os.getenv("DATABASE_URL").replace("postgresql://", "postgres://")
 
 NEURO_API_URL = "https://" + os.getenv("NEURO_API-DOMAIN", "") + "/neuro_api"
