@@ -197,7 +197,7 @@ async def mw_status_poll(user_id: int):
 
 @mentor_workspace.route("/mentor_workspace/<int:user_id>/avatar_options", methods=["GET"])
 async def get_avatar_options(user_id: int):
-    
+                                                       
     session_user_id = session.get("user_id")
     if not session_user_id or session_user_id != user_id:
         return jsonify({"ok": False, "error": "unauthorized"}), 401
@@ -342,7 +342,7 @@ async def mw_upsert_structure(user_id: int):
 
 @mentor_workspace.route('/mentor_workspace/<int:user_id>/lesson', methods=['GET'])
 async def open_lesson(user_id: int):
-    
+                 
     if 'user_id' not in session or session['user_id'] != user_id:
         return redirect(url_for("auth.login"))
 
@@ -351,7 +351,7 @@ async def open_lesson(user_id: int):
     lesson_idx = request.args.get("lesson_idx", type=int)
 
     if course_idx is None or topic_idx is None or lesson_idx is None:
-        
+                                                   
         return redirect(url_for("mentor_workspace.workspace", user_id=user_id, course_idx=course_idx or 0))
 
     user = await User.get_or_none(id=user_id)
@@ -360,11 +360,11 @@ async def open_lesson(user_id: int):
 
     courses = user.course_info if isinstance(user.course_info, list) else []
     if not (0 <= course_idx < len(courses)):
-        
+                                                  
         return redirect(url_for("mentor_workspace.workspace", user_id=user_id, course_idx=len(courses)))
 
     course_obj = courses[course_idx] or {}
-    topics = course_obj.get("course") or []   
+    topics = course_obj.get("course") or []                                                         
 
     if not (0 <= topic_idx < len(topics)):
         return redirect(url_for("mentor_workspace.workspace", user_id=user_id, course_idx=course_idx))
@@ -384,7 +384,7 @@ async def open_lesson(user_id: int):
         "3_name": mentor.get("name") or "Mentor",
         "0_topic": topic_title,
         "5_categories": mentor.get("specializations") or [],
-        
+                                                                           
         "4_structure": [
             {"0_topic": t_title, "3_lessons": [{"name": l} for l in (topics[i][t_title])]}
             for i, t in enumerate(topics)
@@ -400,8 +400,8 @@ async def open_lesson(user_id: int):
         "topic_title": topic_title,
         "lesson_title": lesson_title,
         "mentor": mentor,
-        "course": topics,   
-        "legacy": legacy,   
+        "course": topics,                    
+        "legacy": legacy,                                         
     }
 
     return redirect(url_for('lesson.lesson_call', user_id=user_id, mentor_idx=course_idx, lesson_id=lesson_id))
