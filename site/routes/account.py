@@ -17,7 +17,7 @@ async def account():
         form = await request.form
         new_username = form.get('username')
         new_password = form.get('password')
-        
+                                                                                      
         if new_username and new_username != user.username:
             existing = await User.filter(username=new_username).exclude(id=user.id).first()
 

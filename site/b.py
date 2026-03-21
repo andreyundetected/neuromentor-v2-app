@@ -17,12 +17,12 @@ class User(Model):
     credits = fields.IntField(default=0)  
 
 async def add_column():
-    
+                                    
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
 
     cursor.execute("PRAGMA table_info(user);")
-    columns = [col[1] for col in cursor.fetchall()]  
+    columns = [col[1] for col in cursor.fetchall()]                              
 
     if "credits" not in columns:
         print("Добавляем колонку 'credits' в таблицу user...")
@@ -31,7 +31,7 @@ async def add_column():
     else:
         print("Колонка 'credits' уже существует, пропускаем добавление.")
 
-    conn.close()  
+    conn.close()                                
 
     await Tortoise.init(db_url=DATABASE_URL, modules={"models": ["__main__"]})
     await Tortoise.generate_schemas()

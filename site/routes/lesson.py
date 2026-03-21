@@ -1,3 +1,4 @@
+from quart import Blueprint
 from quart import Blueprint, render_template, request, redirect, url_for, session, Response, jsonify
 from services.require_login import require_login
 import json
@@ -287,3 +288,6 @@ def _flatten_course(course_struct):
         for l_idx, title in enumerate(lessons):
             out.append((t_idx, l_idx, topic_title, title))
     return out
+
+
+lesson_bp = Blueprint('lesson', __name__)
