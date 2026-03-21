@@ -306,10 +306,10 @@ async def save_draft(user_id: int):
         return jsonify({"ok": False, "error": "unauthorized"}), 401
 
     payload = await request.get_json(force=True, silent=True) or {}
-    
+                                               
     session.setdefault("mentor_draft", {})
     session["mentor_draft"][str(user_id)] = payload
-    
+                                                          
     return jsonify({"ok": True})
 
 @mentor_workspace.route('/mentor_workspace/<int:user_id>/upsert_structure', methods=['POST'])
