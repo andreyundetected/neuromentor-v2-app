@@ -5,7 +5,7 @@
   <!-- Сервер должен подставить актуальное имя пользователя в content -->
   <meta name="username" content="{{ username }}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Course library - NeuroMentor</title>
+  <title>Mentors Dashboard - NeuroMentor</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/library.css') }}?v=5">
 </head>
 <body>
@@ -43,16 +43,16 @@
   <!-- Основной контейнер -->
   <div class="container">
     {% if session.get('language', 'ru') == 'ru' %}
-      <h1>Библиотека курсов</h1>
+      <h1>Центр менторов</h1>
     {% elif session.get('language', 'ru') == 'en' %}
-      <h1>Course library</h1>
+      <h1>Mentors Dashboard</h1>
     {% endif %}
     <!-- Панель поиска -->
     <div class="search-bar">
         {% if session.get('language', 'ru') == 'ru' %}
-          <input type="text" id="search-input" placeholder="Поиск курсов..." oninput="filterCourses()">
+          <input type="text" id="search-input" placeholder="Поиск ментора..." oninput="filterCourses()">
         {% elif session.get('language', 'ru') == 'en' %}
-          <input type="text" id="search-input" placeholder="Search courses..." oninput="filterCourses()">
+          <input type="text" id="search-input" placeholder="Search mentors..." oninput="filterCourses()">
         {% endif %}
     </div>
     <!-- Панель категорий -->
@@ -80,11 +80,11 @@
       <div class="course-card add-course-card" onclick="location.href='/mentor_workspace'">
         <img src="/static/images/add_icon.jpg" alt="Create a course">
         {% if session.get('language', 'ru') == 'ru' %}
-          <h2>Создать новый курс</h2>
-          <p>Начните свой новый образовательный проект</p>
+          <h2>Создать нового ментора</h2>
+          <p>Начните персональное обучение с искусственным наставником</p>
         {% elif session.get('language', 'ru') == 'en' %}
-          <h2>Create a new course</h2>
-          <p>Start your new educational project</p>
+          <h2>Create a new mentor</h2>
+          <p>Start your personal learning journey with an AI mentor</p>
         {% endif %}
       </div>
       <!-- Существующие курсы -->
@@ -119,20 +119,20 @@
     {% if session.get('language', 'ru') == 'ru' %}
     <h2>NeuroMentor – обучение будущего</h2>
     <p class="subtitle">
-      Персонализированные онлайн-курсы с адаптивным ИИ-наставником
+      Персонализированное обучение с адаптивным ИИ-наставником
     </p>
   
     <div class="about-content">
       <!-- Левая часть: текст -->
       <div class="about-text">
         <p>
-          Забудьте о скучных лекциях и неудобных курсах - учитесь в удобном темпе и формате, 
-          получая мгновенную обратную связь от интеллектуального наставника.
+          Забудьте о скучных лекциях и типовых курсах - учитесь в удобном темпе и формате, 
+          получая мгновенную обратную связь от персонального ИИ-наставника.
         </p>
         <ul class="advantages">
-          <li>📌 <strong>Гибкость обучения</strong> – выбирайте удобный ритм и стиль занятий</li>
-          <li>🧠 <strong>Искусственный интеллект</strong> – персональный помощник</li>
-          <li>🎯 <strong>Персонализированные курсы</strong> – адаптация под ваши потребности</li>
+          <li>📌 <strong>Гибкость обучения</strong> - выбирайте удобный ритм и стиль занятий</li>
+          <li>🧠 <strong>Искусственный интеллект</strong> - ваш персональный ментор</li>
+          <li>🎯 <strong>Персонализированные курсы</strong> - адаптация под ваши потребности</li>
         </ul>
       </div>
       <!-- Правая часть: картинка -->
@@ -143,19 +143,19 @@
     {% elif session.get('language', 'ru') == 'en' %}
     <h2>NeuroMentor – Education of the Future</h2>
     <p class="subtitle">
-      Personalized online courses with an adaptive AI tutor
+      Personalized learning with an adaptive AI mentor
     </p>
   
     <div class="about-content">
       <!-- Левая часть: текст -->
       <div class="about-text">
         <p>
-            Forget about boring lectures and inconvenient courses - study at a convenient pace and format, 
-            receiving instant feedback from an intelligent mentor.
+            Forget about boring lectures and cookie-cutter courses - study at your own pace and format, 
+            receiving instant feedback from your personal learning assistant.
         </p>
         <ul class="advantages">
           <li>📌 <strong>Flexible Learning</strong> – choose a convenient pace and style of study</li>
-          <li>🧠 <strong>Artificial Intelligence</strong> – your personal assistant</li>
+          <li>🧠 <strong>Artificial Intelligence</strong> – your personal mentor</li>
           <li>🎯 <strong>Personalized Courses</strong> – tailored to your needs</li>            
         </ul>
       </div>
