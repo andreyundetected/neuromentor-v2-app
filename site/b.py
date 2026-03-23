@@ -4,7 +4,7 @@ from tortoise.models import Model
 import sqlite3
 
 DATABASE_URL = "sqlite://neuromentor.db"
-DB_FILE = "neuromentor.db"  
+DB_FILE = "neuromentor.db"                                              
 
 class User(Model):
     id = fields.IntField(pk=True)
@@ -14,7 +14,7 @@ class User(Model):
     course_info = fields.JSONField(default=[])
     has_completed_interview = fields.BooleanField(default=False)
     recommendations = fields.JSONField(default=[])
-    credits = fields.IntField(default=0)  
+    credits = fields.IntField(default=0)                              
 
 async def add_column():
                                     

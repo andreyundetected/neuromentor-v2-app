@@ -2,7 +2,7 @@ from quart import Blueprint, render_template, request, redirect, url_for, sessio
 from collections import Counter
 from services.require_login import require_login
 from models.user import User
-from services.recommendations import generate_default_recommendations  
+from services.recommendations import generate_default_recommendations                            
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
