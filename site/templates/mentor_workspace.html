@@ -318,6 +318,17 @@
       border-color:#cfe0ff;
     }
 
+/* голубая «аура» на 1.4 с */
+@keyframes chatGlow {
+  0%   { box-shadow:0 0 0 0 rgba(42,119,255,.00);}
+  30%  { box-shadow:0 0 0 6px rgba(42,119,255,.20);}
+  80%  { box-shadow:0 0 0 3px rgba(42,119,255,.12);}
+  100% { box-shadow:0 0 0 0 rgba(42,119,255,.00);}
+}
+.chat-highlight-once{
+  animation:chatGlow 1.4s ease-out;
+}
+
     /* У активного чата ввод и кнопка полностью рабочие */
     .chat-card.chat-active .chat-input,
     .chat-card.chat-active .chat-send {
@@ -558,6 +569,13 @@
 
 /* Для whiteboard (wb-user / wb-teacher) */
 .wb-user.wb--in, .wb-teacher.wb--in { animation: msgIn .24s cubic-bezier(.22,.75,.25,1) both; }
+
+/* Уже была анимация msgIn, просто правильно подвяжем класс */
+.msg.msg--in{
+  animation: msgIn .35s cubic-bezier(.22,.75,.25,1) both;
+  transform-origin: 0 0;          /* teacher */
+}
+.msg.you.msg--in{transform-origin:100% 0;} /* пользователь */
 
 /* Индикация «печатает…» */
 .typing {
@@ -1130,8 +1148,15 @@ function applyChosenAvatar() {
 
       if (all) {
         // Постоянная активация чата
+        const wasDisabled = chatCard.classList.contains('chat-disabled');
         chatCard.classList.remove('chat-disabled');
         chatCard.classList.add('chat-active');
+
+        /* если только что перешли из disabled → active, вспыхнём */
+        if (wasDisabled) {
+          chatCard.classList.add('chat-highlight-once');
+          setTimeout(()=>chatCard.classList.remove('chat-highlight-once'), 1500);
+        }
 
         // На всякий случай, если были заблокированы атрибутами
         chatInput.disabled = false;
@@ -1207,7 +1232,7 @@ function hideTyping() {
       chatBody.appendChild(row);
       chatBody.scrollTop = chatBody.scrollHeight;
 
-      requestAnimationFrame(() => row.classList.add('chatBody--in'));
+      requestAnimationFrame(() => row.classList.add('msg--in'));
       row.addEventListener('animationend', () => row.classList.remove('chatBody--in'), { once: true });
 
     }
