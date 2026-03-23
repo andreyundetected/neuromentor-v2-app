@@ -49,5 +49,5 @@ async def interview():
 
         return jsonify(response)
 
-    session['conversation'] = []  
+    session['conversation'] = []                             
     return await render_template('interview.html', username=user.username)
