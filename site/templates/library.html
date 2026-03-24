@@ -6,7 +6,7 @@
   <meta name="username" content="{{ username }}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mentors Dashboard - NeuroMentor</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/library.css') }}?v=6">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/library.css') }}?v=7">
 </head>
 <body>
   <!-- Header -->
@@ -62,15 +62,18 @@
       <div class="category-item" onclick="toggleCategory(this, '{{ category }}')">{{ category }}</div>
       {% endfor %}
     </div>
+
     <!-- Рекомендационная панель -->
     <div class="recommendation-bar">
       {% for rec in user.recommendations %}
-      <div class="recommendation-card" onclick="checkInterview('/start_recommendation/{{ loop.index0 }}')">
-        <img src="/static/images/course_placeholder.jpg" alt="Курс {{ rec.recommendation_name }}">
-        <h2>{{ rec.recommendation_name }}</h2>
+      <div class="recommendation-card"
+           data-image-text="{{ rec.image_text }}"
+           onclick="checkInterview('/start_recommendation/{{ loop.index0 }}')">
+        <span class="rec-label">{{ rec.image_text }}</span>
       </div>
       {% endfor %}
     </div>
+
     
     <!-- Разделительная линия -->
     <div class="divider"></div>
@@ -330,6 +333,27 @@
         </a>
     </div>
 </div>
+<script>
+(function () {
+  /**
+   * случайный яркий градиент: два тона с шагом 30-90°
+   */
+  function randomGradient(){
+    const h1 = Math.floor(Math.random()*360);
+    const h2 = (h1 + 30 + Math.floor(Math.random()*60)) % 360;
+    return `linear-gradient(135deg,
+              hsl(${h1} , 80%, 60%),
+              hsl(${h2}, 80%, 60%))`;
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.recommendation-card').forEach(card=>{
+      card.style.background = randomGradient();
+      /* если нужно «разные» оттенки надписи – можно тоже подменять цвет/тень */
+    });
+  });
+})();
+</script>
 
 <script>
     function toggleLanguageDropdown() {

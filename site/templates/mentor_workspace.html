@@ -19,12 +19,19 @@
 
     /* ===== Header (берём твою шапку-логику) ===== */
     header {
-      position: fixed; top: 0; left: 0; right: 0; height: 64px;
-      background: rgba(255,255,255,0.85);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(255,255,255,0.8);
       backdrop-filter: blur(10px);
-      box-shadow: 0 2px 10px rgba(0,0,0,.06);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       z-index: 1000;
-      display:flex; align-items:center;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
     }
     .logo {
       font-size: 24px;
@@ -32,26 +39,23 @@
       color: #007bff;
       text-decoration: none;
     }
-    .header-right { margin-left:auto; display:flex; align-items:center; gap:12px; padding-right: 16px; }
+    .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px; /* Увеличьте расстояние между элементами */
+    margin-left: auto; /* Прижимает блок к правому краю */
+}
 .credits {
-  position: absolute;
-  top: 10px;
-  right: 62px; /* Расстояние от правого края */
-  font-size: 20px;
-  font-weight: bold;
-  color: #ffffff;
-  padding: 8px 14px;
-  background: linear-gradient(135deg, #1e90ff, #0073e6);
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  text-decoration: none;
-  transition: background 0.3s, transform 0.2s;
-  white-space: nowrap;
-  width: 140px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    color: #ffffff;
+    padding: 8px 14px;
+    background: linear-gradient(135deg, #1e90ff, #0073e6);
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+    transition: background 0.3s, transform 0.2s;
+    white-space: nowrap;
 }
 
 .credits:hover {
@@ -59,19 +63,18 @@
   transform: scale(1.05);
 }
 .lang-btn {
-  position: absolute;
-  top: 10px;
-  right: 214px;
-  width: 40px;
-  height: 40px;
-  background: #ffffff;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
+    width: 40px;
+    height: 40px;
+    background: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+    font-size: 18px;
+    color: #333;
 }
 
 /* Текст внутри кнопки */
@@ -88,20 +91,34 @@
 
 
     .account a { text-decoration: none; }
-    .account .account-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: #fff;
-      font-size: 18px;
-      font-weight: bold;
-      border: 2px solid #007bff;
-      transition: transform 0.3s;
-    }
+.account-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    border: 2px solid #007bff;
+    transition: transform 0.3s;
+}
     .account .account-avatar:hover { transform: scale(1.1); }
+
+    .lang-dropdown {
+    position: absolute;
+    top: 50px;
+    right: 20px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    z-index: 1001;
+}
 
     /* ===== Background canvas (твои фигуры) ===== */
     #backgroundCanvas {
@@ -701,35 +718,30 @@
 <body>
   <canvas id="backgroundCanvas"></canvas>
 
-    <header>
+<header>
     <a href="/" class="logo">NeuroMentor</a>
-    
-    <!-- Блок с выбором языка (слева от кредитов) -->
-    <div class="header-btn lang-btn" id="lang-btn" onclick="toggleLanguageDropdown()">
-        <span class="btn-text" id="lang-text">
-            {% if session.get('language', 'ru') == 'ru' %} RU {% else %} EN {% endif %}
-        </span>
+    <div class="header-right">
+        <button id="lang-btn" class="lang-btn">
+            <span id="lang-text">{% if session.get('language', 'ru') == 'ru' %} RU {% else %} EN {% endif %}</span>
+        </button>
+        <div class="lang-dropdown hidden" id="lang-dropdown">
+            <button onclick="selectLanguage('en')">EN</button>
+            <button onclick="selectLanguage('ru')">RU</button>
+        </div>
+
+        <a href="https://t.me/NeuroMentor_payment_bot" class="credits" title="Buy Credits via Telegram" target="_blank">
+            {% if session.get('language', 'ru') == 'ru' %}
+                {{ user.credits }} Кредитов
+            {% elif session.get('language', 'ru') == 'en' %}
+                {{ user.credits }} Credits
+            {% endif %}
+        </a>
+
+        <a href="/account" title="Profile" class="account">
+            <div class="account-avatar" id="user-avatar"></div>
+        </a>
     </div>
-    <!-- Выпадающий список языков (скрыт по умолчанию) -->
-    <div class="lang-dropdown" id="lang-dropdown">
-        <button onclick="selectLanguage('en')">EN</button>
-        <button onclick="selectLanguage('ru')">RU</button>
-      </div>
-    <!-- Блок с количеством кредитов -->
-    <a href="https://t.me/NeuroMentor_payment_bot" class="credits" title="Buy Credits via Telegram" target="_blank">
-      {% if session.get('language', 'ru') == 'ru' %}
-        {{ user.credits }} Кредитов
-      {% elif session.get('language', 'ru') == 'en' %}
-        {{ user.credits }} Credits
-      {% endif %}
-    </a>
-    
-    <!-- Аватарка пользователя (крайний правый элемент) -->
-    <a href="/account" title="Profile" class="account">
-      <div class="avatar account-avatar"></div>
-    </a>
-    
-    </header>
+</header>
 
   <main class="page">
     <div class="grid">
@@ -944,7 +956,54 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 </script>
+<script>
+  (function () {
+    const m = document.querySelector('meta[name="username"]');
+    window.username = (m && m.getAttribute('content')) || 'User';
+  })();
 
+  window.getUserAvatarColor = function(name) {
+    const colors = ['#FF5733', '#33B5FF', '#FF33F6', '#33FF57', '#FFBD33'];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
+</script>
+<script>
+    
+document.addEventListener('DOMContentLoaded', () => {
+    const userAvatarEl = document.getElementById('user-avatar');
+    if (userAvatarEl) {
+        const usernameMeta = document.querySelector('meta[name="username"]');
+        const username = usernameMeta ? usernameMeta.getAttribute('content') : 'User';
+        const userInitial = username.charAt(0).toUpperCase();
+        userAvatarEl.style.backgroundColor = getUserAvatarColor(username);
+        userAvatarEl.textContent = userInitial;
+    }
+});
+</script>
+    <script>
+        function toggleLanguageDropdown() {
+            const dropdown = document.getElementById('lang-dropdown');
+            dropdown.style.display = dropdown.style.display === 'flex' ? 'none' : 'flex';
+        }
+    
+        function selectLanguage(lang) {
+            console.log("Selected language:", lang);
+            
+            fetch(`/set_language/${lang}`, { method: "POST" })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();  // ✅ Перезагрузка страницы
+                    } else {
+                        console.error("Error setting language:", response.statusText);
+                    }
+                })
+                .catch(error => console.error("Fetch error:", error));
+        }
+    </script>
   <script>
     // ===== Header language dropdown =====
     const langBtn = document.getElementById('lang-btn');
@@ -952,11 +1011,7 @@ document.addEventListener('DOMContentLoaded', () => {
     langBtn.addEventListener('click', () => {
       langDd.style.display = (langDd.style.display === 'flex' ? 'none' : 'flex');
     });
-    function selectLanguage(lang) {
-      fetch(`/set_language/${lang}`, { method: "POST" })
-        .then(r => r.ok && location.reload())
-        .catch(console.error);
-    }
+
 
     // ===== Account avatar init =====
     (function initHeaderAvatar(){
@@ -1347,7 +1402,7 @@ function renderFromModel() {
   if (!Array.isArray(courseModel) || !courseModel.length) {
     container.innerHTML = `<div style="grid-column:1/-1; color:#7a8bb5;">
       ${document.getElementById('lang-text').textContent.trim().toUpperCase() === 'RU'
-        ? 'Структура ещё не сгенерирована' : 'Structure not generated yet'}
+        ? '' : ''}
     </div>`;
     const lessonsBox = document.getElementById('lessons');
     if (lessonsBox) lessonsBox.classList.toggle('edit-mode', editMode);

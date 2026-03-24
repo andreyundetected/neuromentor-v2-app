@@ -165,44 +165,42 @@
       background: #0056b3;
       color: #fff;
     }
-    
-    /* Сетка рекомендаций */
-    .recommendation-bar {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* 5-7 карточек */
-      gap: 36px;
-      max-width: 900px;
-      margin: 0 auto;
-    }
-    /* Карточка рекомендаций */
-    .recommendation-card {
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-      text-align: center;
-      padding: 10px;
-      cursor: pointer;
-      width: 120px; /* Фиксированная ширина */
-      height: 120px; /* Уменьшенная высота */
-      transition: transform 0.3s, box-shadow 0.3s;
-    }
 
-    .recommendation-card:hover {
-      transform: scale(1.08);
-      box-shadow: 0 3px 7px rgba(0, 0, 0, 0.2);
-    }
 
-    .recommendation-card img {
-      width: 100%;
-      border-radius: 8px;
-      margin-bottom: 5px;
-    }
 
-    .recommendation-card h2 {
-      font-size: 12px;
-      margin: 0;
-      color: #333;
-    }
+
+.recommendation-bar{
+  display:flex; gap:18px; flex-wrap:wrap;
+}
+
+.recommendation-card{
+  width:180px; height:120px;           /* нужный тебе формат */
+  border-radius:18px;
+  position:relative;
+  cursor:pointer;
+  overflow:hidden;
+  box-shadow:0 6px 18px rgba(0,0,0,.08);
+  transition:.2s transform, .2s box-shadow;
+  color:#fff;
+}
+.recommendation-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 12px 32px rgba(0,0,0,.12);
+}
+
+/* подпись по центру */
+.rec-label{
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  padding:0 12px; text-align:center;
+  font-size:18px; font-weight:800; line-height:1.25;
+  text-shadow:0 2px 4px rgba(0,0,0,.25);
+  pointer-events:none;                /* чтобы клики шли на карточку */
+}
+
+
+
+
 
     .divider {
       width: 100%;
