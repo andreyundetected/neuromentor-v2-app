@@ -27,34 +27,81 @@
       display:flex; align-items:center;
     }
     .logo {
-      margin-left: 16px;
-      font-weight: 800; color:#1e6bff; text-decoration:none; font-size: 20px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #007bff;
+      text-decoration: none;
     }
     .header-right { margin-left:auto; display:flex; align-items:center; gap:12px; padding-right: 16px; }
-    .credits { 
-      font-weight:700; color:#fff; text-decoration:none; padding:8px 14px; border-radius:10px;
-      background: linear-gradient(135deg, #1e90ff, #0073e6);
-      box-shadow: 0 2px 6px rgba(0,0,0,.18);
-      white-space:nowrap;
-    }
-    .lang-btn {
-      width:40px; height:40px; border:1px solid #d9e2f5; border-radius:8px; background:#fff; cursor:pointer;
-      display:flex; align-items:center; justify-content:center; font-weight:700; color:#2b3a55;
-    }
-    .lang-dropdown {
-      position:absolute; top:58px; right:110px; display:none; flex-direction:column;
-      background:#fff; border:1px solid #d9e2f5; border-radius:10px; overflow:hidden; z-index:1001;
-      box-shadow:0 10px 30px rgba(0,0,0,.08);
-    }
-    .lang-dropdown button {
-      padding:10px 14px; border:none; background:#fff; cursor:pointer; text-align:left;
-    }
-    .lang-dropdown button:hover { background:#f3f6ff; }
+.credits {
+  position: absolute;
+  top: 10px;
+  right: 62px; /* Расстояние от правого края */
+  font-size: 20px;
+  font-weight: bold;
+  color: #ffffff;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #1e90ff, #0073e6);
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  text-decoration: none;
+  transition: background 0.3s, transform 0.2s;
+  white-space: nowrap;
+  width: 140px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
 
-    .account-avatar {
-      width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800;
-      border:2px solid #1e6bff;
+.credits:hover {
+  background: linear-gradient(135deg, #0f7ae5, #005bb5);
+  transform: scale(1.05);
+}
+.lang-btn {
+  position: absolute;
+  top: 10px;
+  right: 214px;
+  width: 40px;
+  height: 40px;
+  background: #ffffff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+/* Текст внутри кнопки */
+.lang-btn .btn-text {
+  font-size: 18px;
+  color: #333;
+}
+
+/* При наведении */
+.lang-btn:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.05);
+}
+
+
+    .account a { text-decoration: none; }
+    .account .account-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      font-size: 18px;
+      font-weight: bold;
+      border: 2px solid #007bff;
+      transition: transform 0.3s;
     }
+    .account .account-avatar:hover { transform: scale(1.1); }
 
     /* ===== Background canvas (твои фигуры) ===== */
     #backgroundCanvas {
@@ -654,20 +701,35 @@
 <body>
   <canvas id="backgroundCanvas"></canvas>
 
-  <header>
+    <header>
     <a href="/" class="logo">NeuroMentor</a>
-    <div class="header-right">
-      <div class="lang-btn" id="lang-btn"><span id="lang-text">{% if session.get('language','ru') == 'ru' %}RU{% else %}EN{% endif %}</span></div>
-      <div class="lang-dropdown" id="lang-dropdown">
+    
+    <!-- Блок с выбором языка (слева от кредитов) -->
+    <div class="header-btn lang-btn" id="lang-btn" onclick="toggleLanguageDropdown()">
+        <span class="btn-text" id="lang-text">
+            {% if session.get('language', 'ru') == 'ru' %} RU {% else %} EN {% endif %}
+        </span>
+    </div>
+    <!-- Выпадающий список языков (скрыт по умолчанию) -->
+    <div class="lang-dropdown" id="lang-dropdown">
         <button onclick="selectLanguage('en')">EN</button>
         <button onclick="selectLanguage('ru')">RU</button>
       </div>
-      <a href="https://t.me/NeuroMentor_payment_bot" class="credits" target="_blank">
-        {% if session.get('language','ru') == 'ru' %}{{ user.credits }} Кредитов{% else %}{{ user.credits }} Credits{% endif %}
-      </a>
-      <a href="/account" class="account"><div class="account-avatar"></div></a>
-    </div>
-  </header>
+    <!-- Блок с количеством кредитов -->
+    <a href="https://t.me/NeuroMentor_payment_bot" class="credits" title="Buy Credits via Telegram" target="_blank">
+      {% if session.get('language', 'ru') == 'ru' %}
+        {{ user.credits }} Кредитов
+      {% elif session.get('language', 'ru') == 'en' %}
+        {{ user.credits }} Credits
+      {% endif %}
+    </a>
+    
+    <!-- Аватарка пользователя (крайний правый элемент) -->
+    <a href="/account" title="Profile" class="account">
+      <div class="avatar account-avatar"></div>
+    </a>
+    
+    </header>
 
   <main class="page">
     <div class="grid">
