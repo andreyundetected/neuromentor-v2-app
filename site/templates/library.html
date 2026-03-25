@@ -69,10 +69,18 @@
       <div class="recommendation-card"
            data-image-text="{{ rec.image_text }}"
            onclick="checkInterview('/start_recommendation/{{ loop.index0 }}')">
-        <span class="rec-label">{{ rec.image_text }}</span>
+    
+          <!-- «Картинка»-заглушка, на ней будет градиент и формула -->
+          <div class="rec-thumb">
+            <span class="rec-thumb-text">{{ rec.image_text }}</span>
+          </div>
+      
+          <!-- Подпись курса внизу (как было) -->
+          <h2 class="rec-title">{{ rec.recommendation_name }}</h2>
       </div>
       {% endfor %}
     </div>
+
 
     
     <!-- Разделительная линия -->
@@ -335,25 +343,25 @@
 </div>
 <script>
 (function () {
-  /**
-   * случайный яркий градиент: два тона с шагом 30-90°
-   */
-  function randomGradient(){
+  /** Пастельный градиент: два светлых тона с разницей 40-80° */
+  function pastelGradient(){
     const h1 = Math.floor(Math.random()*360);
-    const h2 = (h1 + 30 + Math.floor(Math.random()*60)) % 360;
+    const h2 = (h1 + 40 + Math.floor(Math.random()*40)) % 360;
+    const s  = 70;   // насыщенность 70 %
+    const l  = 85;   // светлота 85 %
     return `linear-gradient(135deg,
-              hsl(${h1} , 80%, 60%),
-              hsl(${h2}, 80%, 60%))`;
+            hsl(${h1} ,${s}%,${l}%),
+            hsl(${h2},${s}%,${l}%))`;
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.recommendation-card').forEach(card=>{
-      card.style.background = randomGradient();
-      /* если нужно «разные» оттенки надписи – можно тоже подменять цвет/тень */
+    document.querySelectorAll('.rec-thumb').forEach(el=>{
+      el.style.background = pastelGradient();
     });
   });
 })();
 </script>
+
 
 <script>
     function toggleLanguageDropdown() {

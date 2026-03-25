@@ -173,30 +173,49 @@
   display:flex; gap:18px; flex-wrap:wrap;
 }
 
+/* сама карточка */
 .recommendation-card{
-  width:180px; height:120px;           /* нужный тебе формат */
+  width:180px;                /* подгони при необходимости */
   border-radius:18px;
-  position:relative;
+  background:#fff;
+  box-shadow:0 6px 18px rgba(0,0,0,.08);
+  transition: transform .18s ease, box-shadow .18s ease;
   cursor:pointer;
   overflow:hidden;
-  box-shadow:0 6px 18px rgba(0,0,0,.08);
-  transition:.2s transform, .2s box-shadow;
-  color:#fff;
 }
 .recommendation-card:hover{
   transform:translateY(-4px);
-  box-shadow:0 12px 32px rgba(0,0,0,.12);
+  box-shadow:0 12px 28px rgba(0,0,0,.12);
 }
 
-/* подпись по центру */
-.rec-label{
-  position:absolute; inset:0;
+/* «картинка» внутри карточки */
+.rec-thumb{
+  position:relative;
+  height:110px;               /* прежняя высота изображения */
+  border-bottom:1px solid #eef2ff;
   display:flex; align-items:center; justify-content:center;
-  padding:0 12px; text-align:center;
-  font-size:18px; font-weight:800; line-height:1.25;
-  text-shadow:0 2px 4px rgba(0,0,0,.25);
-  pointer-events:none;                /* чтобы клики шли на карточку */
 }
+
+/* формула/подпись поверх градиента */
+.rec-thumb-text{
+  z-index:1;
+  max-width:90%;
+  text-align:center;
+  font-weight:800;
+  font-size:18px;
+  line-height:1.25;
+  color:#2d3959;
+  text-shadow:0 1px 2px rgba(255,255,255,.6);
+}
+
+/* заголовок курса */
+.rec-title{
+  padding:10px 12px 14px;
+  font-size:15px;
+  font-weight:800;
+  color:#1c2e5c;
+}
+
 
 
 

@@ -87,7 +87,8 @@ def generate_default_recommendations(language):
                     "4_structure": [],
                     "5_categories": ["Mathematics", "Algebra", "School"],
                 },
-                "start_message": "Hello! Let's start creating an algebra course. What is the last topic you studied in this subject?"
+                "start_message": "Hello! Let's start creating an algebra course. What is the last topic you studied in this subject?",
+                "image_text": "x^2 + 3x = 10",
             },
             {
                 "recommendation_name": "High School Physics",
@@ -99,7 +100,8 @@ def generate_default_recommendations(language):
                     "4_structure": [],
                     "5_categories": ["Physics", "School"],
                 },
-                "start_message": "Hello! Let's start creating a physics course. What is the last topic you studied in this subject?"
+                "start_message": "Hello! Let's start creating a physics course. What is the last topic you studied in this subject?",
+                "image_text": "F = ma",
             },
             {
                 "recommendation_name": "Beginner Chemistry",
@@ -111,7 +113,8 @@ def generate_default_recommendations(language):
                     "4_structure": [],
                     "5_categories": ["Chemistry", "School"],
                 },
-                "start_message": "Hello! Let's start creating a chemistry course. What is the last topic you studied in this subject?"
+                "start_message": "Hello! Let's start creating a chemistry course. What is the last topic you studied in this subject?",
+                "image_text": "2 H₂ + O₂ → 2 H₂O",
             },
             {
                 "recommendation_name": "Middle School Biology",
@@ -123,7 +126,8 @@ def generate_default_recommendations(language):
                     "4_structure": [],
                     "5_categories": ["Biology", "School"],
                 },
-                "start_message": "Hello! Let's start creating a biology course. What is the last topic you studied in this subject?"
+                "start_message": "Hello! Let's start creating a biology course. What is the last topic you studied in this subject?",
+                "image_text": "DNA → RNA → Protein",
             },
             {
                 "recommendation_name": "Geometry. High School",
@@ -135,7 +139,8 @@ def generate_default_recommendations(language):
                     "4_structure": [],
                     "5_categories": ["Mathematics", "Geometry", "School"],
                 },
-                "start_message": "Hello! Let's start creating a geometry course. What is the last topic you studied in this subject?"
+                "start_message": "Hello! Let's start creating a geometry course. What is the last topic you studied in this subject?",
+                "image_text": "a^2 + b^2 = c^2",
             },
             {
                 "recommendation_name": "School Social Studies",
@@ -147,7 +152,8 @@ def generate_default_recommendations(language):
                     "4_structure": [],
                     "5_categories": ["Social Studies", "School"],
                 },
-                "start_message": "Hello! Let's start creating a social studies course. What is the last topic you studied in this subject?"
+                "start_message": "Hello! Let's start creating a social studies course. What is the last topic you studied in this subject?",
+                "image_text": "C + I + G + (X − M)",
             }
         ]
 
