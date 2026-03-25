@@ -6,7 +6,7 @@
   <meta name="username" content="{{ username }}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mentors Dashboard - NeuroMentor</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/library.css') }}?v=7">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/library.css') }}?v=10">
 </head>
 <body>
   <!-- Header -->
@@ -66,20 +66,18 @@
     <!-- Рекомендационная панель -->
     <div class="recommendation-bar">
       {% for rec in user.recommendations %}
-      <div class="recommendation-card"
-           data-image-text="{{ rec.image_text }}"
-           onclick="checkInterview('/start_recommendation/{{ loop.index0 }}')">
-    
-          <!-- «Картинка»-заглушка, на ней будет градиент и формула -->
+        <div class="recommendation-card"
+             data-image-text="{{ rec.image_text }}"
+            onclick="checkInterview('/start_recommendation/{{ loop.index0 }}')">
           <div class="rec-thumb">
-            <span class="rec-thumb-text">{{ rec.image_text }}</span>
+            <span class="thumb-text">{{ rec.image_text }}</span>
           </div>
-      
-          <!-- Подпись курса внизу (как было) -->
-          <h2 class="rec-title">{{ rec.recommendation_name }}</h2>
-      </div>
+    
+          <h2 class="course-title">{{ rec.recommendation_name }}</h2>
+        </div>
       {% endfor %}
     </div>
+
 
 
     
@@ -342,25 +340,25 @@
     </div>
 </div>
 <script>
-(function () {
-  /** Пастельный градиент: два светлых тона с разницей 40-80° */
-  function pastelGradient(){
-    const h1 = Math.floor(Math.random()*360);
-    const h2 = (h1 + 40 + Math.floor(Math.random()*40)) % 360;
-    const s  = 70;   // насыщенность 70 %
-    const l  = 85;   // светлота 85 %
-    return `linear-gradient(135deg,
-            hsl(${h1} ,${s}%,${l}%),
-            hsl(${h2},${s}%,${l}%))`;
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.rec-thumb').forEach(el=>{
-      el.style.background = pastelGradient();
-    });
+document.addEventListener('DOMContentLoaded',()=>{
+  const thumbs = document.querySelectorAll('.rec-thumb');
+  thumbs.forEach(el=>{
+    el.style.background = makeGradient();
   });
-})();
+});
+
+/* пастельная, но «живенькая» палитра */
+function makeGradient(){
+  const h1 = Math.floor(Math.random()*360);
+  const h2 = (h1 + 50 + Math.random()*40) % 360;
+  const s  = 80;   // насыщенность
+  const l1 = 70;   // светлота точки 1
+  const l2 = 78;   // светлота точки 2
+  return `linear-gradient(135deg,hsl(${h1},${s}%,${l1}%),
+                                   hsl(${h2},${s}%,${l2}%))`;
+}
 </script>
+
 
 
 <script>

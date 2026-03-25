@@ -37,7 +37,9 @@
 <script id="MathJax-script" async
         src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=33">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/lesson_call.css') }}?v=34">
+
   </head>
   <body>
     <canvas id="backgroundCanvas"></canvas>
@@ -72,13 +74,17 @@
     </header>
   
 
-      <div id="presentationZone">
-        {% if session.get('language', 'ru') == 'ru' %}
-        <img id="presentationImage" src="" alt="Начните урок используя кнопку микрофона или написав в чат и тут появится презентация">
-        {% elif session.get('language', 'ru') == 'en' %}
-        <img id="presentationImage" src="" alt="Start the lesson using the microphone button or by writing in the chat and the presentation will appear here">
-        {% endif %}
-      </div>
+<div id="presentationZone">
+    <!-- волны + заголовок -->
+    <canvas id="waveCanvas"></canvas>
+    <h1 id="placeholderTitle">{{ lesson_title }}</h1>
+
+    <!-- сюда придёт реальная картинка -->
+    <img id="presentationImage" style="display:none;" alt="">
+</div>
+
+
+
          
     <div class="container">
       <div class="wb-header">
@@ -1287,6 +1293,58 @@ function getEdgeAverageColor(img, downScale = 32) {
     const { r, g, b } = getEdgeAverageColor(img);
     zone.style.background = `rgb(${r}, ${g}, ${b})`;
   }
+</script>
+<script> 
+/* ---------- WAVE placeholder ---------- */
+(() => {
+  const title   = '{{ lesson_title|e }}';
+  const zone    = document.getElementById('presentationZone');
+  const canvas  = document.getElementById('waveCanvas');
+  const ctx     = canvas.getContext('2d');
+  const img     = document.getElementById('presentationImage');
+  const h1      = document.getElementById('placeholderTitle');
+  if (!zone || !canvas || !h1) return;
+
+  /* 1) две пастельные HSL-краски из названия */
+  let h1hash=0, h2hash=0;
+  for (let i=0;i<title.length;i++){
+    h1hash = (h1hash*31 + title.charCodeAt(i)) & 0xffff;
+    h2hash = (h2hash*17 + title.charCodeAt(i)) & 0xffff;
+  }
+  const H1 = h1hash%360, H2 = h2hash%360;
+  const bg1=`hsl(${H1} 85% 90%)`, bg2=`hsl(${H2} 85% 80%)`;
+  zone.style.background=`linear-gradient(135deg, ${bg1}, ${bg2})`;
+
+  /* 2) волны */
+  function resize(){ canvas.width = zone.clientWidth; canvas.height = zone.clientHeight; }
+  window.addEventListener('resize', resize); resize();
+
+  function draw(time){
+    const {width:w, height:h} = canvas;
+    ctx.clearRect(0,0,w,h);
+    for(let i=0;i<3;i++){
+      ctx.beginPath();
+      ctx.fillStyle=`hsla(${(H1+i*40)%360},70%,${88-i*6}%,.55)`;
+      const A=20+i*10, k=0.0025+i*0.0008, s=time*0.0003*(i+1);
+      ctx.moveTo(0,h);
+      for(let x=0;x<=w;x++){
+        const y = h*0.55 + Math.sin(x*k+s)*A + Math.sin(x*k*1.5+s*1.6)*A*0.4;
+        ctx.lineTo(x,y);
+      }
+      ctx.lineTo(w,h); ctx.closePath(); ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+
+  /* 3) если реальная картинка пришла — скрываем placeholder */
+  img.addEventListener('load', () => {
+    canvas.style.display='none';
+    h1.style.display='none';
+    img.style.display='';
+  });
+})();
+
 </script>
 <script>
   const userId    = "{{ user.id }}";

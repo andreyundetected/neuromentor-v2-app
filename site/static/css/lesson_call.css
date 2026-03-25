@@ -331,6 +331,21 @@
 
   z-index: 1;
   padding: 10px;
+  overflow:hidden;     /* обрежем «волны» по краям */
+}
+#waveCanvas{
+  position:absolute; inset:0;
+  width:100%; height:100%;
+}
+#placeholderTitle{
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  font:700 48px/1.15 "Poppins","Segoe UI",sans-serif;
+  text-align:center;
+  color:#111;
+  text-shadow:0 2px 4px rgba(0,0,0,.08);
+  padding:0 8%;
+  pointer-events:none;           /* чтоб клик сквозь заголовок */
 }
 
 

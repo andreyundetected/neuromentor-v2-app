@@ -170,50 +170,53 @@
 
 
 .recommendation-bar{
-  display:flex; gap:18px; flex-wrap:wrap;
+  display:flex; gap:16px; flex-wrap:wrap;
 }
 
-/* сама карточка */
 .recommendation-card{
-  width:180px;                /* подгони при необходимости */
-  border-radius:18px;
+  width:165px;                   /* при желании меняйте */
+  height:120px;                  /* …и эту тоже */
   background:#fff;
-  box-shadow:0 6px 18px rgba(0,0,0,.08);
-  transition: transform .18s ease, box-shadow .18s ease;
+  border-radius:14px;
+  box-shadow:0 4px 14px rgba(0,0,0,.07);
+  padding:10px;
+  position:relative;             /* чтобы внутренние отступы считались от белой карточки */
+  transition:.15s transform, .15s box-shadow;
   cursor:pointer;
-  overflow:hidden;
 }
 .recommendation-card:hover{
-  transform:translateY(-4px);
-  box-shadow:0 12px 28px rgba(0,0,0,.12);
+  transform:translateY(-3px);
+  box-shadow:0 10px 26px rgba(0,0,0,.12);
 }
 
-/* «картинка» внутри карточки */
+/* — градиентная «картинка» — */
 .rec-thumb{
-  position:relative;
-  height:110px;               /* прежняя высота изображения */
-  border-bottom:1px solid #eef2ff;
+  height: calc(75%);      /* половина карточки минус верхний отступ */
+  width: calc(100%);      /* на 10 px меньше слева и справа */
+  margin: auto 0;           /* 10 px сверху, авто по бокам, 0 снизу */
+  border-radius:12px;
   display:flex; align-items:center; justify-content:center;
+  overflow:hidden;               /* чтобы text-shadow не выходил */
 }
 
-/* формула/подпись поверх градиента */
-.rec-thumb-text{
-  z-index:1;
-  max-width:90%;
-  text-align:center;
-  font-weight:800;
+/* формула/текст внутри плашки */
+.thumb-text{
+  font-weight:600;
   font-size:18px;
-  line-height:1.25;
-  color:#2d3959;
-  text-shadow:0 1px 2px rgba(255,255,255,.6);
+  color:#1c1c1c;
+  text-align:center;
+  line-height:1.2;
 }
 
-/* заголовок курса */
-.rec-title{
-  padding:10px 12px 14px;
-  font-size:15px;
-  font-weight:800;
-  color:#1c2e5c;
+/* название курса — внизу, поэтому margin-top:auto */
+.course-title{
+  position:absolute;
+  left:10px; right:10px; bottom:2px;
+  font-size:14px;
+  font-weight:700;
+  color:#000;
+  text-align:center;
+  white-space:normal;
 }
 
 
