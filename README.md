@@ -14,7 +14,7 @@ The web component is built on the Quart framework, providing an asynchronous int
 
 #### Data Persistence
 The application uses SQLAlchemy and Tortoise-ORM to handle database interactions. All conversation history and user states are persisted in a relational database, which allows for long-term memory of educational sessions. The system relies on asynchronous database drivers to prevent blocking the event loop during I/O operations.
-
+ 
 ### Tech Stack
 
 - Quart (Asynchronous web framework)
